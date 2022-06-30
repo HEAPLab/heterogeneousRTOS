@@ -3383,7 +3383,7 @@ static portTASK_FUNCTION( prvIdleTask, pvParameters )
 
 //fedit add
 //    	xil_printf("idle task running");
-//fedit remove
+//fedit remove : removed yelds from IDLE task since tasks to be allocated will be called via an interrupt of the fpga-queue is not available to PS at the moment, idle task will simply run until preempted by someone else
 //        #if ( configUSE_PREEMPTION == 0 )
 //            {
 //                /* If we are not using preemption we keep forcing a task switch to
