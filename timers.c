@@ -243,7 +243,8 @@
                                                           NULL,
                                                           ( ( UBaseType_t ) configTIMER_TASK_PRIORITY ) | portPRIVILEGE_BIT,
                                                           pxTimerTaskStackBuffer,
-                                                          pxTimerTaskTCBBuffer );
+                                                          pxTimerTaskTCBBuffer, //fedit add
+														  NULL );
 
                     if( xTimerTaskHandle != NULL )
                     {
@@ -257,7 +258,8 @@
                                            configTIMER_TASK_STACK_DEPTH,
                                            NULL,
                                            ( ( UBaseType_t ) configTIMER_TASK_PRIORITY ) | portPRIVILEGE_BIT,
-                                           &xTimerTaskHandle );
+                                           &xTimerTaskHandle,
+										   NULL );
                 }
             #endif /* configSUPPORT_STATIC_ALLOCATION */
         }
