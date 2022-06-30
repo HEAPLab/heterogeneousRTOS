@@ -2020,6 +2020,10 @@ void vTaskStartScheduler( void )
 
         xil_printf("idle task global pointer in tasks.c: %p", &pxIdleTCB);
 
+        //fedit add
+        //not necessary since last added task is idle one (and since scheduler is not running pxCurrentTCB should be last added task TCB) but just to be sure to force idle task scheduling
+		pxCurrentTCB = pxIdleTCB;
+
         /* Setting up the timer tick is hardware specific and thus in the
          * portable interface. */
         if( xPortStartScheduler() != pdFALSE )
@@ -3377,37 +3381,40 @@ static portTASK_FUNCTION( prvIdleTask, pvParameters )
          * is responsible for freeing the deleted task's TCB and stack. */
         prvCheckTasksWaitingTermination();
 
-        #if ( configUSE_PREEMPTION == 0 )
-            {
-                /* If we are not using preemption we keep forcing a task switch to
-                 * see if any other task has become available.  If we are using
-                 * preemption we don't need to do this as any task becoming available
-                 * will automatically get the processor anyway. */
-                taskYIELD();
-            }
-        #endif /* configUSE_PREEMPTION */
-
-        #if ( ( configUSE_PREEMPTION == 1 ) && ( configIDLE_SHOULD_YIELD == 1 ) )
-            {
-                /* When using preemption tasks of equal priority will be
-                 * timesliced.  If a task that is sharing the idle priority is ready
-                 * to run then the idle task should yield before the end of the
-                 * timeslice.
-                 *
-                 * A critical region is not required here as we are just reading from
-                 * the list, and an occasional incorrect value will not matter.  If
-                 * the ready list at the idle priority contains more than one task
-                 * then a task other than the idle task is ready to execute. */
-                if( listCURRENT_LIST_LENGTH( &( pxReadyTasksLists[ tskIDLE_PRIORITY ] ) ) > ( UBaseType_t ) 1 )
-                {
-                    taskYIELD();
-                }
-                else
-                {
-                    mtCOVERAGE_TEST_MARKER();
-                }
-            }
-        #endif /* ( ( configUSE_PREEMPTION == 1 ) && ( configIDLE_SHOULD_YIELD == 1 ) ) */
+//fedit add
+//    	xil_printf("idle task running");
+//fedit remove
+//        #if ( configUSE_PREEMPTION == 0 )
+//            {
+//                /* If we are not using preemption we keep forcing a task switch to
+//                 * see if any other task has become available.  If we are using
+//                 * preemption we don't need to do this as any task becoming available
+//                 * will automatically get the processor anyway. */
+//                taskYIELD();
+//            }
+//        #endif /* configUSE_PREEMPTION */
+//
+//        #if ( ( configUSE_PREEMPTION == 1 ) && ( configIDLE_SHOULD_YIELD == 1 ) )
+//            {
+//              /* When using preemption tasks of equal priority will be
+//             * timesliced.  If a task that is sharing the idle priority is ready
+//                 * to run then the idle task should yield before the end of the
+//                 * timeslice.
+//                 *
+//                 * A critical region is not required here as we are just reading from
+//                 * the list, and an occasional incorrect value will not matter.  If
+//                 * the ready list at the idle priority contains more than one task
+//                 * then a task other than the idle task is ready to execute. */
+//                if( listCURRENT_LIST_LENGTH( &( pxReadyTasksLists[ tskIDLE_PRIORITY ] ) ) > ( UBaseType_t ) 1 )
+//                {
+//                    taskYIELD();
+//                }
+//                else
+//                {
+//                    mtCOVERAGE_TEST_MARKER();
+//                }
+//            }
+//        #endif /* ( ( configUSE_PREEMPTION == 1 ) && ( configIDLE_SHOULD_YIELD == 1 ) ) */
 
         #if ( configUSE_IDLE_HOOK == 1 )
             {
