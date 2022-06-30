@@ -39,6 +39,9 @@
 #include "timers.h"
 #include "stack_macros.h"
 
+//fedit
+#include "xil_printf.h"
+
 /* Lint e9021, e961 and e750 are suppressed as a MISRA exception justified
  * because the MPU ports require MPU_WRAPPERS_INCLUDED_FROM_API_FILE to be defined
  * for the header files above, but not in this file, in order to generate the
@@ -2014,6 +2017,8 @@ void vTaskStartScheduler( void )
         portCONFIGURE_TIMER_FOR_RUN_TIME_STATS();
 
         traceTASK_SWITCHED_IN();
+
+        xil_printf("idle task global pointer in tasks.c: %p", &pxIdleTCB);
 
         /* Setting up the timer tick is hardware specific and thus in the
          * portable interface. */
