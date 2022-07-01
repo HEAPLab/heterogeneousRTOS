@@ -630,7 +630,8 @@ typedef enum
  */
 #if ( portUSING_MPU_WRAPPERS == 1 )
     BaseType_t xTaskCreateRestricted( const TaskParameters_t * const pxTaskDefinition,
-                                      TaskHandle_t * pxCreatedTask ) PRIVILEGED_FUNCTION;
+                                      TaskHandle_t * pxCreatedTask, //fedit add
+									  TCB_t ** const pxTCBOut ) PRIVILEGED_FUNCTION;
 #endif
 
 /**
@@ -720,7 +721,8 @@ typedef enum
  */
 #if ( ( portUSING_MPU_WRAPPERS == 1 ) && ( configSUPPORT_STATIC_ALLOCATION == 1 ) )
     BaseType_t xTaskCreateRestrictedStatic( const TaskParameters_t * const pxTaskDefinition,
-                                            TaskHandle_t * pxCreatedTask ) PRIVILEGED_FUNCTION;
+                                            TaskHandle_t * pxCreatedTask, //fedit add
+											TCB_t ** const pxTCBOut ) PRIVILEGED_FUNCTION;
 #endif
 
 /**

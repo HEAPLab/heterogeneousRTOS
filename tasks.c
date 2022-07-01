@@ -482,7 +482,7 @@ static void prvInitialiseNewTask( TaskFunction_t pxTaskCode,
  * Called after a new task has been created and initialised to place the task
  * under the control of the scheduler.
  */
-static int prvAddNewTaskToTasksList( TCB_t * pxNewTCB ) PRIVILEGED_FUNCTION;
+static int prvAddNewTaskToRTTasksList( TCB_t * pxNewTCB ) PRIVILEGED_FUNCTION;
 
 //fedit remove
 ///*
@@ -553,7 +553,7 @@ static int prvAddNewTaskToTasksList( TCB_t * pxNewTCB ) PRIVILEGED_FUNCTION;
             	*pxTCBOut = pxNewTCB;
             }
             //fedit edit
-            prvAddNewTaskToTasksList( pxNewTCB );
+            //prvAddNewTaskToRTTasksList( pxNewTCB );
         }
         else
         {
@@ -569,7 +569,8 @@ static int prvAddNewTaskToTasksList( TCB_t * pxNewTCB ) PRIVILEGED_FUNCTION;
 #if ( ( portUSING_MPU_WRAPPERS == 1 ) && ( configSUPPORT_STATIC_ALLOCATION == 1 ) )
 
     BaseType_t xTaskCreateRestrictedStatic( const TaskParameters_t * const pxTaskDefinition,
-                                            TaskHandle_t * pxCreatedTask )
+                                            TaskHandle_t * pxCreatedTask, //fedit add
+											TCB_t ** const pxTCBOut )
     {
         TCB_t * pxNewTCB;
         BaseType_t xReturn = errCOULD_NOT_ALLOCATE_REQUIRED_MEMORY;
@@ -602,8 +603,12 @@ static int prvAddNewTaskToTasksList( TCB_t * pxNewTCB ) PRIVILEGED_FUNCTION;
                                   pxTaskDefinition->uxPriority,
                                   pxCreatedTask, pxNewTCB,
                                   pxTaskDefinition->xRegions );
+            //fedit add
+            if (pxTCBOut != NULL) {
+            	*pxTCBOut = pxNewTCB;
+            }
             //fedit edit
-            prvAddNewTaskToTasksList( pxNewTCB );
+            //prvAddNewTaskToRTTasksList( pxNewTCB );
             xReturn = pdPASS;
         }
 
@@ -616,7 +621,8 @@ static int prvAddNewTaskToTasksList( TCB_t * pxNewTCB ) PRIVILEGED_FUNCTION;
 #if ( ( portUSING_MPU_WRAPPERS == 1 ) && ( configSUPPORT_DYNAMIC_ALLOCATION == 1 ) )
 
     BaseType_t xTaskCreateRestricted( const TaskParameters_t * const pxTaskDefinition,
-                                      TaskHandle_t * pxCreatedTask )
+                                      TaskHandle_t * pxCreatedTask, //fedit add
+									  TCB_t ** const pxTCBOut )
     {
         TCB_t * pxNewTCB;
         BaseType_t xReturn = errCOULD_NOT_ALLOCATE_REQUIRED_MEMORY;
@@ -651,9 +657,12 @@ static int prvAddNewTaskToTasksList( TCB_t * pxNewTCB ) PRIVILEGED_FUNCTION;
                                       pxTaskDefinition->uxPriority,
                                       pxCreatedTask, pxNewTCB,
                                       pxTaskDefinition->xRegions );
-
+                //fedit add
+                if (pxTCBOut != NULL) {
+                	*pxTCBOut = pxNewTCB;
+                }
                 //fedit edit
-                prvAddNewTaskToTasksList( pxNewTCB );
+                //prvAddNewTaskToRTTasksList( pxNewTCB );
                 xReturn = pdPASS;
             }
         }
@@ -749,7 +758,7 @@ static int prvAddNewTaskToTasksList( TCB_t * pxNewTCB ) PRIVILEGED_FUNCTION;
             	*pxTCBOut = pxNewTCB;
             }
             //fedit edit
-            prvAddNewTaskToTasksList( pxNewTCB );
+            //prvAddNewTaskToRTTasksList( pxNewTCB );
             xReturn = pdPASS;
         }
         else
@@ -1099,7 +1108,7 @@ static void prvInitialiseNewTask( TaskFunction_t pxTaskCode,
 /*-----------------------------------------------------------*/
 
 //fedit add
-static int prvAddNewTaskToTasksList( TCB_t * pxNewTCB )
+static int prvAddNewTaskToRTTasksList( TCB_t * pxNewTCB )
 {
   if( xSchedulerRunning == pdFALSE )
   {
