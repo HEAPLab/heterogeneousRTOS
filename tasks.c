@@ -778,19 +778,19 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB ) PRIVILEGED_FUNCTION;
                              UBaseType_t uxPriority,
                              TaskHandle_t * const pxCreatedTask, //fedit add
 							 RTTask_t ** const pxRTTaskOut,
-							 UBaseType_t const deadline,
-							 UBaseType_t const period,
-							 UBaseType_t const wcet
+							 UBaseType_t const pxDeadline,
+							 UBaseType_t const pxPeriod,
+							 UBaseType_t const pxWcet
 							)
      {
     	RTTask_t* pxNewRTTask = ( RTTask_t * ) pvPortMalloc( sizeof( RTTask_t ) );
 
     	BaseType_t xReturn=xTaskCreate(pxTaskCode, pcName, usStackDepth, pvParameters, uxPriority, pxCreatedTask, &( pxNewRTTask->taskTCB ) );
 
-    	pxNewRTTask->deadline=deadline;
-    	pxNewRTTask->period=period;
-    	pxNewRTTask->taskNumber=pxNewRTTask->taskTCB->uxTaskNumber;
-    	pxNewRTTask->wcet=wcet;
+    	pxNewRTTask->pxDeadline=pxDeadline;
+    	pxNewRTTask->pxPeriod=pxPeriod;
+    	pxNewRTTask->uxTaskNumber=pxNewRTTask->taskTCB->uxTaskNumber;
+    	pxNewRTTask->pxWcet=pxWcet;
 
     	if (xReturn==pdPASS) {
     		*pxRTTaskOut=pxNewRTTask;

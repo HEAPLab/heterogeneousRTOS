@@ -173,10 +173,10 @@ typedef tskTCB TCB_t;
 
 typedef struct RealTimeTask_t {
 	TCB_t* taskTCB;
-	UBaseType_t taskNumber;
-	UBaseType_t period;
-	UBaseType_t wcet;
-	UBaseType_t	deadline;
+	UBaseType_t uxTaskNumber;
+	UBaseType_t pxPeriod;
+	UBaseType_t pxWcet;
+	UBaseType_t	pxDeadline;
 } RTTask_t;
 
 //______________________________________________________
@@ -448,6 +448,18 @@ typedef enum
                             UBaseType_t uxPriority,
                             TaskHandle_t * const pxCreatedTask, //fedit add
 							TCB_t ** const pxTCBOut ) PRIVILEGED_FUNCTION;
+
+    BaseType_t xRTTaskCreate( TaskFunction_t pxTaskCode,
+                                 const char * const pcName, /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
+                                 const configSTACK_DEPTH_TYPE usStackDepth,
+                                 void * const pvParameters,
+                                 UBaseType_t uxPriority,
+                                 TaskHandle_t * const pxCreatedTask, //fedit add
+    							 RTTask_t ** const pxRTTaskOut,
+    							 UBaseType_t const pxDeadline,
+    							 UBaseType_t const pxPeriod,
+    							 UBaseType_t const pxWcet
+    							) PRIVILEGED_FUNCTION;
 #endif
 
 /**
