@@ -173,7 +173,7 @@ typedef tskTCB TCB_t;
 
 typedef struct RealTimeTask_t {
 	TCB_t* taskTCB;
-	UBaseType_t taskId;
+	UBaseType_t taskNumber;
 	UBaseType_t period;
 	UBaseType_t wcet;
 	UBaseType_t	deadline;

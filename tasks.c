@@ -483,7 +483,7 @@ static void prvInitialiseNewTask( TaskFunction_t pxTaskCode,
  * Called after a new task has been created and initialised to place the task
  * under the control of the scheduler.
  */
-static int prvAddNewTaskToRTTasksList( RTTask_t * pxNewTCB ) PRIVILEGED_FUNCTION;
+static BaseType_t prvAddNewTaskToRTTasksList( RTTask_t * pxNewRTTask ) PRIVILEGED_FUNCTION;
 
 //fedit currently unused
 ///*
@@ -769,6 +769,37 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB ) PRIVILEGED_FUNCTION;
 
         return xReturn;
     }
+
+
+    BaseType_t xRTTaskCreate( TaskFunction_t pxTaskCode,
+                             const char * const pcName, /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
+                             const configSTACK_DEPTH_TYPE usStackDepth,
+                             void * const pvParameters,
+                             UBaseType_t uxPriority,
+                             TaskHandle_t * const pxCreatedTask, //fedit add
+							 RTTask_t ** const pxRTTaskOut,
+							 UBaseType_t const deadline,
+							 UBaseType_t const period,
+							 UBaseType_t const wcet
+							)
+     {
+    	RTTask_t* pxNewRTTask = ( RTTask_t * ) pvPortMalloc( sizeof( RTTask_t ) );
+
+    	BaseType_t xReturn=xTaskCreate(pxTaskCode, pcName, usStackDepth, pvParameters, uxPriority, pxCreatedTask, &( pxNewRTTask->taskTCB ) );
+
+    	pxNewRTTask->deadline=deadline;
+    	pxNewRTTask->period=period;
+    	pxNewRTTask->taskNumber=pxNewRTTask->taskTCB->uxTaskNumber;
+    	pxNewRTTask->wcet=wcet;
+
+    	if (xReturn==pdPASS) {
+    		*pxRTTaskOut=pxNewRTTask;
+    		return prvAddNewTaskToRTTasksList(pxNewRTTask);
+    	}
+
+    	return xReturn;
+     }
+
 
 #endif /* configSUPPORT_DYNAMIC_ALLOCATION */
 /*-----------------------------------------------------------*/
@@ -1110,7 +1141,7 @@ static void prvInitialiseNewTask( TaskFunction_t pxTaskCode,
 /*-----------------------------------------------------------*/
 
 //fedit add
-static int prvAddNewTaskToRTTasksList( RTTask_t * pxNewRTTask )
+static BaseType_t prvAddNewTaskToRTTasksList( RTTask_t * pxNewRTTask )
 {
 	TCB_t* pxNewTCB=pxNewRTTask->taskTCB;
   if( xSchedulerRunning == pdFALSE )
@@ -1159,10 +1190,10 @@ static int prvAddNewTaskToRTTasksList( RTTask_t * pxNewRTTask )
     }
     taskEXIT_CRITICAL();
     //xil_printf("created tasks array address: %p", pxRTTasksList);
-    return 0;
+    return pdPASS;
   } else {
     /* Error, stasks must be added before scheduler startup */
-    return 1;
+    return errSCHEDULER_ALREADY_RUNNING;
   }
 }
 /*-----------------------------------------------------------*/

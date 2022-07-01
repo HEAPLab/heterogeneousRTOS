@@ -50,6 +50,8 @@ typedef void (* TaskFunction_t)( void * );
 
 /* FreeRTOS error definitions. */
 #define errCOULD_NOT_ALLOCATE_REQUIRED_MEMORY    ( -1 )
+//fedit add
+#define errSCHEDULER_ALREADY_RUNNING		     ( -10 )
 #define errQUEUE_BLOCKED                         ( -4 )
 #define errQUEUE_YIELD                           ( -5 )
 
