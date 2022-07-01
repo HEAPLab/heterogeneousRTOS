@@ -268,7 +268,7 @@ PRIVILEGED_DATA TCB_t * volatile pxIdleTCB = NULL;
 PRIVILEGED_DATA static List_t pxReadyTasksLists[ configMAX_PRIORITIES ]; /*< Prioritised ready tasks. */
 
 //fedit add
-PRIVILEGED_DATA static TCB_t* pxTasksList[ configMAX_TASKS ]; /*< Created tasks. */
+PRIVILEGED_DATA static TCB_t* pxRTTasksList[ configMAX_TASKS ]; /*< Created tasks. */
 
 PRIVILEGED_DATA static List_t xDelayedTaskList1;                         /*< Delayed tasks. */
 PRIVILEGED_DATA static List_t xDelayedTaskList2;                         /*< Delayed tasks (two lists are used - one for delays that have overflowed the current tick count. */
@@ -1150,12 +1150,12 @@ static int prvAddNewTaskToRTTasksList( TCB_t * pxNewTCB )
         #endif /* configUSE_TRACE_FACILITY */
         traceTASK_CREATE( pxNewTCB );
 
-        pxTasksList[uxTaskNumber-1]=pxNewTCB;
+        pxRTTasksList[uxTaskNumber-1]=pxNewTCB;
 
         portSETUP_TCB( pxNewTCB );
     }
     taskEXIT_CRITICAL();
-    //xil_printf("created tasks array address: %p", pxTasksList);
+    //xil_printf("created tasks array address: %p", pxRTTasksList);
     return 0;
   } else {
     /* Error, stasks must be added before scheduler startup */
@@ -3677,9 +3677,9 @@ static portTASK_FUNCTION( prvIdleTask, pvParameters )
 static void prvInitialiseTaskLists( void )
 {
 	//fedit add
-    //vListInitialise( &pxTasksList );
+    //vListInitialise( &pxRTTasksList );
 	for (int i=0; i<configMAX_TASKS; i++) {
-		pxTasksList[i]=NULL;
+		pxRTTasksList[i]=NULL;
 	}
 
     //todo remove other lists init on next steps of project
