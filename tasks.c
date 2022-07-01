@@ -564,6 +564,37 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB ) PRIVILEGED_FUNCTION;
         return xReturn;
     }
 
+    TaskHandle_t xRTTaskCreateStatic( TaskFunction_t pxTaskCode,
+            					const char * const pcName, /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
+								const uint32_t ulStackDepth,
+								void * const pvParameters,
+								UBaseType_t uxPriority,
+								StackType_t * const puxStackBuffer,
+								StaticTask_t * const pxTaskBuffer,  //fedit add
+    							 RTTask_t ** const pxRTTaskOut,
+    							 UBaseType_t const pxDeadline,
+    							 UBaseType_t const pxPeriod,
+    							 UBaseType_t const pxWcet
+    							)
+         {
+        	RTTask_t* pxNewRTTask = ( RTTask_t * ) pvPortMalloc( sizeof( RTTask_t ) );
+
+        	TaskHandle_t xReturn=xTaskCreateStatic(pxTaskCode, pcName, ulStackDepth, pvParameters, uxPriority, puxStackBuffer, pxTaskBuffer, &( pxNewRTTask->taskTCB ) );
+
+        	pxNewRTTask->pxDeadline=pxDeadline;
+        	pxNewRTTask->pxPeriod=pxPeriod;
+        	pxNewRTTask->uxTaskNumber=pxNewRTTask->taskTCB->uxTaskNumber;
+        	pxNewRTTask->pxWcet=pxWcet;
+
+        	if (xReturn!=NULL) {
+        		*pxRTTaskOut=pxNewRTTask;
+        		if (prvAddNewTaskToRTTasksList(pxNewRTTask) != pdPass)
+        			return NULL;
+        	}
+        	return xReturn;
+         }
+
+
 #endif /* SUPPORT_STATIC_ALLOCATION */
 /*-----------------------------------------------------------*/
 

@@ -579,6 +579,20 @@ typedef enum
                                     StackType_t * const puxStackBuffer,
                                     StaticTask_t * const pxTaskBuffer, //fedit add
 									TCB_t ** const pxTCBOut ) PRIVILEGED_FUNCTION;
+
+    //fedit add
+ TaskHandle_t xRTTaskCreateStatic( TaskFunction_t pxTaskCode,
+         					const char * const pcName, /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
+								const uint32_t ulStackDepth,
+								void * const pvParameters,
+								UBaseType_t uxPriority,
+								StackType_t * const puxStackBuffer,
+								StaticTask_t * const pxTaskBuffer,  //fedit add
+ 							 RTTask_t ** const pxRTTaskOut,
+ 							 UBaseType_t const pxDeadline,
+ 							 UBaseType_t const pxPeriod,
+ 							 UBaseType_t const pxWcet
+ 							) PRIVILEGED_FUNCTION;
 #endif /* configSUPPORT_STATIC_ALLOCATION */
 
 /**
