@@ -2041,7 +2041,8 @@ void vTaskStartScheduler( void )
         {
             if( xReturn == pdPASS )
             {
-                xReturn = xTimerCreateTimerTask();
+            	//fedit remove TODO
+                //xReturn = xTimerCreateTimerTask();
             }
             else
             {

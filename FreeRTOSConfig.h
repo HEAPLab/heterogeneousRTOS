@@ -44,7 +44,7 @@
 
 #define configUSE_COUNTING_SEMAPHORES 1
 
-#define configUSE_TIMERS 1
+#define configUSE_TIMERS 0
 
 #define configUSE_IDLE_HOOK 0
 
