@@ -74,6 +74,9 @@
 
 #define configMAX_PRIORITIES (8)
 
+//fedit add
+#define configMAX_TASKS (128)
+
 #define configMAX_CO_ROUTINE_PRIORITIES 2
 
 #define configMINIMAL_STACK_SIZE ( ( unsigned short ) 200)
