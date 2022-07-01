@@ -167,6 +167,20 @@ typedef struct tskTaskControlBlock       /* The old naming convention is used to
 typedef tskTCB TCB_t;
 //______________________________________________________
 
+//fedit add
+
+/*Used to represent real time tasks, contain timing informations of task and pointer to its TCB_t. Will be used by RT scheduler. */
+
+typedef struct RealTimeTask_t {
+	TCB_t* taskTCB;
+	UBaseType_t taskId;
+	UBaseType_t period;
+	UBaseType_t wcet;
+	UBaseType_t	deadline;
+} RTTask_t;
+
+//______________________________________________________
+
 /*
  * Defines the prototype to which the application task hook function must
  * conform.

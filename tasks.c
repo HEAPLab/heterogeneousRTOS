@@ -267,8 +267,9 @@ PRIVILEGED_DATA TCB_t * volatile pxIdleTCB = NULL;
  * the static qualifier. */
 PRIVILEGED_DATA static List_t pxReadyTasksLists[ configMAX_PRIORITIES ]; /*< Prioritised ready tasks. */
 
+
 //fedit add
-PRIVILEGED_DATA static TCB_t* pxRTTasksList[ configMAX_TASKS ]; /*< Created tasks. */
+PRIVILEGED_DATA static RTTask_t* pxRTTasksList[ configMAX_TASKS ]; /*< Created tasks. */
 
 PRIVILEGED_DATA static List_t xDelayedTaskList1;                         /*< Delayed tasks. */
 PRIVILEGED_DATA static List_t xDelayedTaskList2;                         /*< Delayed tasks (two lists are used - one for delays that have overflowed the current tick count. */
@@ -482,14 +483,14 @@ static void prvInitialiseNewTask( TaskFunction_t pxTaskCode,
  * Called after a new task has been created and initialised to place the task
  * under the control of the scheduler.
  */
-static int prvAddNewTaskToRTTasksList( TCB_t * pxNewTCB ) PRIVILEGED_FUNCTION;
+static int prvAddNewTaskToRTTasksList( RTTask_t * pxNewTCB ) PRIVILEGED_FUNCTION;
 
-//fedit remove
+//fedit currently unused
 ///*
 // * Called after a new task has been created and initialised to place the task
 // * under the control of the scheduler.
 // */
-//static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB ) PRIVILEGED_FUNCTION;
+static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB ) PRIVILEGED_FUNCTION;
 
 /*
  * freertos_tasks_c_additions_init() should only be called if the user definable
@@ -1022,94 +1023,96 @@ static void prvInitialiseNewTask( TaskFunction_t pxTaskCode,
     }
 }
 /*-----------------------------------------------------------*/
+//fedit currently unused
 
-// static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB )
-// {
-//     /* Ensure interrupts don't access the task lists while the lists are being
-//      * updated. */
-//     taskENTER_CRITICAL();
-//     {
-//         uxCurrentNumberOfTasks++;
-//
-//         if( pxCurrentTCB == NULL )
-//         {
-//             /* There are no other tasks, or all the other tasks are in
-//              * the suspended state - make this the current task. */
-//             pxCurrentTCB = pxNewTCB;
-//
-//             if( uxCurrentNumberOfTasks == ( UBaseType_t ) 1 )
-//             {
-//                 /* This is the first task to be created so do the preliminary
-//                  * initialisation required.  We will not recover if this call
-//                  * fails, but we will report the failure. */
-//                 prvInitialiseTaskLists();
-//             }
-//             else
-//             {
-//                 mtCOVERAGE_TEST_MARKER();
-//             }
-//         }
-//         else
-//         {
-//             /* If the scheduler is not already running, make this task the
-//              * current task if it is the highest priority task to be created
-//              * so far. */
-//             if( xSchedulerRunning == pdFALSE )
-//             {
-//                 if( pxCurrentTCB->uxPriority <= pxNewTCB->uxPriority )
-//                 {
-//                     pxCurrentTCB = pxNewTCB;
-//                 }
-//                 else
-//                 {
-//                     mtCOVERAGE_TEST_MARKER();
-//                 }
-//             }
-//             else
-//             {
-//                 mtCOVERAGE_TEST_MARKER();
-//             }
-//         }
-//
-//         uxTaskNumber++;
-//
-//         #if ( configUSE_TRACE_FACILITY == 1 )
-//             {
-//                 /* Add a counter into the TCB for tracing only. */
-//                 pxNewTCB->uxTCBNumber = uxTaskNumber;
-//             }
-//         #endif /* configUSE_TRACE_FACILITY */
-//         traceTASK_CREATE( pxNewTCB );
-//
-//         prvAddTaskToReadyList( pxNewTCB );
-//
-//         portSETUP_TCB( pxNewTCB );
-//     }
-//     taskEXIT_CRITICAL();
-//
-//     if( xSchedulerRunning != pdFALSE )
-//     {
-//         /* If the created task is of a higher priority than the current task
-//          * then it should run now. */
-//         if( pxCurrentTCB->uxPriority < pxNewTCB->uxPriority )
-//         {
-//             taskYIELD_IF_USING_PREEMPTION();
-//         }
-//         else
-//         {
-//             mtCOVERAGE_TEST_MARKER();
-//         }
-//     }
-//     else
-//     {
-//         mtCOVERAGE_TEST_MARKER();
-//     }
-// }
+ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB )
+ {
+     /* Ensure interrupts don't access the task lists while the lists are being
+      * updated. */
+     taskENTER_CRITICAL();
+     {
+         uxCurrentNumberOfTasks++;
+
+         if( pxCurrentTCB == NULL )
+         {
+             /* There are no other tasks, or all the other tasks are in
+              * the suspended state - make this the current task. */
+             pxCurrentTCB = pxNewTCB;
+
+             if( uxCurrentNumberOfTasks == ( UBaseType_t ) 1 )
+             {
+                 /* This is the first task to be created so do the preliminary
+                  * initialisation required.  We will not recover if this call
+                  * fails, but we will report the failure. */
+                 prvInitialiseTaskLists();
+             }
+             else
+             {
+                 mtCOVERAGE_TEST_MARKER();
+             }
+         }
+         else
+         {
+             /* If the scheduler is not already running, make this task the
+              * current task if it is the highest priority task to be created
+              * so far. */
+             if( xSchedulerRunning == pdFALSE )
+             {
+                 if( pxCurrentTCB->uxPriority <= pxNewTCB->uxPriority )
+                 {
+                     pxCurrentTCB = pxNewTCB;
+                 }
+                 else
+                 {
+                     mtCOVERAGE_TEST_MARKER();
+                 }
+             }
+             else
+             {
+                 mtCOVERAGE_TEST_MARKER();
+             }
+         }
+
+         uxTaskNumber++;
+
+         #if ( configUSE_TRACE_FACILITY == 1 )
+             {
+                 /* Add a counter into the TCB for tracing only. */
+                 pxNewTCB->uxTCBNumber = uxTaskNumber;
+             }
+         #endif /* configUSE_TRACE_FACILITY */
+         traceTASK_CREATE( pxNewTCB );
+
+         prvAddTaskToReadyList( pxNewTCB );
+
+         portSETUP_TCB( pxNewTCB );
+     }
+     taskEXIT_CRITICAL();
+
+     if( xSchedulerRunning != pdFALSE )
+     {
+         /* If the created task is of a higher priority than the current task
+          * then it should run now. */
+         if( pxCurrentTCB->uxPriority < pxNewTCB->uxPriority )
+         {
+             taskYIELD_IF_USING_PREEMPTION();
+         }
+         else
+         {
+             mtCOVERAGE_TEST_MARKER();
+         }
+     }
+     else
+     {
+         mtCOVERAGE_TEST_MARKER();
+     }
+ }
 /*-----------------------------------------------------------*/
 
 //fedit add
-static int prvAddNewTaskToRTTasksList( TCB_t * pxNewTCB )
+static int prvAddNewTaskToRTTasksList( RTTask_t * pxNewRTTask )
 {
+	TCB_t* pxNewTCB=pxNewRTTask->taskTCB;
   if( xSchedulerRunning == pdFALSE )
   {
     /* Ensure interrupts don't access the task lists while the lists are being
@@ -1121,7 +1124,7 @@ static int prvAddNewTaskToRTTasksList( TCB_t * pxNewTCB )
         if( pxCurrentTCB == NULL )
         {
             /* There are no other tasks - make this the current task. */
-            pxCurrentTCB = pxNewTCB;
+            //pxCurrentTCB = pxNewTCB;
 
             if( uxCurrentNumberOfTasks == ( UBaseType_t ) 1 )
             {
@@ -1150,7 +1153,7 @@ static int prvAddNewTaskToRTTasksList( TCB_t * pxNewTCB )
         #endif /* configUSE_TRACE_FACILITY */
         traceTASK_CREATE( pxNewTCB );
 
-        pxRTTasksList[uxTaskNumber-1]=pxNewTCB;
+        pxRTTasksList[uxTaskNumber-1]=pxNewRTTask;
 
         portSETUP_TCB( pxNewTCB );
     }
