@@ -75,7 +75,7 @@
 #define configMAX_PRIORITIES (8)
 
 //fedit add
-#define configMAX_TASKS (128)
+#define configMAX_RT_TASKS (128)
 
 #define configMAX_CO_ROUTINE_PRIORITIES 2
 

@@ -269,7 +269,7 @@ PRIVILEGED_DATA static List_t pxReadyTasksLists[ configMAX_PRIORITIES ]; /*< Pri
 
 
 //fedit add
-PRIVILEGED_DATA static RTTask_t* pxRTTasksList[ configMAX_TASKS ]; /*< Created tasks. */
+PRIVILEGED_DATA static RTTask_t* pxRTTasksList[ configMAX_RT_TASKS ]; /*< Created tasks. */
 
 PRIVILEGED_DATA static List_t xDelayedTaskList1;                         /*< Delayed tasks. */
 PRIVILEGED_DATA static List_t xDelayedTaskList2;                         /*< Delayed tasks (two lists are used - one for delays that have overflowed the current tick count. */
@@ -3681,7 +3681,7 @@ static void prvInitialiseTaskLists( void )
 {
 	//fedit add
     //vListInitialise( &pxRTTasksList );
-	for (int i=0; i<configMAX_TASKS; i++) {
+	for (int i=0; i<configMAX_RT_TASKS; i++) {
 		pxRTTasksList[i]=NULL;
 	}
 
