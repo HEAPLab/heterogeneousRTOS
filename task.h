@@ -763,6 +763,15 @@ typedef enum
     BaseType_t xTaskCreateRestrictedStatic( const TaskParameters_t * const pxTaskDefinition,
                                             TaskHandle_t * pxCreatedTask, //fedit add
 											TCB_t ** const pxTCBOut ) PRIVILEGED_FUNCTION;
+
+    //fedit add
+    BaseType_t xRTTaskCreateRestrictedStatic( const TaskParameters_t * const pxTaskDefinition,
+                					TaskHandle_t * pxCreatedTask, //fedit add
+        							 RTTask_t ** const pxRTTaskOut,
+        							 UBaseType_t const pxDeadline,
+        							 UBaseType_t const pxPeriod,
+        							 UBaseType_t const pxWcet
+        							) PRIVILEGED_FUNCTION;
 #endif
 
 /**

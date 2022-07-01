@@ -647,6 +647,31 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB ) PRIVILEGED_FUNCTION;
         return xReturn;
     }
 
+    BaseType_t xRTTaskCreateRestrictedStatic( const TaskParameters_t * const pxTaskDefinition,
+            					TaskHandle_t * pxCreatedTask, //fedit add
+    							 RTTask_t ** const pxRTTaskOut,
+    							 UBaseType_t const pxDeadline,
+    							 UBaseType_t const pxPeriod,
+    							 UBaseType_t const pxWcet
+    							)
+         {
+        	RTTask_t* pxNewRTTask = ( RTTask_t * ) pvPortMalloc( sizeof( RTTask_t ) );
+
+        	BaseType_t xReturn=xRTTaskCreateRestrictedStatic(pxTaskDefinition, pxCreatedTask, &( pxNewRTTask->taskTCB ) );
+
+        	pxNewRTTask->pxDeadline=pxDeadline;
+        	pxNewRTTask->pxPeriod=pxPeriod;
+        	pxNewRTTask->uxTaskNumber=pxNewRTTask->taskTCB->uxTaskNumber;
+        	pxNewRTTask->pxWcet=pxWcet;
+
+        	if (xReturn==pdPASS) {
+        		*pxRTTaskOut=pxNewRTTask;
+        		return prvAddNewTaskToRTTasksList(pxNewRTTask);
+        	}
+
+        	return xReturn;
+         }
+
 #endif /* ( portUSING_MPU_WRAPPERS == 1 ) && ( configSUPPORT_STATIC_ALLOCATION == 1 ) */
 /*-----------------------------------------------------------*/
 
