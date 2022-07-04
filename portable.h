@@ -180,6 +180,14 @@ size_t xPortGetFreeHeapSize( void ) PRIVILEGED_FUNCTION;
 size_t xPortGetMinimumEverFreeHeapSize( void ) PRIVILEGED_FUNCTION;
 
 /*
+ * Initialises the scheduler
+ */
+
+BaseType_t xPortInitScheduler( u32 prvDmaSourceAddr, u32 byteSize ) PRIVILEGED_FUNCTION;
+
+int prvDmaInit() PRIVILEGED_FUNCTION;
+
+/*
  * Setup the hardware ready for the scheduler to take control.  This generally
  * sets up a tick interrupt and sets timers for the correct tick frequency.
  */

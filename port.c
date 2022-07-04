@@ -343,13 +343,13 @@ StackType_t *pxPortInitialiseStack( StackType_t *pxTopOfStack, TaskFunction_t px
 
 //#define DMA_NUMBER_OF_TRANSFERS	2	/* Number of simple transfers to do */
 #define DMA_CTRL_DEVICE_ID 	XPAR_AXICDMA_0_DEVICE_ID
-#define DMA_INTC_DEVICE_ID		XPAR_SCUGIC_SINGLE_DEVICE_ID
+#define DMA_INTC_DEVICE_ID	XPAR_SCUGIC_SINGLE_DEVICE_ID
 #define DMA_CTRL_IRPT_INTR	XPAR_FABRIC_AXI_CDMA_0_CDMA_INTROUT_INTR
 
 static volatile int prvDmaDone = 0;	/* Dma transfer is done */
 static volatile int prvDmaError = 0;	/* Dma Bus Error occurs */
 
-//static u32 prvDmaSourceAddr 	= 0x20000000;
+static u32 prvDmaSourceAddr 	= 0x20000000;
 static u32 prvDmaDestAddr 	= 0xC0000000;
 
 static XAxiCdma prvDmaAxiCdmaInstance;	/* Instance of the XAxiCdma */
@@ -426,23 +426,29 @@ static int prvDmaSetupIntrSystem(XScuGic *IntcInstancePtr, XAxiCdma *InstancePtr
 }
 
 int prvDmaInit() {
+	//xil_printf("init sched");
+
 	int Status=XST_FAILURE;
 	XAxiCdma_Config *CfgPtr;
 
-	XScuGic *IntcInstancePtr=&prvDmaIntcController;
-	XAxiCdma *InstancePtr=&prvDmaAxiCdmaInstance;
-	u16 DeviceId=DMA_CTRL_DEVICE_ID;
-	u32 IntrId=DMA_CTRL_IRPT_INTR;
+	XScuGic *IntcInstancePtr = &prvDmaIntcController;
+	XAxiCdma *InstancePtr = &prvDmaAxiCdmaInstance;
+	u16 DeviceId = DMA_CTRL_DEVICE_ID;
+	u32 IntrId = DMA_CTRL_IRPT_INTR;
 
 	/* Initialize the XAxiCdma device.
 	 */
 	CfgPtr = XAxiCdma_LookupConfig(DeviceId);
 	if (!CfgPtr) {
+		xil_printf("init failure");
 		return XST_FAILURE;
 	}
 
-	XAxiCdma_CfgInitialize(InstancePtr, CfgPtr, CfgPtr->BaseAddress);
+	Status = XAxiCdma_CfgInitialize(InstancePtr, CfgPtr, CfgPtr->BaseAddress);
 	if (Status != XST_SUCCESS) {
+		xil_printf("CfgInitialize failure");
+		xil_printf("status %i", Status);
+
 		return XST_FAILURE;
 	}
 
@@ -492,7 +498,7 @@ static int prvDmaCDMABlockingTransfer(XAxiCdma *InstancePtr, int Length, u32 Sou
 		Xil_DCacheFlushRange((u32)SourceAddr, Length);
 
 		Status = XAxiCdma_SimpleTransfer(InstancePtr,
-										(u32)(u8 *) (SourceAddr ),
+										(u32)(SourceAddr),
 										(u32)(DestAddr),
 										Length,
 										prvDmaCdma_CallBack,
@@ -509,11 +515,11 @@ static int prvDmaCDMABlockingTransfer(XAxiCdma *InstancePtr, int Length, u32 Sou
 			 */
 			while (!prvDmaDone && !prvDmaError) {
 				/* Wait */
+				xil_printf("waiting Transfer to finish \n\r");
 			}
 
 			if (prvDmaError) {
 				return XST_FAILURE;
-				return 1;
 			}
 		/* Invalidate the DestBuffer before receiving the data, in case the
 		 * Data Cache is enabled
@@ -525,7 +531,7 @@ static int prvDmaCDMABlockingTransfer(XAxiCdma *InstancePtr, int Length, u32 Sou
 
 /*Transfers the task set via DMA to the FPGA and waits for transfer completion. Then scheduler can be started. */
 
-int prvDmaTransferRTTaskSet(RTTask_t* prvDmaSourceAddr, u32 byteSize) {
+int prvDmaTransferRTTaskSet( u32 byteSize ) {
 	XAxiCdma *InstancePtr=&prvDmaAxiCdmaInstance;
 	int index;
 	int Status=XST_FAILURE;
@@ -541,7 +547,7 @@ int prvDmaTransferRTTaskSet(RTTask_t* prvDmaSourceAddr, u32 byteSize) {
 			/*			Status = prvDmaCDMABlockingTransfer(InstancePtr,
 					   	   BUFFER_BYTESIZE, SubmitTries);*/
 			Status = prvDmaCDMABlockingTransfer(InstancePtr,
-					(remainder != 0 && index == bursts -1) ? remainder : byteSize, (u32) prvDmaSourceAddr, (u32)prvDmaDestAddr);
+					(remainder != 0 && index == bursts -1) ? remainder : byteSize, prvDmaSourceAddr, prvDmaDestAddr);
 		}
 	} else {
 		Status = prvDmaCDMABlockingTransfer(InstancePtr,
@@ -672,6 +678,22 @@ int32_t lReturn;
 	configASSERT( lReturn );
 }
 /*-----------------------------------------------------------*/
+
+//fedit add
+/* Initialises the scheduler */
+
+BaseType_t xPortInitScheduler( u32 prvDmaSourceAddr, u32 byteSize )
+{
+	int status;
+	status=prvDmaInit();
+	if (status==XST_SUCCESS) {
+		status=prvDmaTransferRTTaskSet( byteSize );
+	}
+	if (status==XST_SUCCESS) {
+		return pdPASS;
+	}
+	return status;
+}
 
 BaseType_t xPortStartScheduler( void )
 {
