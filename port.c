@@ -337,6 +337,7 @@ StackType_t *pxPortInitialiseStack( StackType_t *pxTopOfStack, TaskFunction_t px
 #include "xdebug.h"
 #include "xil_exception.h"
 #include "xil_cache.h"
+#include <math.h>
 #include "xparameters.h"
 #include "xscugic.h"
 
@@ -345,8 +346,8 @@ StackType_t *pxPortInitialiseStack( StackType_t *pxTopOfStack, TaskFunction_t px
 #define DMA_INTC_DEVICE_ID		XPAR_SCUGIC_SINGLE_DEVICE_ID
 #define DMA_CTRL_IRPT_INTR	XPAR_FABRIC_AXI_CDMA_0_CDMA_INTROUT_INTR
 
-volatile static int prvDmaDone = 0;	/* Dma transfer is done */
-volatile static int prvDmaError = 0;	/* Dma Bus Error occurs */
+static volatile int prvDmaDone = 0;	/* Dma transfer is done */
+static volatile int prvDmaError = 0;	/* Dma Bus Error occurs */
 
 //static u32 prvDmaSourceAddr 	= 0x20000000;
 static u32 prvDmaDestAddr 	= 0xC0000000;
@@ -455,11 +456,11 @@ int prvDmaInit() {
 	/* Enable all (completion/error/delay) interrupts
 	 */
 	XAxiCdma_IntrEnable(InstancePtr, XAXICDMA_XR_IRQ_ALL_MASK);
+	return XST_SUCCESS;
 }
 
 static void prvDmaCdma_CallBack(void *CallBackRef, u32 IrqMask, int *IgnorePtr)
 {
-
 	if (IrqMask & XAXICDMA_XR_IRQ_ERROR_MASK) {
 		prvDmaError = TRUE;
 		xil_printf("\r\n--- Transfer Error --- \r\n");
@@ -469,10 +470,10 @@ static void prvDmaCdma_CallBack(void *CallBackRef, u32 IrqMask, int *IgnorePtr)
 		xil_printf("\r\n--- Transfer Done --- \r\n");
 		prvDmaDone = TRUE;
 	}
-
 }
 
-static int prvDmaCDMABlockingTransfer(XAxiCdma *InstancePtr, int Length, int Retries, u32 SourceAddr, u32 DestAddr)
+/* Performs a blocking transfer (waits for transfer completion); Retries are the n */
+static int prvDmaCDMABlockingTransfer(XAxiCdma *InstancePtr, int Length, u32 SourceAddr, u32 DestAddr)
 {
 
 	int Status;
@@ -522,27 +523,29 @@ static int prvDmaCDMABlockingTransfer(XAxiCdma *InstancePtr, int Length, int Ret
 	return XST_SUCCESS;
 }
 
-int prvDmaTransferRTTaskSet(RTTask_t* prvDmaSourceAddr, int byteSize) {
+/*Transfers the task set via DMA to the FPGA and waits for transfer completion. Then scheduler can be started. */
+
+int prvDmaTransferRTTaskSet(RTTask_t* prvDmaSourceAddr, u32 byteSize) {
 	XAxiCdma *InstancePtr=&prvDmaAxiCdmaInstance;
-	int SubmitTries = 1;		/* Retry to submit */
-	int Index;
+	int index;
 	int Status=XST_FAILURE;
 	u32 BUFFER_BYTESIZE	= (XPAR_AXI_CDMA_0_M_AXI_DATA_WIDTH * XPAR_AXI_CDMA_0_M_AXI_MAX_BURST_LEN);
 
 	if (byteSize > BUFFER_BYTESIZE) {
 		//int Tries = DMA_NUMBER_OF_TRANSFERS;
-		int Tries = 2;
+		int bursts = ceil( byteSize / BUFFER_BYTESIZE );
+		u32 remainder = byteSize % BUFFER_BYTESIZE;
 
-		for (Index = 0; Index < Tries; Index++) {
+		for (index = 0; index < bursts; index++) {
 			//TODO
 			/*			Status = prvDmaCDMABlockingTransfer(InstancePtr,
 					   	   BUFFER_BYTESIZE, SubmitTries);*/
 			Status = prvDmaCDMABlockingTransfer(InstancePtr,
-					byteSize, SubmitTries, (u32) prvDmaSourceAddr, (u32)prvDmaDestAddr);
+					(remainder != 0 && index == bursts -1) ? remainder : byteSize, (u32) prvDmaSourceAddr, (u32)prvDmaDestAddr);
 		}
 	} else {
 		Status = prvDmaCDMABlockingTransfer(InstancePtr,
-				byteSize, SubmitTries, (u32) prvDmaSourceAddr, (u32)prvDmaDestAddr);
+				byteSize, (u32) prvDmaSourceAddr, (u32)prvDmaDestAddr);
 	}
 
 	if(Status != XST_SUCCESS) {
@@ -553,7 +556,7 @@ int prvDmaTransferRTTaskSet(RTTask_t* prvDmaSourceAddr, int byteSize) {
 	return XST_SUCCESS;
 }
 
-//________________________________
+// END OF DMA FUNCTIONS________________________________
 
 
 static void prvTaskExitError( void )
