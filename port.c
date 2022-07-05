@@ -332,17 +332,20 @@ StackType_t *pxPortInitialiseStack( StackType_t *pxTopOfStack, TaskFunction_t px
 //FPGA INFOS fedit
 
 //GPIO
-XGpio prvSchedStartGPIO;
+#include "xparameters.h"
+#include "xgpio.h"
+#define GPIO0VAL 0x01
+#define GPIO_START_SCHED_CHANNEL 1
+#define GPIO_START_SCHED_DEVICE_ID XPAR_GPIO_0_DEVICE_ID
+XGpio prvGpio0;
 
 //DMA____________________________
 
 #include "xaxicdma.h"
-#include "xgpio.h"
 #include "xdebug.h"
 #include "xil_exception.h"
 #include "xil_cache.h"
 #include <math.h>
-#include "xparameters.h"
 #include "xscugic.h"
 
 //#define DMA_NUMBER_OF_TRANSFERS	2	/* Number of simple transfers to do */
@@ -441,8 +444,6 @@ static int prvDmaSetupIntrSystem(XScuGic *IntcInstancePtr, XAxiCdma *InstancePtr
 }
 
 int prvDmaInit() {
-	//xil_printf("init sched");
-
 	int Status=XST_FAILURE;
 	XAxiCdma_Config *CfgPtr;
 
@@ -539,7 +540,7 @@ static int prvDmaCDMABlockingTransfer(XAxiCdma *InstancePtr, int Length, u32 Sou
 		/* Invalidate the DestBuffer before receiving the data, in case the
 		 * Data Cache is enabled
 		 */
-		Xil_DCacheInvalidateRange((u32)DestAddr, Length);
+		//Xil_DCacheInvalidateRange((u32)DestAddr, Length); THIS ROW CAUSED TO HANG UP
 
 	return XST_SUCCESS;
 }
@@ -558,9 +559,6 @@ int prvDmaTransferRTTaskSet( u32 byteSize ) {
 		u32 remainder = byteSize % BUFFER_BYTESIZE;
 
 		for (index = 0; index < bursts; index++) {
-			//TODO
-			/*			Status = prvDmaCDMABlockingTransfer(InstancePtr,
-					   	   BUFFER_BYTESIZE, SubmitTries);*/
 			Status = prvDmaCDMABlockingTransfer(InstancePtr,
 					(remainder != 0 && index == bursts -1) ? remainder : byteSize, prvDmaSourceAddr, prvDmaDestAddr);
 		}
@@ -572,7 +570,6 @@ int prvDmaTransferRTTaskSet( u32 byteSize ) {
 	if(Status != XST_SUCCESS) {
 		return XST_FAILURE;
 	}
-	xil_printf("SUCCESS \n\r");
 	return XST_SUCCESS;
 }
 
@@ -694,33 +691,41 @@ int32_t lReturn;
 /*-----------------------------------------------------------*/
 
 //fedit add
-/* Initialises the scheduler. Copies pxRTTasksList to FPGA */
+/* Initializes the scheduler. Copies pxRTTasksList to FPGA */
 
 BaseType_t xPortInitScheduler( u32 prvDmaSourceAddr, u32 byteSize )
 {
 	int status;
+
 	status=prvDmaInit();
-	if (status==XST_SUCCESS) {
-		status=prvDmaTransferRTTaskSet( byteSize );
+	if (status!=XST_SUCCESS) {
+		xil_printf("DMA init failed");
+		return status;
 	}
-	if (status==XST_SUCCESS) {
-		return pdPASS;
+
+	status=prvDmaTransferRTTaskSet( byteSize );
+	if (status!=XST_SUCCESS) {
+		xil_printf("DMA RTTTaskSet transfer failed");
+		return status;
 	}
 
 	//TODO CHECK WHETHER DISABLE OR NOT
 	prvDmaDisableIntrSystem();
 
-    XGpio_Initialize(&prvSchedStartGPIO, XPAR_AXI_GPIO_0_DEVICE_ID);
-    XGpio_SetDataDirection(&prvSchedStartGPIO, 1, 0);
+	status = XGpio_Initialize(&prvGpio0, GPIO_START_SCHED_DEVICE_ID);
+	if (status != XST_SUCCESS) {
+		xil_printf("Gpio Initialization Failed\r\n");
+		return status;
+	}
 
-	return status;
+	XGpio_SetDataDirection(&prvGpio0, GPIO_START_SCHED_CHANNEL, ~GPIO0VAL);
+
+	return pdPASS;
 }
 
 BaseType_t xPortStartScheduler( void )
 {
 uint32_t ulAPSR;
-
-
 
 	#if( configASSERT_DEFINED == 1 )
 	{
@@ -783,7 +788,7 @@ uint32_t ulAPSR;
 			//configSETUP_TICK_INTERRUPT();
 
 			/* Start the scheduler on hardware */
-			XGpio_DiscreteWrite(&prvSchedStartGPIO, 1, TRUE);
+			XGpio_DiscreteWrite(&prvGpio0, GPIO_START_SCHED_CHANNEL, GPIO0VAL);
 
 			/* Start the first task executing. */
 			vPortRestoreTaskContext();
