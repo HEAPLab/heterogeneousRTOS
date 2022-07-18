@@ -171,12 +171,12 @@ typedef tskTCB TCB_t;
 
 /*Used to represent real time tasks, contain timing informations of task and pointer to its TCB_t. Will be used by RT scheduler. */
 
-typedef struct RealTimeTask_t {
+typedef struct __attribute__((__packed__)) RealTimeTask_t {
 	TCB_t* taskTCB;
-	UBaseType_t uxTaskNumber;
-	UBaseType_t pxPeriod;
-	UBaseType_t pxWcet;
-	UBaseType_t	pxDeadline;
+	u32 uxTaskNumber;
+	u32 pxPeriod;
+	u32 pxWcet;
+	u32	pxDeadline;
 } RTTask_t;
 
 //______________________________________________________
@@ -455,7 +455,7 @@ typedef enum
                                  void * const pvParameters,
                                  UBaseType_t uxPriority,
                                  TaskHandle_t * const pxCreatedTask, //fedit add
-    							 RTTask_t ** const pxRTTaskOut,
+    							 //RTTask_t ** const pxRTTaskOut,
     							 UBaseType_t const pxDeadline,
     							 UBaseType_t const pxPeriod,
     							 UBaseType_t const pxWcet
@@ -588,7 +588,7 @@ typedef enum
 								UBaseType_t uxPriority,
 								StackType_t * const puxStackBuffer,
 								StaticTask_t * const pxTaskBuffer,  //fedit add
- 							 RTTask_t ** const pxRTTaskOut,
+ 							 //RTTask_t ** const pxRTTaskOut,
  							 UBaseType_t const pxDeadline,
  							 UBaseType_t const pxPeriod,
  							 UBaseType_t const pxWcet
@@ -675,7 +675,7 @@ typedef enum
 
     BaseType_t xRTTaskCreateRestricted( const TaskParameters_t * const pxTaskDefinition,
     									TaskHandle_t * pxCreatedTask, //fedit add
-            							 RTTask_t ** const pxRTTaskOut,
+            							 //RTTask_t ** const pxRTTaskOut,
             							 UBaseType_t const pxDeadline,
             							 UBaseType_t const pxPeriod,
             							 UBaseType_t const pxWcet
@@ -775,7 +775,7 @@ typedef enum
     //fedit add
     BaseType_t xRTTaskCreateRestrictedStatic( const TaskParameters_t * const pxTaskDefinition,
                 					TaskHandle_t * pxCreatedTask, //fedit add
-        							 RTTask_t ** const pxRTTaskOut,
+        							 //RTTask_t ** const pxRTTaskOut,
         							 UBaseType_t const pxDeadline,
         							 UBaseType_t const pxPeriod,
         							 UBaseType_t const pxWcet

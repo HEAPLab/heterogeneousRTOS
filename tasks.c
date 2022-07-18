@@ -272,7 +272,7 @@ PRIVILEGED_DATA static List_t pxReadyTasksLists[ configMAX_PRIORITIES ]; /*< Pri
 //PRIVILEGED_DATA static RTTask_t* pxRTTasksList[ configMAX_RT_TASKS ]; /*< Created tasks. */
 static const u32 prvDmaSourceAddr 	= 0x20000000;
 //pxRTTasksList array will be located at address indicated by prvDmaSourceAddr. This address must match hardware (on Vivado) DMA source address.
-PRIVILEGED_DATA static RTTask_t** pxRTTasksList = (RTTask_t*) prvDmaSourceAddr; /*< Created tasks. */
+PRIVILEGED_DATA static RTTask_t* pxRTTasksList = (RTTask_t*) prvDmaSourceAddr; /*< Created tasks. */
 
 PRIVILEGED_DATA static List_t xDelayedTaskList1;                         /*< Delayed tasks. */
 PRIVILEGED_DATA static List_t xDelayedTaskList2;                         /*< Delayed tasks (two lists are used - one for delays that have overflowed the current tick count. */
@@ -486,7 +486,7 @@ static void prvInitialiseNewTask( TaskFunction_t pxTaskCode,
  * Called after a new task has been created and initialised to place the task
  * under the control of the scheduler.
  */
-static BaseType_t prvAddNewTaskToRTTasksList( RTTask_t * pxNewRTTask ) PRIVILEGED_FUNCTION;
+static BaseType_t prvAddNewTaskToRTTasksList( RTTask_t pxNewRTTask ) PRIVILEGED_FUNCTION;
 
 //fedit currently unused
 ///*
@@ -574,7 +574,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB ) PRIVILEGED_FUNCTION;
 								UBaseType_t uxPriority,
 								StackType_t * const puxStackBuffer,
 								StaticTask_t * const pxTaskBuffer,  //fedit add
-    							 RTTask_t ** const pxRTTaskOut,
+    							 //RTTask_t ** const pxRTTaskOut,
     							 UBaseType_t const pxDeadline,
     							 UBaseType_t const pxPeriod,
     							 UBaseType_t const pxWcet
@@ -582,15 +582,14 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB ) PRIVILEGED_FUNCTION;
          {
         	RTTask_t* pxNewRTTask = ( RTTask_t * ) pvPortMalloc( sizeof( RTTask_t ) );
 
-        	TaskHandle_t xReturn=xTaskCreateStatic(pxTaskCode, pcName, ulStackDepth, pvParameters, uxPriority, puxStackBuffer, pxTaskBuffer, &( pxNewRTTask->taskTCB ) );
+        	TaskHandle_t xReturn=xTaskCreateStatic(pxTaskCode, pcName, ulStackDepth, pvParameters, uxPriority, puxStackBuffer, pxTaskBuffer, &( pxNewRTTask.taskTCB ) );
 
-        	pxNewRTTask->pxDeadline=pxDeadline;
-        	pxNewRTTask->pxPeriod=pxPeriod;
-        	pxNewRTTask->uxTaskNumber=pxNewRTTask->taskTCB->uxTaskNumber;
-        	pxNewRTTask->pxWcet=pxWcet;
+        	pxNewRTTask.pxDeadline=pxDeadline;
+        	pxNewRTTask.pxPeriod=pxPeriod;
+        	pxNewRTTask.pxWcet=pxWcet;
 
         	if (xReturn!=NULL) {
-        		*pxRTTaskOut=pxNewRTTask;
+        		//*pxRTTaskOut=pxNewRTTask;
         		if (prvAddNewTaskToRTTasksList(pxNewRTTask) != pdPass)
         			return NULL;
         	}
@@ -652,23 +651,22 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB ) PRIVILEGED_FUNCTION;
 
     BaseType_t xRTTaskCreateRestrictedStatic( const TaskParameters_t * const pxTaskDefinition,
             					TaskHandle_t * pxCreatedTask, //fedit add
-    							 RTTask_t ** const pxRTTaskOut,
+    							 //RTTask_t ** const pxRTTaskOut,
     							 UBaseType_t const pxDeadline,
     							 UBaseType_t const pxPeriod,
     							 UBaseType_t const pxWcet
     							)
          {
-        	RTTask_t* pxNewRTTask = ( RTTask_t * ) pvPortMalloc( sizeof( RTTask_t ) );
+        	//RTTask_t* pxNewRTTask = ( RTTask_t * ) pvPortMalloc( sizeof( RTTask_t ) );
+    		RTTask_t pxNewRTTask;
+        	BaseType_t xReturn=xRTTaskCreateRestrictedStatic(pxTaskDefinition, pxCreatedTask, &( pxNewRTTask.taskTCB ) );
 
-        	BaseType_t xReturn=xRTTaskCreateRestrictedStatic(pxTaskDefinition, pxCreatedTask, &( pxNewRTTask->taskTCB ) );
-
-        	pxNewRTTask->pxDeadline=pxDeadline;
-        	pxNewRTTask->pxPeriod=pxPeriod;
-        	pxNewRTTask->uxTaskNumber=pxNewRTTask->taskTCB->uxTaskNumber;
-        	pxNewRTTask->pxWcet=pxWcet;
+        	pxNewRTTask.pxDeadline=pxDeadline;
+        	pxNewRTTask.pxPeriod=pxPeriod;
+        	pxNewRTTask.pxWcet=pxWcet;
 
         	if (xReturn==pdPASS) {
-        		*pxRTTaskOut=pxNewRTTask;
+        		//*pxRTTaskOut=pxNewRTTask;
         		return prvAddNewTaskToRTTasksList(pxNewRTTask);
         	}
 
@@ -732,23 +730,23 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB ) PRIVILEGED_FUNCTION;
 
     BaseType_t xRTTaskCreateRestricted( const TaskParameters_t * const pxTaskDefinition,
 									TaskHandle_t * pxCreatedTask, //fedit add
-        							 RTTask_t ** const pxRTTaskOut,
+        							 //RTTask_t ** const pxRTTaskOut,
         							 UBaseType_t const pxDeadline,
         							 UBaseType_t const pxPeriod,
         							 UBaseType_t const pxWcet
         							)
              {
-            	RTTask_t* pxNewRTTask = ( RTTask_t * ) pvPortMalloc( sizeof( RTTask_t ) );
+            	//RTTask_t* pxNewRTTask = ( RTTask_t * ) pvPortMalloc( sizeof( RTTask_t ) );
+    			RTTask_t pxNewRTTask;
 
-            	BaseType_t xReturn=xTaskCreateRestricted(pxTaskDefinition, pxCreatedTask, &( pxNewRTTask->taskTCB ) );
+            	BaseType_t xReturn=xTaskCreateRestricted(pxTaskDefinition, pxCreatedTask, &( pxNewRTTask.taskTCB ) );
 
-            	pxNewRTTask->pxDeadline=pxDeadline;
-            	pxNewRTTask->pxPeriod=pxPeriod;
-            	pxNewRTTask->uxTaskNumber=pxNewRTTask->taskTCB->uxTaskNumber;
-            	pxNewRTTask->pxWcet=pxWcet;
+            	pxNewRTTask.pxDeadline=pxDeadline;
+            	pxNewRTTask.pxPeriod=pxPeriod;
+            	pxNewRTTask.pxWcet=pxWcet;
 
             	if (xReturn==pdPASS) {
-            		*pxRTTaskOut=pxNewRTTask;
+            		//*pxRTTaskOut=pxNewRTTask;
             		return prvAddNewTaskToRTTasksList(pxNewRTTask);
             	}
 
@@ -861,23 +859,23 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB ) PRIVILEGED_FUNCTION;
                              void * const pvParameters,
                              UBaseType_t uxPriority,
                              TaskHandle_t * const pxCreatedTask, //fedit add
-							 RTTask_t ** const pxRTTaskOut,
+							 //RTTask_t ** const pxRTTaskOut,
 							 UBaseType_t const pxDeadline,
 							 UBaseType_t const pxPeriod,
 							 UBaseType_t const pxWcet
 							)
      {
-    	RTTask_t* pxNewRTTask = ( RTTask_t * ) pvPortMalloc( sizeof( RTTask_t ) );
+    	//RTTask_t* pxNewRTTask = ( RTTask_t * ) pvPortMalloc( sizeof( RTTask_t ) );
+    	RTTask_t pxNewRTTask;
 
-    	BaseType_t xReturn=xTaskCreate(pxTaskCode, pcName, usStackDepth, pvParameters, uxPriority, pxCreatedTask, &( pxNewRTTask->taskTCB ) );
+    	BaseType_t xReturn=xTaskCreate(pxTaskCode, pcName, usStackDepth, pvParameters, uxPriority, pxCreatedTask, &( pxNewRTTask.taskTCB ) );
 
-    	pxNewRTTask->pxDeadline=pxDeadline;
-    	pxNewRTTask->pxPeriod=pxPeriod;
-    	pxNewRTTask->uxTaskNumber=pxNewRTTask->taskTCB->uxTaskNumber;
-    	pxNewRTTask->pxWcet=pxWcet;
+    	pxNewRTTask.pxDeadline=pxDeadline;
+    	pxNewRTTask.pxPeriod=pxPeriod;
+    	pxNewRTTask.pxWcet=pxWcet;
 
     	if (xReturn==pdPASS) {
-    		*pxRTTaskOut=pxNewRTTask;
+    		//*pxRTTaskOut=pxNewRTTask;
     		return prvAddNewTaskToRTTasksList(pxNewRTTask);
     	}
 
@@ -1225,9 +1223,9 @@ static void prvInitialiseNewTask( TaskFunction_t pxTaskCode,
 /*-----------------------------------------------------------*/
 
 //fedit add
-static BaseType_t prvAddNewTaskToRTTasksList( RTTask_t * pxNewRTTask )
+static BaseType_t prvAddNewTaskToRTTasksList( RTTask_t pxNewRTTask )
 {
-	TCB_t* pxNewTCB=pxNewRTTask->taskTCB;
+	TCB_t* pxNewTCB=pxNewRTTask.taskTCB;
   if( xSchedulerRunning == pdFALSE )
   {
     /* Ensure interrupts don't access the task lists while the lists are being
@@ -1267,6 +1265,11 @@ static BaseType_t prvAddNewTaskToRTTasksList( RTTask_t * pxNewRTTask )
             }
         #endif /* configUSE_TRACE_FACILITY */
         traceTASK_CREATE( pxNewTCB );
+
+        //fedit add
+        pxNewRTTask.uxTaskNumber=uxTaskNumber;
+        //TODO STATIC INSTEAD OF POINTER!
+        //memcpy(pxRTTasksList+sizeof(*pxNewRTTask)*(uxTaskNumber-1), pxNewRTTask, sizeof(*pxNewRTTask));
 
         pxRTTasksList[uxTaskNumber-1]=pxNewRTTask;
 
@@ -2123,7 +2126,10 @@ void vTaskStartScheduler( void )
 {
     BaseType_t xReturn;
 
-	if ( xPortInitScheduler( &pxRTTasksList, sizeof( RTTask_t* )*configMAX_RT_TASKS , configMAX_RT_TASKS) == pdPASS )
+	xil_printf("Size of task struct: %d /n", sizeof(RTTask_t));
+
+
+	if ( xPortInitScheduler( pxRTTasksList, sizeof( RTTask_t )*configMAX_RT_TASKS , configMAX_RT_TASKS) == pdPASS )
 	{
 	    /* Add the idle task at the lowest priority. */
 	    #if ( configSUPPORT_STATIC_ALLOCATION == 1 )
@@ -3805,9 +3811,9 @@ static void prvInitialiseTaskLists( void )
 {
 	//fedit add
     //vListInitialise( &pxRTTasksList );
-	for (int i=0; i<configMAX_RT_TASKS; i++) {
-		pxRTTasksList[i]=NULL;
-	}
+	/*for (int i=0; i<configMAX_RT_TASKS; i++) {
+		pxRTTasksList[i]=0;
+	}*/
 
     //todo remove other lists init on next steps of project
 
