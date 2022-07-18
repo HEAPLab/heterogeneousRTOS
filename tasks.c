@@ -2123,7 +2123,7 @@ void vTaskStartScheduler( void )
 {
     BaseType_t xReturn;
 
-	if ( xPortInitScheduler( &pxRTTasksList, sizeof( RTTask_t* )*configMAX_RT_TASKS ) == pdPASS )
+	if ( xPortInitScheduler( &pxRTTasksList, sizeof( RTTask_t* )*configMAX_RT_TASKS , configMAX_RT_TASKS) == pdPASS )
 	{
 	    /* Add the idle task at the lowest priority. */
 	    #if ( configSUPPORT_STATIC_ALLOCATION == 1 )

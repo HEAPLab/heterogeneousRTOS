@@ -183,7 +183,7 @@ size_t xPortGetMinimumEverFreeHeapSize( void ) PRIVILEGED_FUNCTION;
  * Initialises the scheduler
  */
 
-BaseType_t xPortInitScheduler( u32 prvDmaSourceAddr, u32 byteSize ) PRIVILEGED_FUNCTION;
+BaseType_t xPortInitScheduler( u32 prvDmaSourceAddr, u32 byteSize, u8 numberOfTasks) PRIVILEGED_FUNCTION;
 
 int prvDmaInit() PRIVILEGED_FUNCTION;
 

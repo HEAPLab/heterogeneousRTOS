@@ -339,6 +339,18 @@ StackType_t *pxPortInitialiseStack( StackType_t *pxTopOfStack, TaskFunction_t px
 #define GPIO_START_SCHED_DEVICE_ID XPAR_GPIO_0_DEVICE_ID
 XGpio prvGpio0;
 
+struct prvSchedControlStruct {
+	volatile u8 data; //2byte
+	volatile u8 control; //1byte
+} prvSchedControl;
+
+void prvWriteSchedControl() {
+	u16 prvSchedControlU16;
+	memcpy(&prvSchedControlU16, &prvSchedControl, sizeof(prvSchedControl));
+	xil_printf("written %x to GPIO0\n", prvSchedControlU16);
+	XGpio_DiscreteWrite(&prvGpio0, GPIO_START_SCHED_CHANNEL, prvSchedControlU16);
+}
+
 //DMA____________________________
 
 #include "xaxicdma.h"
@@ -693,7 +705,7 @@ int32_t lReturn;
 //fedit add
 /* Initializes the scheduler. Copies pxRTTasksList to FPGA */
 
-BaseType_t xPortInitScheduler( u32 prvDmaSourceAddr, u32 byteSize )
+BaseType_t xPortInitScheduler( u32 prvDmaSourceAddr, u32 byteSize, u8 numberOfTasks)
 {
 	int status;
 
@@ -719,6 +731,10 @@ BaseType_t xPortInitScheduler( u32 prvDmaSourceAddr, u32 byteSize )
 	}
 
 	XGpio_SetDataDirection(&prvGpio0, GPIO_START_SCHED_CHANNEL, ~GPIO0VAL);
+
+	prvSchedControl.control=1;
+	prvSchedControl.data = numberOfTasks;
+	prvWriteSchedControl();
 
 	return pdPASS;
 }
@@ -788,7 +804,9 @@ uint32_t ulAPSR;
 			//configSETUP_TICK_INTERRUPT();
 
 			/* Start the scheduler on hardware */
-			XGpio_DiscreteWrite(&prvGpio0, GPIO_START_SCHED_CHANNEL, GPIO0VAL);
+			prvSchedControl.control=2;
+			prvSchedControl.data = 0;
+			prvWriteSchedControl();
 
 			/* Start the first task executing. */
 			vPortRestoreTaskContext();
