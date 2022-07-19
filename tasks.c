@@ -580,7 +580,8 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB ) PRIVILEGED_FUNCTION;
     							 UBaseType_t const pxWcet
     							)
          {
-        	RTTask_t* pxNewRTTask = ( RTTask_t * ) pvPortMalloc( sizeof( RTTask_t ) );
+        	//RTTask_t* pxNewRTTask = ( RTTask_t * ) pvPortMalloc( sizeof( RTTask_t ) );
+    		RTTask_t* pxNewRTTask
 
         	TaskHandle_t xReturn=xTaskCreateStatic(pxTaskCode, pcName, ulStackDepth, pvParameters, uxPriority, puxStackBuffer, pxTaskBuffer, &( pxNewRTTask.taskTCB ) );
 
