@@ -308,6 +308,7 @@ PRIVILEGED_DATA static volatile TickType_t xPendedTicks = ( TickType_t ) 0U;
 PRIVILEGED_DATA static volatile BaseType_t xYieldPending = pdFALSE;
 PRIVILEGED_DATA static volatile BaseType_t xNumOfOverflows = ( BaseType_t ) 0;
 PRIVILEGED_DATA static UBaseType_t uxTaskNumber = ( UBaseType_t ) 0U;
+PRIVILEGED_DATA static UBaseType_t uxRTTaskNumber = ( UBaseType_t ) 0U;
 PRIVILEGED_DATA static volatile TickType_t xNextTaskUnblockTime = ( TickType_t ) 0U; /* Initialised to portMAX_DELAY before the scheduler starts. */
 PRIVILEGED_DATA static TaskHandle_t xIdleTaskHandle = NULL;                          /*< Holds the handle of the idle task.  The idle task is created automatically when the scheduler is started. */
 
@@ -1268,11 +1269,14 @@ static BaseType_t prvAddNewTaskToRTTasksList( RTTask_t pxNewRTTask )
         traceTASK_CREATE( pxNewTCB );
 
         //fedit add
-        pxNewRTTask.uxTaskNumber=uxTaskNumber;
+        uxCurrentNumberOfRTTasks
+        pxNewRTTask.uxTaskNumber=uxRTTaskNumber;
+
+        uxRTTaskNumber++;
         //TODO STATIC INSTEAD OF POINTER!
         //memcpy(pxRTTasksList+sizeof(*pxNewRTTask)*(uxTaskNumber-1), pxNewRTTask, sizeof(*pxNewRTTask));
 
-        pxRTTasksList[uxTaskNumber-1]=pxNewRTTask;
+        pxRTTasksList[uxRTTaskNumber]=pxNewRTTask;
 
         portSETUP_TCB( pxNewTCB );
     }
