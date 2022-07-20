@@ -270,9 +270,8 @@ PRIVILEGED_DATA static List_t pxReadyTasksLists[ configMAX_PRIORITIES ]; /*< Pri
 
 //fedit add
 //PRIVILEGED_DATA static RTTask_t* pxRTTasksList[ configMAX_RT_TASKS ]; /*< Created tasks. */
-static const u32 prvDmaSourceAddr 	= 0x20000000;
 //pxRTTasksList array will be located at address indicated by prvDmaSourceAddr. This address must match hardware (on Vivado) DMA source address.
-PRIVILEGED_DATA static RTTask_t* pxRTTasksList = (RTTask_t*) prvDmaSourceAddr; /*< Created tasks. */
+PRIVILEGED_DATA static RTTask_t* pxRTTasksList = (RTTask_t*) configDMA_BASE_ADDR; /*< Created tasks. */
 
 PRIVILEGED_DATA static List_t xDelayedTaskList1;                         /*< Delayed tasks. */
 PRIVILEGED_DATA static List_t xDelayedTaskList2;                         /*< Delayed tasks (two lists are used - one for delays that have overflowed the current tick count. */
@@ -1269,7 +1268,6 @@ static BaseType_t prvAddNewTaskToRTTasksList( RTTask_t pxNewRTTask )
         traceTASK_CREATE( pxNewTCB );
 
         //fedit add
-        uxCurrentNumberOfRTTasks
         pxNewRTTask.uxTaskNumber=uxRTTaskNumber;
 
         uxRTTaskNumber++;
@@ -2127,14 +2125,69 @@ static BaseType_t prvAddNewTaskToRTTasksList( RTTask_t pxNewRTTask )
 #endif /* ( ( INCLUDE_xTaskResumeFromISR == 1 ) && ( INCLUDE_vTaskSuspend == 1 ) ) */
 /*-----------------------------------------------------------*/
 
+
+    void prvGenerateOrderedQueues( RTTask_t* prvRTTasksList, u8 numberOfTasks, u8 destArrayDeadlineAscTaskNum[], u8 destArrayNextActivationAscTaskNum[], u32 destArrayDeadlineAscTaskDeadline[], u32 destArrayNextActivationAscTaskActivation[]) {
+    	int loboundDeadline=-1; //init
+    	int loboundActivation=-1; //init
+
+    	int destArrayDeadlineI=0;
+    	int destArrayActivationI=0;
+
+    	for (int i=0; i < numberOfTasks; i++) {
+    		u32 minDeadline = -1; //init
+    		u32 minActivation = -1; //init
+
+    		for (int i2=0; i2 < numberOfTasks; i2++) {
+    			if (loboundDeadline!=-2 && prvRTTasksList[i2].pxDeadline > loboundDeadline && (prvRTTasksList[i2].pxDeadline < minDeadline || minDeadline==-1)) {
+    				minDeadline=prvRTTasksList[i2].pxDeadline;
+    			}
+    			if (loboundDeadline!=-2 && prvRTTasksList[i2].pxPeriod > loboundActivation && (prvRTTasksList[i2].pxPeriod < minActivation || minActivation==-1)) {
+    				minActivation=prvRTTasksList[i2].pxPeriod;
+    			}
+    		}
+    		if (minDeadline==-1 && minActivation==-1) {
+    			break;
+    		} else {
+    			if (minDeadline!=-1)
+    				loboundDeadline=minDeadline;
+    			else
+    				loboundDeadline=-2; //end of search
+
+    			if (minActivation!=-1)
+    				loboundActivation=minActivation;
+    			else
+    				loboundDeadline=-2; //end of search
+
+    			for (int i3=0; i3 < numberOfTasks; i3++) {
+    				if (minDeadline!=-1 && prvRTTasksList[i3].pxDeadline==minDeadline) {
+    					destArrayDeadlineAscTaskNum[destArrayDeadlineI]=i3;
+    					destArrayDeadlineAscTaskDeadline[destArrayDeadlineI]=minDeadline;
+    					destArrayDeadlineI++;
+    				}
+    				if (minActivation!=-1 && prvRTTasksList[i3].pxPeriod==minActivation) {
+    					destArrayNextActivationAscTaskNum[destArrayActivationI]=i3;
+    					destArrayNextActivationAscTaskActivation[destArrayActivationI]=minDeadline;
+    					destArrayActivationI++;
+    				}
+    			}
+    		}
+    	}
+    }
+
 void vTaskStartScheduler( void )
 {
     BaseType_t xReturn;
 
+	u8 orderedDeadlineActivationQTaskNums [configMAX_RT_TASKS*2];
+	u32 orderedDeadlineActivationQPayload [configMAX_RT_TASKS*2];
+
+
+	prvGenerateOrderedQueues(pxRTTasksList, configMAX_RT_TASKS, &orderedDeadlineActivationQTaskNums, &(orderedDeadlineActivationQTaskNums[configMAX_RT_TASKS]), orderedDeadlineActivationQPayload, &(orderedDeadlineActivationQPayload[configMAX_RT_TASKS]));
+
 	xil_printf("Size of task struct: %d /n", sizeof(RTTask_t));
 
 
-	if ( xPortInitScheduler( pxRTTasksList, sizeof( RTTask_t )*configMAX_RT_TASKS , configMAX_RT_TASKS) == pdPASS )
+	if ( xPortInitScheduler( configMAX_RT_TASKS, (u32) pxRTTasksList, sizeof(pxRTTasksList), (u32) (&orderedDeadlineActivationQTaskNums), sizeof(orderedDeadlineActivationQTaskNums), (u32)orderedDeadlineActivationQPayload, sizeof(orderedDeadlineActivationQPayload)) == pdPASS )
 	{
 	    /* Add the idle task at the lowest priority. */
 	    #if ( configSUPPORT_STATIC_ALLOCATION == 1 )

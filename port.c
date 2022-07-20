@@ -368,8 +368,7 @@ void prvWriteSchedControl() {
 static volatile int prvDmaDone = 0;	/* Dma transfer is done */
 static volatile int prvDmaError = 0;	/* Dma Bus Error occurs */
 
-static u32 prvDmaSourceAddr 	= 0x20000000;
-static u32 prvDmaDestAddr 	= 0xC0000000;
+static u32 prvDmaRTTasksListDestAddr 	= 0xC0000000;
 
 static XAxiCdma prvDmaAxiCdmaInstance;	/* Instance of the XAxiCdma */
 static XScuGic prvDmaIntcController;	/* Instance of the Interrupt Controller */
@@ -559,7 +558,7 @@ static int prvDmaCDMABlockingTransfer(XAxiCdma *InstancePtr, int Length, u32 Sou
 
 /*Transfers the task set via DMA to the FPGA and waits for transfer completion. Then scheduler can be started. */
 
-int prvDmaTransferRTTaskSet( u32 byteSize ) {
+int prvDmaBlockingTransferFreeByteSize( u32 prvDmaDestAddr, u32 prvDmaSourceAddr, u32 byteSize ) {
 	XAxiCdma *InstancePtr=&prvDmaAxiCdmaInstance;
 	int index;
 	int Status=XST_FAILURE;
@@ -702,10 +701,36 @@ int32_t lReturn;
 }
 /*-----------------------------------------------------------*/
 
+void prvOrderByDeadline( RTTask_t* prvRTTasksList, u8 numberOfTasks, u8* destArray) {
+	int lobound=-1;
+	int destArrayI=0;
+
+	for (int i=0; i < numberOfTasks; i++) {
+		int min = -1;
+		for (int i2=0; i2 < numberOfTasks; i2++) {
+			if (prvRTTasksList[i2].pxDeadline > lobound && (prvRTTasksList[i2].pxDeadline < min || min==-1)) {
+				min=prvRTTasksList[i2].pxDeadline;
+			}
+		}
+		if (min==-1) {
+			break;
+		} else {
+			lobound=min;
+			for (int i3=0; i3 < numberOfTasks; i3++) {
+				if (prvRTTasksList[i3].pxDeadline==min) {
+					destArray[i]=i3;
+					destArrayI++;
+				}
+			}
+		}
+	}
+}
+
+
 //fedit add
 /* Initializes the scheduler. Copies pxRTTasksList to FPGA */
 
-BaseType_t xPortInitScheduler( u32 prvDmaSourceAddr, u32 byteSize, u8 numberOfTasks)
+BaseType_t xPortInitScheduler( u8 numberOfTasks, u32 prvRTTasksListPtr, u32 prvRTTasksListByteSize, u32 prvOrderedQueuesPtr, u32 prvOrderedQueuesByteSize , u32 orderedDeadlineActivationQPayload, u32 orderedDeadlineActivationQPayloadByteSize)
 {
 	int status;
 
@@ -715,14 +740,33 @@ BaseType_t xPortInitScheduler( u32 prvDmaSourceAddr, u32 byteSize, u8 numberOfTa
 		return status;
 	}
 
-	status=prvDmaTransferRTTaskSet( byteSize );
+	status=prvDmaBlockingTransferFreeByteSize( prvDmaRTTasksListDestAddr, prvRTTasksListPtr, prvRTTasksListByteSize );
 	if (status!=XST_SUCCESS) {
 		xil_printf("DMA RTTTaskSet transfer failed");
 		return status;
-	}
+	};
+
+
+
+	status=prvDmaBlockingTransferFreeByteSize( prvDmaRTTasksListDestAddr+prvRTTasksListByteSize, prvOrderedQueuesPtr, prvOrderedQueuesByteSize );
+	if (status!=XST_SUCCESS) {
+		xil_printf("DMA OrderedDeadlineActivationQueue transfer failed");
+		return status;
+	};
+
+
+	orderedDeadlineActivationQPayload
+	status=prvDmaBlockingTransferFreeByteSize( prvDmaRTTasksListDestAddr+prvRTTasksListByteSize+prvOrderedQueuesByteSize, orderedDeadlineActivationQPayload, orderedDeadlineActivationQPayloadByteSize );
+	if (status!=XST_SUCCESS) {
+		xil_printf("DMA OrderedDeadlineActivationQueue transfer failed");
+		return status;
+	};
+
 
 	//TODO CHECK WHETHER DISABLE OR NOT
 	prvDmaDisableIntrSystem();
+
+
 
 	status = XGpio_Initialize(&prvGpio0, GPIO_START_SCHED_DEVICE_ID);
 	if (status != XST_SUCCESS) {
