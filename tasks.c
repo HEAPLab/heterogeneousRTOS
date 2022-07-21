@@ -2126,7 +2126,7 @@ static BaseType_t prvAddNewTaskToRTTasksList( RTTask_t pxNewRTTask )
 /*-----------------------------------------------------------*/
 
 
-    void prvGenerateOrderedQueues( RTTask_t* prvRTTasksList, u8 numberOfTasks, u8 destArrayDeadlineAscTaskNum[], u8 destArrayNextActivationAscTaskNum[], u32 destArrayDeadlineAscTaskDeadline[], u32 destArrayNextActivationAscTaskActivation[]) {
+    void prvGenerateOrderedQueues( RTTask_t* prvRTTasksList, u8 numberOfTasks, u32 destArrayDeadlineAscTaskNum[], u32 destArrayNextActivationAscTaskNum[], u32 destArrayDeadlineAscTaskDeadline[], u32 destArrayNextActivationAscTaskActivation[]) {
     	int loboundDeadline=-1; //init
     	int loboundActivation=-1; //init
 
@@ -2178,7 +2178,7 @@ void vTaskStartScheduler( void )
 {
     BaseType_t xReturn;
 
-	u8 orderedDeadlineActivationQTaskNums [configMAX_RT_TASKS*2];
+	u32 orderedDeadlineActivationQTaskNums [configMAX_RT_TASKS*2];
 	u32 orderedDeadlineActivationQPayload [configMAX_RT_TASKS*2];
 
 

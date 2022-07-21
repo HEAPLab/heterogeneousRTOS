@@ -755,7 +755,6 @@ BaseType_t xPortInitScheduler( u8 numberOfTasks, u32 prvRTTasksListPtr, u32 prvR
 	};
 
 
-	orderedDeadlineActivationQPayload
 	status=prvDmaBlockingTransferFreeByteSize( prvDmaRTTasksListDestAddr+prvRTTasksListByteSize+prvOrderedQueuesByteSize, orderedDeadlineActivationQPayload, orderedDeadlineActivationQPayloadByteSize );
 	if (status!=XST_SUCCESS) {
 		xil_printf("DMA OrderedDeadlineActivationQueue transfer failed");
