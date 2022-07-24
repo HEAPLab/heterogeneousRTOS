@@ -701,6 +701,7 @@ int32_t lReturn;
 }
 /*-----------------------------------------------------------*/
 
+/*
 void prvOrderByDeadline( RTTask_t* prvRTTasksList, u8 numberOfTasks, u8* destArray) {
 	int lobound=-1;
 	int destArrayI=0;
@@ -725,7 +726,7 @@ void prvOrderByDeadline( RTTask_t* prvRTTasksList, u8 numberOfTasks, u8* destArr
 		}
 	}
 }
-
+*/
 
 //fedit add
 /* Initializes the scheduler. Copies pxRTTasksList to FPGA */
@@ -739,21 +740,25 @@ BaseType_t xPortInitScheduler( u8 numberOfTasks, u32 prvRTTasksListPtr, u32 prvR
 		xil_printf("DMA init failed");
 		return status;
 	}
+//SINGLE TRANSACTION IF SOURCE ADDRESSES ARE CONTIGUOUS
+/*	status=prvDmaBlockingTransferFreeByteSize( prvDmaRTTasksListDestAddr, prvRTTasksListPtr, prvRTTasksListByteSize + prvOrderedQueuesByteSize + orderedDeadlineActivationQPayloadByteSize);
+	if (status!=XST_SUCCESS) {
+		xil_printf("DMA RTTTaskSet transfer failed");
+		return status;
+	};*/
+	//MULTIPLE TRANSACTIONS
 
-	status=prvDmaBlockingTransferFreeByteSize( prvDmaRTTasksListDestAddr, prvRTTasksListPtr, prvRTTasksListByteSize );
+	status=prvDmaBlockingTransferFreeByteSize( prvDmaRTTasksListDestAddr, prvRTTasksListPtr, prvRTTasksListByteSize);
 	if (status!=XST_SUCCESS) {
 		xil_printf("DMA RTTTaskSet transfer failed");
 		return status;
 	};
-
-
 
 	status=prvDmaBlockingTransferFreeByteSize( prvDmaRTTasksListDestAddr+prvRTTasksListByteSize, prvOrderedQueuesPtr, prvOrderedQueuesByteSize );
 	if (status!=XST_SUCCESS) {
 		xil_printf("DMA OrderedDeadlineActivationQueue transfer failed");
 		return status;
 	};
-
 
 	status=prvDmaBlockingTransferFreeByteSize( prvDmaRTTasksListDestAddr+prvRTTasksListByteSize+prvOrderedQueuesByteSize, orderedDeadlineActivationQPayload, orderedDeadlineActivationQPayloadByteSize );
 	if (status!=XST_SUCCESS) {
