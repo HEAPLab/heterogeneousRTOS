@@ -741,13 +741,13 @@ BaseType_t xPortInitScheduler( u8 numberOfTasks, u32 prvRTTasksListPtr, u32 prvR
 		return status;
 	}
 //SINGLE TRANSACTION IF SOURCE ADDRESSES ARE CONTIGUOUS
-/*	status=prvDmaBlockingTransferFreeByteSize( prvDmaRTTasksListDestAddr, prvRTTasksListPtr, prvRTTasksListByteSize + prvOrderedQueuesByteSize + orderedDeadlineActivationQPayloadByteSize);
+	status=prvDmaBlockingTransferFreeByteSize( prvDmaRTTasksListDestAddr, prvRTTasksListPtr, prvRTTasksListByteSize + prvOrderedQueuesByteSize + orderedDeadlineActivationQPayloadByteSize);
 	if (status!=XST_SUCCESS) {
 		xil_printf("DMA RTTTaskSet transfer failed");
 		return status;
-	};*/
+	};
 	//MULTIPLE TRANSACTIONS
-
+/*
 	status=prvDmaBlockingTransferFreeByteSize( prvDmaRTTasksListDestAddr, prvRTTasksListPtr, prvRTTasksListByteSize);
 	if (status!=XST_SUCCESS) {
 		xil_printf("DMA RTTTaskSet transfer failed");
@@ -766,7 +766,7 @@ BaseType_t xPortInitScheduler( u8 numberOfTasks, u32 prvRTTasksListPtr, u32 prvR
 		return status;
 	};
 
-
+*/
 	//TODO CHECK WHETHER DISABLE OR NOT
 	prvDmaDisableIntrSystem();
 
