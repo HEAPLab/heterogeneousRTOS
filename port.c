@@ -331,6 +331,22 @@ StackType_t *pxPortInitialiseStack( StackType_t *pxTopOfStack, TaskFunction_t px
 
 //FPGA INFOS fedit
 
+
+//NEXT TASK HANDLER
+#define NEXT_TASK_HANDLER_BASEADDR 0x43C00000
+
+int enableNewTaskInterrupt() {
+	NEXT_TASK_HANDLER_EnableInterrupt(NEXT_TASK_HANDLER_BASEADDR);
+	return 0;
+}
+
+void newTaskHandler(void *HandlerRef)
+{
+	xil_printf("new task");
+	   NEXT_TASK_HANDLER_ACK(NEXT_TASK_HANDLER_BASEADDR);
+}
+
+
 //GPIO
 #include "xparameters.h"
 #include "xgpio.h"
@@ -413,7 +429,9 @@ static int prvDmaSetupIntrSystem(XScuGic *IntcInstancePtr, XAxiCdma *InstancePtr
 	}
 
 	XScuGic_SetPriorityTriggerType(IntcInstancePtr, IntrId, 0xA0, 0x3);
-
+////////////////////
+	XScuGic_SetPriorityTriggerType(IntcInstancePtr, XPAR_FABRIC_NEXT_TASK_HANDLER_0_IRQ_INTR, 0xA0, 0x3);
+//////////////////
 	/*
 	 * Connect the device driver handler that will be called when an
 	 * interrupt for the device occurs, the handler defined above performs
@@ -426,13 +444,23 @@ static int prvDmaSetupIntrSystem(XScuGic *IntcInstancePtr, XAxiCdma *InstancePtr
 		return Status;
 	}
 
+	////////////////////
+	Status = XScuGic_Connect(IntcInstancePtr, XPAR_FABRIC_NEXT_TASK_HANDLER_0_IRQ_INTR,
+				(Xil_InterruptHandler)newTaskHandler,
+				(void *) IntcInstancePtr);
+	if (Status != XST_SUCCESS) {
+		return Status;
+	}
+	////////////////////
+
 	/*
 	 * Enable the interrupt for the DMA device.
 	 */
 	XScuGic_Enable(IntcInstancePtr, IntrId);
 
-
-
+///////////
+	XScuGic_Enable(IntcInstancePtr, XPAR_FABRIC_NEXT_TASK_HANDLER_0_IRQ_INTR);
+////////////////
 
 	Xil_ExceptionInit();
 
@@ -768,8 +796,8 @@ BaseType_t xPortInitScheduler( u8 numberOfTasks, u32 prvRTTasksListPtr, u32 prvR
 
 */
 	//TODO CHECK WHETHER DISABLE OR NOT
-	prvDmaDisableIntrSystem();
-
+	//prvDmaDisableIntrSystem();
+	enableNewTaskInterrupt();
 
 
 	status = XGpio_Initialize(&prvGpio0, GPIO_START_SCHED_DEVICE_ID);
