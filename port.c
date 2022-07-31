@@ -332,287 +332,287 @@ StackType_t *pxPortInitialiseStack( StackType_t *pxTopOfStack, TaskFunction_t px
 //FPGA INFOS fedit
 
 
-//NEXT TASK HANDLER
-#define NEXT_TASK_HANDLER_BASEADDR 0x43C00000
-
-int enableNewTaskInterrupt() {
-	NEXT_TASK_HANDLER_EnableInterrupt(NEXT_TASK_HANDLER_BASEADDR);
-	return 0;
-}
-
-void newTaskHandler(void *HandlerRef)
-{
-	xil_printf("new task");
-	   NEXT_TASK_HANDLER_ACK(NEXT_TASK_HANDLER_BASEADDR);
-}
-
-
-//GPIO
-#include "xparameters.h"
-#include "xgpio.h"
-#define GPIO0VAL 0x01
-#define GPIO_START_SCHED_CHANNEL 1
-#define GPIO_START_SCHED_DEVICE_ID XPAR_GPIO_0_DEVICE_ID
-XGpio prvGpio0;
-
-struct prvSchedControlStruct {
-	volatile u8 data; //2byte
-	volatile u8 control; //1byte
-} prvSchedControl;
-
-void prvWriteSchedControl() {
-	u16 prvSchedControlU16;
-	memcpy(&prvSchedControlU16, &prvSchedControl, sizeof(prvSchedControl));
-	xil_printf("written %x to GPIO0\n", prvSchedControlU16);
-	XGpio_DiscreteWrite(&prvGpio0, GPIO_START_SCHED_CHANNEL, prvSchedControlU16);
-}
+////NEXT TASK HANDLER
+//#define NEXT_TASK_HANDLER_BASEADDR 0x43C00000
+//
+//int enableNewTaskInterrupt() {
+//	NEXT_TASK_HANDLER_EnableInterrupt(NEXT_TASK_HANDLER_BASEADDR);
+//	return 0;
+//}
+//
+//void newTaskHandler(void *HandlerRef)
+//{
+//	xil_printf("new task");
+//	   NEXT_TASK_HANDLER_ACK(NEXT_TASK_HANDLER_BASEADDR);
+//}
+//
+//
+////GPIO
+//#include "xparameters.h"
+//#include "xgpio.h"
+//#define GPIO0VAL 0x01
+//#define GPIO_START_SCHED_CHANNEL 1
+//#define GPIO_START_SCHED_DEVICE_ID XPAR_GPIO_0_DEVICE_ID
+//XGpio prvGpio0;
+//
+//struct prvSchedControlStruct {
+//	volatile u8 data; //2byte
+//	volatile u8 control; //1byte
+//} prvSchedControl;
+//
+//void prvWriteSchedControl() {
+//	u16 prvSchedControlU16;
+//	memcpy(&prvSchedControlU16, &prvSchedControl, sizeof(prvSchedControl));
+//	xil_printf("written %x to GPIO0\n", prvSchedControlU16);
+//	XGpio_DiscreteWrite(&prvGpio0, GPIO_START_SCHED_CHANNEL, prvSchedControlU16);
+//}
 
 //DMA____________________________
-
-#include "xaxicdma.h"
-#include "xdebug.h"
-#include "xil_exception.h"
-#include "xil_cache.h"
-#include <math.h>
-#include "xscugic.h"
-
-//#define DMA_NUMBER_OF_TRANSFERS	2	/* Number of simple transfers to do */
-#define DMA_CTRL_DEVICE_ID 	XPAR_AXICDMA_0_DEVICE_ID
-#define DMA_INTC_DEVICE_ID	XPAR_SCUGIC_SINGLE_DEVICE_ID
-#define DMA_CTRL_IRPT_INTR	XPAR_FABRIC_AXI_CDMA_0_CDMA_INTROUT_INTR
-
-static volatile int prvDmaDone = 0;	/* Dma transfer is done */
-static volatile int prvDmaError = 0;	/* Dma Bus Error occurs */
-
-static u32 prvDmaRTTasksListDestAddr 	= 0xC0000000;
-
-static XAxiCdma prvDmaAxiCdmaInstance;	/* Instance of the XAxiCdma */
-static XScuGic prvDmaIntcController;	/* Instance of the Interrupt Controller */
-
-static void prvDmaDisableIntrSystem()
-{
-
-	XScuGic *IntcInstancePtr = &prvDmaIntcController;
-	u32 IntrId = DMA_CTRL_IRPT_INTR;
-
-	XScuGic_Disable(IntcInstancePtr ,IntrId );
-	XScuGic_Disconnect(IntcInstancePtr ,IntrId );
-
-}
-
-static int prvDmaSetupIntrSystem(XScuGic *IntcInstancePtr, XAxiCdma *InstancePtr,
-			u32 IntrId)
-
-{
-	int Status;
-
-
-	/*
-	 * Initialize the interrupt controller driver
-	 */
-	XScuGic_Config *IntcConfig;
-
-
-	/*
-	 * Initialize the interrupt controller driver so that it is ready to
-	 * use.
-	 */
-	IntcConfig = XScuGic_LookupConfig(DMA_INTC_DEVICE_ID);
-	if (NULL == IntcConfig) {
-		return XST_FAILURE;
-	}
-
-	Status = XScuGic_CfgInitialize(IntcInstancePtr, IntcConfig,
-					IntcConfig->CpuBaseAddress);
-	if (Status != XST_SUCCESS) {
-		return XST_FAILURE;
-	}
-
-	XScuGic_SetPriorityTriggerType(IntcInstancePtr, IntrId, 0xA0, 0x3);
+//
+//#include "xaxicdma.h"
+//#include "xdebug.h"
+//#include "xil_exception.h"
+//#include "xil_cache.h"
+//#include <math.h>
+//#include "xscugic.h"
+//
+////#define DMA_NUMBER_OF_TRANSFERS	2	/* Number of simple transfers to do */
+//#define DMA_CTRL_DEVICE_ID 	XPAR_AXICDMA_0_DEVICE_ID
+//#define DMA_INTC_DEVICE_ID	XPAR_SCUGIC_SINGLE_DEVICE_ID
+//#define DMA_CTRL_IRPT_INTR	XPAR_FABRIC_AXI_CDMA_0_CDMA_INTROUT_INTR
+//
+//static volatile int prvDmaDone = 0;	/* Dma transfer is done */
+//static volatile int prvDmaError = 0;	/* Dma Bus Error occurs */
+//
+//static u32 prvDmaRTTasksListDestAddr 	= 0xC0000000;
+//
+//static XAxiCdma prvDmaAxiCdmaInstance;	/* Instance of the XAxiCdma */
+//static XScuGic prvDmaIntcController;	/* Instance of the Interrupt Controller */
+//
+//static void prvDmaDisableIntrSystem()
+//{
+//
+//	XScuGic *IntcInstancePtr = &prvDmaIntcController;
+//	u32 IntrId = DMA_CTRL_IRPT_INTR;
+//
+//	XScuGic_Disable(IntcInstancePtr ,IntrId );
+//	XScuGic_Disconnect(IntcInstancePtr ,IntrId );
+//
+//}
+//
+//static int prvDmaSetupIntrSystem(XScuGic *IntcInstancePtr, XAxiCdma *InstancePtr,
+//			u32 IntrId)
+//
+//{
+//	int Status;
+//
+//
+//	/*
+//	 * Initialize the interrupt controller driver
+//	 */
+//	XScuGic_Config *IntcConfig;
+//
+//
+//	/*
+//	 * Initialize the interrupt controller driver so that it is ready to
+//	 * use.
+//	 */
+//	IntcConfig = XScuGic_LookupConfig(DMA_INTC_DEVICE_ID);
+//	if (NULL == IntcConfig) {
+//		return XST_FAILURE;
+//	}
+//
+//	Status = XScuGic_CfgInitialize(IntcInstancePtr, IntcConfig,
+//					IntcConfig->CpuBaseAddress);
+//	if (Status != XST_SUCCESS) {
+//		return XST_FAILURE;
+//	}
+//
+//	XScuGic_SetPriorityTriggerType(IntcInstancePtr, IntrId, 0xA0, 0x3);
+//////////////////////
+//	XScuGic_SetPriorityTriggerType(IntcInstancePtr, XPAR_FABRIC_NEXT_TASK_HANDLER_0_IRQ_INTR, 0xA0, 0x3);
 ////////////////////
-	XScuGic_SetPriorityTriggerType(IntcInstancePtr, XPAR_FABRIC_NEXT_TASK_HANDLER_0_IRQ_INTR, 0xA0, 0x3);
+//	/*
+//	 * Connect the device driver handler that will be called when an
+//	 * interrupt for the device occurs, the handler defined above performs
+//	 * the specific interrupt processing for the device.
+//	 */
+//	Status = XScuGic_Connect(IntcInstancePtr, IntrId,
+//				(Xil_InterruptHandler)XAxiCdma_IntrHandler,
+//				InstancePtr);
+//	if (Status != XST_SUCCESS) {
+//		return Status;
+//	}
+//
+//	////////////////////
+//	Status = XScuGic_Connect(IntcInstancePtr, XPAR_FABRIC_NEXT_TASK_HANDLER_0_IRQ_INTR,
+//				(Xil_InterruptHandler)newTaskHandler,
+//				(void *) IntcInstancePtr);
+//	if (Status != XST_SUCCESS) {
+//		return Status;
+//	}
+//	////////////////////
+//
+//	/*
+//	 * Enable the interrupt for the DMA device.
+//	 */
+//	XScuGic_Enable(IntcInstancePtr, IntrId);
+//
+/////////////
+//	XScuGic_Enable(IntcInstancePtr, XPAR_FABRIC_NEXT_TASK_HANDLER_0_IRQ_INTR);
 //////////////////
-	/*
-	 * Connect the device driver handler that will be called when an
-	 * interrupt for the device occurs, the handler defined above performs
-	 * the specific interrupt processing for the device.
-	 */
-	Status = XScuGic_Connect(IntcInstancePtr, IntrId,
-				(Xil_InterruptHandler)XAxiCdma_IntrHandler,
-				InstancePtr);
-	if (Status != XST_SUCCESS) {
-		return Status;
-	}
-
-	////////////////////
-	Status = XScuGic_Connect(IntcInstancePtr, XPAR_FABRIC_NEXT_TASK_HANDLER_0_IRQ_INTR,
-				(Xil_InterruptHandler)newTaskHandler,
-				(void *) IntcInstancePtr);
-	if (Status != XST_SUCCESS) {
-		return Status;
-	}
-	////////////////////
-
-	/*
-	 * Enable the interrupt for the DMA device.
-	 */
-	XScuGic_Enable(IntcInstancePtr, IntrId);
-
-///////////
-	XScuGic_Enable(IntcInstancePtr, XPAR_FABRIC_NEXT_TASK_HANDLER_0_IRQ_INTR);
-////////////////
-
-	Xil_ExceptionInit();
-
-	/*
-	 * Connect the interrupt controller interrupt handler to the hardware
-	 * interrupt handling logic in the processor.
-	 */
-	Xil_ExceptionRegisterHandler(XIL_EXCEPTION_ID_IRQ_INT,
-				(Xil_ExceptionHandler)XScuGic_InterruptHandler,
-				IntcInstancePtr);
-
-
-	/*
-	 * Enable interrupts in the Processor.
-	 */
-	Xil_ExceptionEnable();
-
-
-	return XST_SUCCESS;
-}
-
-int prvDmaInit() {
-	int Status=XST_FAILURE;
-	XAxiCdma_Config *CfgPtr;
-
-	XScuGic *IntcInstancePtr = &prvDmaIntcController;
-	XAxiCdma *InstancePtr = &prvDmaAxiCdmaInstance;
-	u16 DeviceId = DMA_CTRL_DEVICE_ID;
-	u32 IntrId = DMA_CTRL_IRPT_INTR;
-
-	/* Initialize the XAxiCdma device.
-	 */
-	CfgPtr = XAxiCdma_LookupConfig(DeviceId);
-	if (!CfgPtr) {
-		xil_printf("init failure");
-		return XST_FAILURE;
-	}
-
-	Status = XAxiCdma_CfgInitialize(InstancePtr, CfgPtr, CfgPtr->BaseAddress);
-	if (Status != XST_SUCCESS) {
-		xil_printf("CfgInitialize failure");
-		xil_printf("status %i", Status);
-
-		return XST_FAILURE;
-	}
-
-	/* Setup the interrupt system
-	 */
-	Status = prvDmaSetupIntrSystem(IntcInstancePtr, InstancePtr, IntrId);
-	if (Status != XST_SUCCESS) {
-		return XST_FAILURE;
-	}
-
-	/* Enable all (completion/error/delay) interrupts
-	 */
-	XAxiCdma_IntrEnable(InstancePtr, XAXICDMA_XR_IRQ_ALL_MASK);
-	return XST_SUCCESS;
-}
-
-static void prvDmaCdma_CallBack(void *CallBackRef, u32 IrqMask, int *IgnorePtr)
-{
-	if (IrqMask & XAXICDMA_XR_IRQ_ERROR_MASK) {
-		prvDmaError = TRUE;
-		xil_printf("\r\n--- Transfer Error --- \r\n");
-	}
-
-	if (IrqMask & XAXICDMA_XR_IRQ_IOC_MASK) {
-		xil_printf("\r\n--- Transfer Done --- \r\n");
-		prvDmaDone = TRUE;
-	}
-}
-
-/* Performs a blocking transfer (waits for transfer completion); Retries are the n */
-static int prvDmaCDMABlockingTransfer(XAxiCdma *InstancePtr, int Length, u32 SourceAddr, u32 DestAddr)
-{
-
-	int Status;
-
-	prvDmaDone = 0;
-	prvDmaError = 0;
-
-
-	xil_printf("Start Transfer \n\r");
-	/* Try to start the DMA transfer
-	 */
-
-		/* Flush the SrcBuffer before the DMA transfer, in case the Data Cache
-		 * is enabled
-		 */
-		Xil_DCacheFlushRange((u32)SourceAddr, Length);
-
-		Status = XAxiCdma_SimpleTransfer(InstancePtr,
-										(u32)(SourceAddr),
-										(u32)(DestAddr),
-										Length,
-										prvDmaCdma_CallBack,
-										(void *)InstancePtr);
-
-		if (Status == XST_FAILURE) {
-			xil_printf("Error in Transfer  \n\r");
-			return 1;
-		}
-
-
-
-		/* Wait until the DMA transfer is done
-			 */
-			while (!prvDmaDone && !prvDmaError) {
-				/* Wait */
-				xil_printf("waiting Transfer to finish \n\r");
-			}
-
-			if (prvDmaError) {
-				return XST_FAILURE;
-			}
-		/* Invalidate the DestBuffer before receiving the data, in case the
-		 * Data Cache is enabled
-		 */
-		//Xil_DCacheInvalidateRange((u32)DestAddr, Length); THIS ROW CAUSED TO HANG UP
-
-	return XST_SUCCESS;
-}
-
-/*Transfers the task set via DMA to the FPGA and waits for transfer completion. Then scheduler can be started. */
-
-int prvDmaBlockingTransferFreeByteSize( u32 prvDmaDestAddr, u32 prvDmaSourceAddr, u32 byteSize ) {
-	XAxiCdma *InstancePtr=&prvDmaAxiCdmaInstance;
-	int index;
-	int Status=XST_FAILURE;
-	u32 BUFFER_BYTESIZE	= (XPAR_AXI_CDMA_0_M_AXI_DATA_WIDTH * XPAR_AXI_CDMA_0_M_AXI_MAX_BURST_LEN);
-
-	if (byteSize > BUFFER_BYTESIZE) {
-		//int Tries = DMA_NUMBER_OF_TRANSFERS;
-		int bursts = ceil( byteSize / BUFFER_BYTESIZE );
-		u32 remainder = byteSize % BUFFER_BYTESIZE;
-
-		for (index = 0; index < bursts; index++) {
-			Status = prvDmaCDMABlockingTransfer(InstancePtr,
-					(remainder != 0 && index == bursts -1) ? remainder : byteSize, prvDmaSourceAddr, prvDmaDestAddr);
-		}
-	} else {
-		Status = prvDmaCDMABlockingTransfer(InstancePtr,
-				byteSize, (u32) prvDmaSourceAddr, (u32)prvDmaDestAddr);
-	}
-
-	if(Status != XST_SUCCESS) {
-		return XST_FAILURE;
-	}
-	return XST_SUCCESS;
-}
-
-// END OF DMA FUNCTIONS________________________________
+//
+//	Xil_ExceptionInit();
+//
+//	/*
+//	 * Connect the interrupt controller interrupt handler to the hardware
+//	 * interrupt handling logic in the processor.
+//	 */
+//	Xil_ExceptionRegisterHandler(XIL_EXCEPTION_ID_IRQ_INT,
+//				(Xil_ExceptionHandler)XScuGic_InterruptHandler,
+//				IntcInstancePtr);
+//
+//
+//	/*
+//	 * Enable interrupts in the Processor.
+//	 */
+//	Xil_ExceptionEnable();
+//
+//
+//	return XST_SUCCESS;
+//}
+//
+//int prvDmaInit() {
+//	int Status=XST_FAILURE;
+//	XAxiCdma_Config *CfgPtr;
+//
+//	XScuGic *IntcInstancePtr = &prvDmaIntcController;
+//	XAxiCdma *InstancePtr = &prvDmaAxiCdmaInstance;
+//	u16 DeviceId = DMA_CTRL_DEVICE_ID;
+//	u32 IntrId = DMA_CTRL_IRPT_INTR;
+//
+//	/* Initialize the XAxiCdma device.
+//	 */
+//	CfgPtr = XAxiCdma_LookupConfig(DeviceId);
+//	if (!CfgPtr) {
+//		xil_printf("init failure");
+//		return XST_FAILURE;
+//	}
+//
+//	Status = XAxiCdma_CfgInitialize(InstancePtr, CfgPtr, CfgPtr->BaseAddress);
+//	if (Status != XST_SUCCESS) {
+//		xil_printf("CfgInitialize failure");
+//		xil_printf("status %i", Status);
+//
+//		return XST_FAILURE;
+//	}
+//
+//	/* Setup the interrupt system
+//	 */
+//	Status = prvDmaSetupIntrSystem(IntcInstancePtr, InstancePtr, IntrId);
+//	if (Status != XST_SUCCESS) {
+//		return XST_FAILURE;
+//	}
+//
+//	/* Enable all (completion/error/delay) interrupts
+//	 */
+//	XAxiCdma_IntrEnable(InstancePtr, XAXICDMA_XR_IRQ_ALL_MASK);
+//	return XST_SUCCESS;
+//}
+//
+//static void prvDmaCdma_CallBack(void *CallBackRef, u32 IrqMask, int *IgnorePtr)
+//{
+//	if (IrqMask & XAXICDMA_XR_IRQ_ERROR_MASK) {
+//		prvDmaError = TRUE;
+//		xil_printf("\r\n--- Transfer Error --- \r\n");
+//	}
+//
+//	if (IrqMask & XAXICDMA_XR_IRQ_IOC_MASK) {
+//		xil_printf("\r\n--- Transfer Done --- \r\n");
+//		prvDmaDone = TRUE;
+//	}
+//}
+//
+///* Performs a blocking transfer (waits for transfer completion); Retries are the n */
+//static int prvDmaCDMABlockingTransfer(XAxiCdma *InstancePtr, int Length, u32 SourceAddr, u32 DestAddr)
+//{
+//
+//	int Status;
+//
+//	prvDmaDone = 0;
+//	prvDmaError = 0;
+//
+//
+//	xil_printf("Start Transfer \n\r");
+//	/* Try to start the DMA transfer
+//	 */
+//
+//		/* Flush the SrcBuffer before the DMA transfer, in case the Data Cache
+//		 * is enabled
+//		 */
+//		Xil_DCacheFlushRange((u32)SourceAddr, Length);
+//
+//		Status = XAxiCdma_SimpleTransfer(InstancePtr,
+//										(u32)(SourceAddr),
+//										(u32)(DestAddr),
+//										Length,
+//										prvDmaCdma_CallBack,
+//										(void *)InstancePtr);
+//
+//		if (Status == XST_FAILURE) {
+//			xil_printf("Error in Transfer  \n\r");
+//			return 1;
+//		}
+//
+//
+//
+//		/* Wait until the DMA transfer is done
+//			 */
+//			while (!prvDmaDone && !prvDmaError) {
+//				/* Wait */
+//				xil_printf("waiting Transfer to finish \n\r");
+//			}
+//
+//			if (prvDmaError) {
+//				return XST_FAILURE;
+//			}
+//		/* Invalidate the DestBuffer before receiving the data, in case the
+//		 * Data Cache is enabled
+//		 */
+//		//Xil_DCacheInvalidateRange((u32)DestAddr, Length); THIS ROW CAUSED TO HANG UP
+//
+//	return XST_SUCCESS;
+//}
+//
+///*Transfers the task set via DMA to the FPGA and waits for transfer completion. Then scheduler can be started. */
+//
+//int prvDmaBlockingTransferFreeByteSize( u32 prvDmaDestAddr, u32 prvDmaSourceAddr, u32 byteSize ) {
+//	XAxiCdma *InstancePtr=&prvDmaAxiCdmaInstance;
+//	int index;
+//	int Status=XST_FAILURE;
+//	u32 BUFFER_BYTESIZE	= (XPAR_AXI_CDMA_0_M_AXI_DATA_WIDTH * XPAR_AXI_CDMA_0_M_AXI_MAX_BURST_LEN);
+//
+//	if (byteSize > BUFFER_BYTESIZE) {
+//		//int Tries = DMA_NUMBER_OF_TRANSFERS;
+//		int bursts = ceil( byteSize / BUFFER_BYTESIZE );
+//		u32 remainder = byteSize % BUFFER_BYTESIZE;
+//
+//		for (index = 0; index < bursts; index++) {
+//			Status = prvDmaCDMABlockingTransfer(InstancePtr,
+//					(remainder != 0 && index == bursts -1) ? remainder : byteSize, prvDmaSourceAddr, prvDmaDestAddr);
+//		}
+//	} else {
+//		Status = prvDmaCDMABlockingTransfer(InstancePtr,
+//				byteSize, (u32) prvDmaSourceAddr, (u32)prvDmaDestAddr);
+//	}
+//
+//	if(Status != XST_SUCCESS) {
+//		return XST_FAILURE;
+//	}
+//	return XST_SUCCESS;
+//}
+//
+//// END OF DMA FUNCTIONS________________________________
 
 
 static void prvTaskExitError( void )
@@ -759,58 +759,64 @@ void prvOrderByDeadline( RTTask_t* prvRTTasksList, u8 numberOfTasks, u8* destArr
 //fedit add
 /* Initializes the scheduler. Copies pxRTTasksList to FPGA */
 
+#include "xparameters.h"
+#include "scheduler.h"
+#define SCHEDULER_BASEADDR XPAR_SCHEDULER_0_S_AXI_BASEADDR
+
 BaseType_t xPortInitScheduler( u8 numberOfTasks, u32 prvRTTasksListPtr, u32 prvRTTasksListByteSize, u32 prvOrderedQueuesPtr, u32 prvOrderedQueuesByteSize , u32 orderedDeadlineActivationQPayload, u32 orderedDeadlineActivationQPayloadByteSize)
 {
 	int status;
 
-	status=prvDmaInit();
-	if (status!=XST_SUCCESS) {
-		xil_printf("DMA init failed");
-		return status;
-	}
-//SINGLE TRANSACTION IF SOURCE ADDRESSES ARE CONTIGUOUS
-	status=prvDmaBlockingTransferFreeByteSize( prvDmaRTTasksListDestAddr, prvRTTasksListPtr, prvRTTasksListByteSize + prvOrderedQueuesByteSize + orderedDeadlineActivationQPayloadByteSize);
-	if (status!=XST_SUCCESS) {
-		xil_printf("DMA RTTTaskSet transfer failed");
-		return status;
-	};
-	//MULTIPLE TRANSACTIONS
-/*
-	status=prvDmaBlockingTransferFreeByteSize( prvDmaRTTasksListDestAddr, prvRTTasksListPtr, prvRTTasksListByteSize);
-	if (status!=XST_SUCCESS) {
-		xil_printf("DMA RTTTaskSet transfer failed");
-		return status;
-	};
-
-	status=prvDmaBlockingTransferFreeByteSize( prvDmaRTTasksListDestAddr+prvRTTasksListByteSize, prvOrderedQueuesPtr, prvOrderedQueuesByteSize );
-	if (status!=XST_SUCCESS) {
-		xil_printf("DMA OrderedDeadlineActivationQueue transfer failed");
-		return status;
-	};
-
-	status=prvDmaBlockingTransferFreeByteSize( prvDmaRTTasksListDestAddr+prvRTTasksListByteSize+prvOrderedQueuesByteSize, orderedDeadlineActivationQPayload, orderedDeadlineActivationQPayloadByteSize );
-	if (status!=XST_SUCCESS) {
-		xil_printf("DMA OrderedDeadlineActivationQueue transfer failed");
-		return status;
-	};
-
-*/
-	//TODO CHECK WHETHER DISABLE OR NOT
-	//prvDmaDisableIntrSystem();
-	enableNewTaskInterrupt();
-
-
-	status = XGpio_Initialize(&prvGpio0, GPIO_START_SCHED_DEVICE_ID);
-	if (status != XST_SUCCESS) {
-		xil_printf("Gpio Initialization Failed\r\n");
-		return status;
-	}
-
-	XGpio_SetDataDirection(&prvGpio0, GPIO_START_SCHED_CHANNEL, ~GPIO0VAL);
-
-	prvSchedControl.control=1;
-	prvSchedControl.data = numberOfTasks;
-	prvWriteSchedControl();
+//	status=prvDmaInit();
+//	if (status!=XST_SUCCESS) {
+//		xil_printf("DMA init failed");
+//		return status;
+//	}
+////SINGLE TRANSACTION IF SOURCE ADDRESSES ARE CONTIGUOUS
+//	status=prvDmaBlockingTransferFreeByteSize( prvDmaRTTasksListDestAddr, prvRTTasksListPtr, prvRTTasksListByteSize + prvOrderedQueuesByteSize + orderedDeadlineActivationQPayloadByteSize);
+//	if (status!=XST_SUCCESS) {
+//		xil_printf("DMA RTTTaskSet transfer failed");
+//		return status;
+//	};
+//	//MULTIPLE TRANSACTIONS
+///*
+//	status=prvDmaBlockingTransferFreeByteSize( prvDmaRTTasksListDestAddr, prvRTTasksListPtr, prvRTTasksListByteSize);
+//	if (status!=XST_SUCCESS) {
+//		xil_printf("DMA RTTTaskSet transfer failed");
+//		return status;
+//	};
+//
+//	status=prvDmaBlockingTransferFreeByteSize( prvDmaRTTasksListDestAddr+prvRTTasksListByteSize, prvOrderedQueuesPtr, prvOrderedQueuesByteSize );
+//	if (status!=XST_SUCCESS) {
+//		xil_printf("DMA OrderedDeadlineActivationQueue transfer failed");
+//		return status;
+//	};
+//
+//	status=prvDmaBlockingTransferFreeByteSize( prvDmaRTTasksListDestAddr+prvRTTasksListByteSize+prvOrderedQueuesByteSize, orderedDeadlineActivationQPayload, orderedDeadlineActivationQPayloadByteSize );
+//	if (status!=XST_SUCCESS) {
+//		xil_printf("DMA OrderedDeadlineActivationQueue transfer failed");
+//		return status;
+//	};
+//
+//*/
+//	//TODO CHECK WHETHER DISABLE OR NOT
+//	//prvDmaDisableIntrSystem();
+//	enableNewTaskInterrupt();
+//
+//
+//	status = XGpio_Initialize(&prvGpio0, GPIO_START_SCHED_DEVICE_ID);
+//	if (status != XST_SUCCESS) {
+//		xil_printf("Gpio Initialization Failed\r\n");
+//		return status;
+//	}
+//
+//	XGpio_SetDataDirection(&prvGpio0, GPIO_START_SCHED_CHANNEL, ~GPIO0VAL);
+//
+//	prvSchedControl.control=1;
+//	prvSchedControl.data = numberOfTasks;
+//	prvWriteSchedControl();
+	SCHEDULER_copyTaskSet(SCHEDULER_BASEADDR, (void *) prvRTTasksListPtr, (prvRTTasksListByteSize + prvOrderedQueuesByteSize + orderedDeadlineActivationQPayloadByteSize));
+	SCHEDULER_sendControl(SCHEDULER_BASEADDR, (u16) 1, (u16) numberOfTasks);
 
 	return pdPASS;
 }
@@ -880,10 +886,11 @@ uint32_t ulAPSR;
 			//configSETUP_TICK_INTERRUPT();
 
 			/* Start the scheduler on hardware */
-			prvSchedControl.control=2;
-			prvSchedControl.data = 0;
-			prvWriteSchedControl();
+//			prvSchedControl.control=2;
+//			prvSchedControl.data = 0;
+//			prvWriteSchedControl();
 
+			SCHEDULER_sendControl(SCHEDULER_BASEADDR, (u16) 2, (u16) 0);
 			/* Start the first task executing. */
 			vPortRestoreTaskContext();
 		}
