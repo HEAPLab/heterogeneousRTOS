@@ -340,11 +340,6 @@ StackType_t *pxPortInitialiseStack( StackType_t *pxTopOfStack, TaskFunction_t px
 //	return 0;
 //}
 //
-//void newTaskHandler(void *HandlerRef)
-//{
-//	xil_printf("new task");
-//	   NEXT_TASK_HANDLER_ACK(NEXT_TASK_HANDLER_BASEADDR);
-//}
 //
 //
 ////GPIO
@@ -762,11 +757,19 @@ void prvOrderByDeadline( RTTask_t* prvRTTasksList, u8 numberOfTasks, u8* destArr
 #include "xparameters.h"
 #include "scheduler.h"
 #define SCHEDULER_BASEADDR XPAR_SCHEDULER_0_S_AXI_BASEADDR
+#define INTC_DEVICE_ID	XPAR_SCUGIC_SINGLE_DEVICE_ID
+#define SCHEDULER_INTR XPAR_FABRIC_SCHEDULER_0_IRQ_INTR
+static XScuGic intControllerInstance;
+
+void SchedulerNewTaskIntrHandl(void *HandlerRef)
+{
+	u32* newTaskPtr=(u32*)0x20018000;
+	xil_printf("new task, ptr: %X", *newTaskPtr);
+	SCHEDULER_ACKInterrupt(SCHEDULER_BASEADDR);
+}
 
 BaseType_t xPortInitScheduler( u8 numberOfTasks, u32 prvRTTasksListPtr, u32 prvRTTasksListByteSize, u32 prvOrderedQueuesPtr, u32 prvOrderedQueuesByteSize , u32 orderedDeadlineActivationQPayload, u32 orderedDeadlineActivationQPayloadByteSize)
 {
-	int status;
-
 //	status=prvDmaInit();
 //	if (status!=XST_SUCCESS) {
 //		xil_printf("DMA init failed");
@@ -815,8 +818,64 @@ BaseType_t xPortInitScheduler( u8 numberOfTasks, u32 prvRTTasksListPtr, u32 prvR
 //	prvSchedControl.control=1;
 //	prvSchedControl.data = numberOfTasks;
 //	prvWriteSchedControl();
+	int status;
+
 	SCHEDULER_copyTaskSet(SCHEDULER_BASEADDR, (void *) prvRTTasksListPtr, (prvRTTasksListByteSize + prvOrderedQueuesByteSize + orderedDeadlineActivationQPayloadByteSize));
 	SCHEDULER_sendControl(SCHEDULER_BASEADDR, (u16) 1, (u16) numberOfTasks);
+
+
+		/*
+		 * Initialize the interrupt controller driver so that it is ready to
+		 * use.
+		 */
+		XScuGic_Config* intCConfig = XScuGic_LookupConfig(INTC_DEVICE_ID);
+		if (intCConfig == NULL) {
+			return XST_FAILURE;
+		}
+
+		status = XScuGic_CfgInitialize(&intControllerInstance, intCConfig,
+				intCConfig->CpuBaseAddress);
+		if (status != XST_SUCCESS) {
+			return XST_FAILURE;
+		}
+
+		XScuGic_SetPriorityTriggerType(&intControllerInstance, SCHEDULER_INTR, 0xA0, 0x3);
+		/*
+		 * Connect the device driver handler that will be called when an
+		 * interrupt for the device occurs, the handler defined above performs
+		 * the specific interrupt processing for the device.
+		 */
+
+		status = XScuGic_Connect(&intControllerInstance, SCHEDULER_INTR,
+					(Xil_InterruptHandler)SchedulerNewTaskIntrHandl,
+					(void *) &intControllerInstance);
+		if (status != XST_SUCCESS) {
+			return status;
+		}
+
+		/*
+		 * Enable the interrupt for the SCHEDULER device.
+		 */
+
+		XScuGic_Enable(&intControllerInstance, SCHEDULER_INTR);
+
+		Xil_ExceptionInit();
+
+		/*
+		 * Connect the interrupt controller interrupt handler to the hardware
+		 * interrupt handling logic in the processor.
+		 */
+		Xil_ExceptionRegisterHandler(XIL_EXCEPTION_ID_IRQ_INT,
+					(Xil_ExceptionHandler)XScuGic_InterruptHandler,
+					&intControllerInstance);
+
+
+		/*
+		 * Enable interrupts in the Processor.
+		 */
+		Xil_ExceptionEnable();
+
+		SCHEDULER_EnableInterrupt(SCHEDULER_BASEADDR);
 
 	return pdPASS;
 }

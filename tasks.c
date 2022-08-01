@@ -1987,18 +1987,17 @@ void prvGenerateOrderedQueues(RTTask_t prvRTTasksList[], u8 numberOfTasks,
 		u32 destArrayNextActivationAscTaskNum[],
 		u32 destArrayDeadlineAscTaskDeadline[],
 		u32 destArrayNextActivationAscTaskActivation[]) {
-	xil_printf("generating ordered queue");
 	u32 loboundDeadline = 0; //init
 	u32 loboundActivation = 0; //init
 
 	u32 destArrayDeadlineI = 0;
 	u32 destArrayActivationI = 0;
 
-	xil_printf("addr prvRTTasksList %x", prvRTTasksList);
-	xil_printf("addr destArrayDeadlineAscTaskNum %x", destArrayDeadlineAscTaskNum);
-	xil_printf("addr destArrayNextActivationAscTaskNum %x", destArrayNextActivationAscTaskNum);
-	xil_printf("addr destArrayDeadlineAscTaskDeadline %x", destArrayDeadlineAscTaskDeadline);
-	xil_printf("addr destArrayNextActivationAscTaskActivation%x", destArrayNextActivationAscTaskActivation);
+//	xil_printf("addr prvRTTasksList %x", prvRTTasksList);
+//	xil_printf("addr destArrayDeadlineAscTaskNum %x", destArrayDeadlineAscTaskNum);
+//	xil_printf("addr destArrayNextActivationAscTaskNum %x", destArrayNextActivationAscTaskNum);
+//	xil_printf("addr destArrayDeadlineAscTaskDeadline %x", destArrayDeadlineAscTaskDeadline);
+//	xil_printf("addr destArrayNextActivationAscTaskActivation%x", destArrayNextActivationAscTaskActivation);
 
 	for (int i = 0; i < numberOfTasks; i++) {
 		u32 minDeadline = 0; //init
@@ -2056,7 +2055,7 @@ void vTaskStartScheduler(void) {
 			orderedDeadlineActivationQPayload,
 			&(orderedDeadlineActivationQPayload[configMAX_RT_TASKS]));
 
-	xil_printf("Size of task struct: %d /n", sizeof(RTTask_t));
+//	xil_printf("Size of task struct: %d /n", sizeof(RTTask_t));
 
 	if (xPortInitScheduler( configMAX_RT_TASKS, (u32) pxRTTasksList,
 			sizeof(RTTask_t) * configMAX_RT_TASKS,
