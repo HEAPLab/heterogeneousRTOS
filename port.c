@@ -168,6 +168,8 @@ static int32_t prvEnsureInterruptControllerIsInitialised( void );
  */
 extern void vPortRestoreTaskContext( void );
 
+extern void vPortHandleNewTask( void );
+
 /*
  * Used to catch tasks that attempt to return from their implementing function.
  */
@@ -759,19 +761,18 @@ void prvOrderByDeadline( RTTask_t* prvRTTasksList, u8 numberOfTasks, u8* destArr
 #define SCHEDULER_BASEADDR XPAR_SCHEDULER_0_S_AXI_BASEADDR
 #define INTC_DEVICE_ID	XPAR_SCUGIC_SINGLE_DEVICE_ID
 #define SCHEDULER_INTR XPAR_FABRIC_SCHEDULER_0_IRQ_INTR
+#define PXNEXTTCB 0x20018000
 static XScuGic intControllerInstance;
 u32* pxCurrentTCB_ptr;
 
-void SchedulerNewTaskIntrHandl(void *HandlerRef)
+void xPortScheduleNewTask(void)
 {
 	//portDISABLE_INTERRUPTS();
 	//xil_printf("new task, ptr: %X", *((u32*)0x20018000));
 	//Xil_MemCpy(pxCurrentTCB_ptr, (u32*)0x20018000, (u32)4);
-	portCPU_IRQ_DISABLE();
-	//portSAVE_CONTEXT();
-	*pxCurrentTCB_ptr=*((u32*)0x20018000);
+	//portCPU_IRQ_DISABLE();
+	*pxCurrentTCB_ptr=*((u32*) PXNEXTTCB );
 	SCHEDULER_ACKInterrupt(SCHEDULER_BASEADDR);
-	vPortRestoreTaskContext();
 }
 
 BaseType_t xPortInitScheduler( u8 numberOfTasks, u32 prvRTTasksListPtr, u32 prvRTTasksListByteSize, u32 prvOrderedQueuesPtr, u32 prvOrderedQueuesByteSize , u32 orderedDeadlineActivationQPayload, u32 orderedDeadlineActivationQPayloadByteSize, u32* pxCurrentTCBPtr)
@@ -854,7 +855,7 @@ BaseType_t xPortInitScheduler( u8 numberOfTasks, u32 prvRTTasksListPtr, u32 prvR
 		 */
 
 		status = XScuGic_Connect(&intControllerInstance, SCHEDULER_INTR,
-					(Xil_InterruptHandler)SchedulerNewTaskIntrHandl,
+					(Xil_InterruptHandler)vPortHandleNewTask,
 					(void *) &intControllerInstance);
 		if (status != XST_SUCCESS) {
 			return status;

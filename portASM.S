@@ -45,11 +45,15 @@
 	.extern vApplicationIRQHandler
 	.extern ulPortInterruptNesting
 	.extern ulPortTaskHasFPUContext
+	/*.extern SCHEDULER_BASEADDR
+	.extern SCHEDULER_ACKInterrupt
+	.extern pxNextTCB*/
+	.extern xPortScheduleNewTask
 
 	.global FreeRTOS_IRQ_Handler
 	.global FreeRTOS_SWI_Handler
 	.global vPortRestoreTaskContext
-
+	.global vPortHandleNewTask
 
 
 
@@ -156,6 +160,23 @@ FreeRTOS_SWI_Handler:
 vPortRestoreTaskContext:
 	/* Switch to system mode. */
 	CPS		#SYS_MODE
+	portRESTORE_CONTEXT
+	
+.type vPortHandleNewTask, %function
+vPortHandleNewTask:
+	CPSID	i
+	DSB
+	ISB
+	portSAVE_CONTEXT
+/*	LDR R0, pxCurrentTCBConst
+	LDR R2, pxNextTCBConst
+	LDR R1, [R2]
+	STR R1, [R0]
+	LDR R0, SCHEDULER_BASEADDRConst
+	LDR R3, SCHEDULER_ACKInterruptConst
+	BLX	R3*/
+	LDR R0, xPortScheduleNewTaskConst
+	BLX	R0
 	portRESTORE_CONTEXT
 
 .align 4
@@ -310,6 +331,12 @@ pxCurrentTCBConst: .word pxCurrentTCB
 ulCriticalNestingConst: .word ulCriticalNesting
 ulPortTaskHasFPUContextConst: .word ulPortTaskHasFPUContext
 ulMaxAPIPriorityMaskConst: .word ulMaxAPIPriorityMask
+
+xPortScheduleNewTaskConst: .word xPortScheduleNewTask
+/*SCHEDULER_BASEADDRConst: .word SCHEDULER_BASEADDR
+SCHEDULER_ACKInterruptConst: .word SCHEDULER_ACKInterrupt
+pxNextTCBConst: .word pxNextTCB*/
+
 vTaskSwitchContextConst: .word vTaskSwitchContext
 vApplicationIRQHandlerConst: .word vApplicationIRQHandler
 ulPortInterruptNestingConst: .word ulPortInterruptNesting

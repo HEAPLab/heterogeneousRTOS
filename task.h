@@ -3103,6 +3103,8 @@ void vTaskRemoveFromUnorderedEventList( ListItem_t * pxEventListItem,
  * Sets the pointer to the current TCB to the TCB of the highest priority task
  * that is ready to run.
  */
+//portDONT_DISCARD void SchedulerNewTaskIntrHandl(void) PRIVILEGED_FUNCTION;
+
 portDONT_DISCARD void vTaskSwitchContext( void ) PRIVILEGED_FUNCTION;
 
 /*

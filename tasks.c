@@ -3031,6 +3031,17 @@ BaseType_t xTaskCallApplicationTaskHook( TaskHandle_t xTask,
 
 #endif /* configUSE_APPLICATION_TASK_TAG */
 /*-----------------------------------------------------------*/
+/*
+void SchedulerNewTaskIntrHandl(void)
+{
+	//portDISABLE_INTERRUPTS();
+	//xil_printf("new task, ptr: %X", *((u32*)0x20018000));
+	//Xil_MemCpy(pxCurrentTCB_ptr, (u32*)0x20018000, (u32)4);
+	//portCPU_IRQ_DISABLE();
+	//vPortSaveTaskContext();
+	pxCurrentTCB=*((u32*)0x20018000);
+	SCHEDULER_ACKInterrupt(SCHEDULER_BASEADDR);
+}*/
 
 void vTaskSwitchContext(void) {
 	if (uxSchedulerSuspended != (UBaseType_t) pdFALSE) {
