@@ -162,11 +162,14 @@ vPortRestoreTaskContext:
 	CPS		#SYS_MODE
 	portRESTORE_CONTEXT
 	
+/******************************************************************************
+ * vPortHandleNewTask is used to perform a context switch when a new task is provided by the FPGA scheduler (hardware scheduler interrupt handler).
+ *****************************************************************************/
 .type vPortHandleNewTask, %function
 vPortHandleNewTask:
-	CPSID	i
+/*	CPSID	i
 	DSB
-	ISB
+	ISB*/
 	portSAVE_CONTEXT
 /*	LDR R0, pxCurrentTCBConst
 	LDR R2, pxNextTCBConst
@@ -175,6 +178,7 @@ vPortHandleNewTask:
 	LDR R0, SCHEDULER_BASEADDRConst
 	LDR R3, SCHEDULER_ACKInterruptConst
 	BLX	R3*/
+	/* schedule new task */
 	LDR R0, xPortScheduleNewTaskConst
 	BLX	R0
 	portRESTORE_CONTEXT

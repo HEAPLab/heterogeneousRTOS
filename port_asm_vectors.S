@@ -67,6 +67,9 @@
 .extern FreeRTOS_IRQ_Handler
 .extern FreeRTOS_SWI_Handler
 
+//FPGA scheduler new task handler
+.extern vPortHandleNewTask
+
 .section .vectors
 _vector_table:
 _freertos_vector_table:
@@ -76,16 +79,20 @@ _freertos_vector_table:
 	B	  FreeRTOS_PrefetchAbortHandler
 	B	  FreeRTOS_DataAbortHandler
 	NOP	  /* Placeholder for address exception vector*/
-	LDR   PC, _irq
-	B	  FreeRTOS_FIQHandler
+	LDR   PC, _irq	
+	LDR   PC, _newtask
+//	B	  FreeRTOS_FIQHandler /* this was the original entry. _newtask has replaced default FreeRTOS_FIQHandler since our FIQ will be the FPGA scheduler interrupt and we want to completely manage its IRQ, avoiding auto registers savings and so on */
 
-_irq:   .word FreeRTOS_IRQ_Handler
+_irq:   .word FreeRTOS_IRQ_Handler		
 _swi:   .word FreeRTOS_SWI_Handler
 
+//FPGA scheduler new task handler
+_newtask: .word vPortHandleNewTask
 
+		
 .align 4
 FreeRTOS_FIQHandler:			/* FIQ vector handler */
-	stmdb	sp!,{r0-r3,r12,lr}	/* state save from compiled code */
+	stmdb	sp!,{r0-r3,r12,lr}	/* state save from compiled code		 */
 FIQLoop:
 	blx	FIQInterrupt			/* FIQ vector */
 	ldmia	sp!,{r0-r3,r12,lr}	/* state restore from compiled code */
