@@ -765,6 +765,8 @@ void prvOrderByDeadline( RTTask_t* prvRTTasksList, u8 numberOfTasks, u8* destArr
 static XScuGic intControllerInstance;
 u32* pxCurrentTCB_ptr;
 
+#define CPU_BASEADDR		XPAR_SCUGIC_CPU_BASEADDR            //ICCICR
+
 void xPortScheduleNewTask(void)
 {
 	//portDISABLE_INTERRUPTS();
@@ -832,56 +834,68 @@ BaseType_t xPortInitScheduler( u8 numberOfTasks, u32 prvRTTasksListPtr, u32 prvR
 	SCHEDULER_sendControl(SCHEDULER_BASEADDR, (u16) 1, (u16) numberOfTasks);
 
 
-		/*
-		 * Initialize the interrupt controller driver so that it is ready to
-		 * use.
-		 */
-		XScuGic_Config* intCConfig = XScuGic_LookupConfig(INTC_DEVICE_ID);
-		if (intCConfig == NULL) {
-			return XST_FAILURE;
-		}
+//		/*
+//		 * Initialize the interrupt controller driver so that it is ready to
+//		 * use.
+//		 */
+//		XScuGic_Config* intCConfig = XScuGic_LookupConfig(INTC_DEVICE_ID);
+//		if (intCConfig == NULL) {
+//			return XST_FAILURE;
+//		}
+//
+//		status = XScuGic_CfgInitialize(&intControllerInstance, intCConfig,
+//				intCConfig->CpuBaseAddress);
+//		if (status != XST_SUCCESS) {
+//			return XST_FAILURE;
+//		}
 
-		status = XScuGic_CfgInitialize(&intControllerInstance, intCConfig,
-				intCConfig->CpuBaseAddress);
-		if (status != XST_SUCCESS) {
-			return XST_FAILURE;
-		}
-
-		XScuGic_SetPriorityTriggerType(&intControllerInstance, SCHEDULER_INTR, 0xA0, 0x3);
-		/*
-		 * Connect the device driver handler that will be called when an
-		 * interrupt for the device occurs, the handler defined above performs
-		 * the specific interrupt processing for the device.
-		 */
-
-		status = XScuGic_Connect(&intControllerInstance, SCHEDULER_INTR,
-					(Xil_InterruptHandler)vPortHandleNewTask,
-					(void *) &intControllerInstance);
-		if (status != XST_SUCCESS) {
-			return status;
-		}
-
-		/*
-		 * Enable the interrupt for the SCHEDULER device.
-		 */
-
-		XScuGic_Enable(&intControllerInstance, SCHEDULER_INTR);
-
-		Xil_ExceptionInit();
-
-		/*
-		 * Connect the interrupt controller interrupt handler to the hardware
-		 * interrupt handling logic in the processor.
-		 */
-		Xil_ExceptionRegisterHandler(XIL_EXCEPTION_ID_IRQ_INT,
-					(Xil_ExceptionHandler)XScuGic_InterruptHandler,
-					&intControllerInstance);
+//		XScuGic_SetPriorityTriggerType(&intControllerInstance, SCHEDULER_INTR, 0xA0, 0x3);
+//		/*
+//		 * Connect the device driver handler that will be called when an
+//		 * interrupt for the device occurs, the handler defined above performs
+//		 * the specific interrupt processing for the device.
+//		 */
+//
+//		status = XScuGic_Connect(&intControllerInstance, SCHEDULER_INTR,
+//					(Xil_InterruptHandler)vPortHandleNewTask,
+//					(void *) &intControllerInstance);
+//		if (status != XST_SUCCESS) {
+//			return status;
+//		}
+//
+//		/*
+//		 * Enable the interrupt for the SCHEDULER device.
+//		 */
+//
+//		XScuGic_Enable(&intControllerInstance, SCHEDULER_INTR);
+//
+//		Xil_ExceptionInit();
+//
+//		/*
+//		 * Connect the interrupt controller interrupt handler to the hardware
+//		 * interrupt handling logic in the processor.
+//		 */
+//		Xil_ExceptionRegisterHandler(XIL_EXCEPTION_ID_IRQ_INT,
+//					(Xil_ExceptionHandler)XScuGic_InterruptHandler,
+//					&intControllerInstance);
 
 
 		/*
 		 * Enable interrupts in the Processor.
 		 */
 		//Xil_ExceptionEnable(); In this case, interrupts will be automatically enabled when a new task is scheduled
+	Xil_ExceptionInit();
+
+	Xil_ExceptionRegisterHandler(XIL_EXCEPTION_ID_FIQ_INT,
+				(Xil_ExceptionHandler) vPortHandleNewTask,
+				(void *)CPU_BASEADDR);
+	/*
+	 * Enable FIQ/IRQ in the ARM
+	 */
+	//Xil_ExceptionEnableMask(XIL_EXCEPTION_ALL);
+
+	Xil_ExceptionEnable();
+
 	return pdPASS;
 }
 
