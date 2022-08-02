@@ -184,7 +184,7 @@ size_t xPortGetMinimumEverFreeHeapSize( void ) PRIVILEGED_FUNCTION;
  */
 void xPortScheduleNewTask(void) PRIVILEGED_FUNCTION;
 
-BaseType_t xPortInitScheduler( u8 numberOfTasks, u32 prvRTTasksListPtr, u32 prvRTTasksListByteSize, u32 prvOrderedQueuesPtr, u32 prvOrderedQueuesByteSize , u32 orderedDeadlineActivationQPayload, u32 orderedDeadlineActivationQPayloadByteSize, u32* pxCurrentTCBPtr) PRIVILEGED_FUNCTION;
+BaseType_t xPortInitScheduler( u16 numberOfTasks, void* pxRTTasksList, void* orderedDeadlineQTaskNums, void* orderedActivationQTaskNums, void* orderedDeadlineQPayload, void* orderedActivationQPayload, u32* pxCurrentTCBPtr) PRIVILEGED_FUNCTION;
 
 void newTaskHandler(void *HandlerRef) PRIVILEGED_FUNCTION;
 

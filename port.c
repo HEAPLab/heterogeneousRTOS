@@ -777,7 +777,9 @@ void xPortScheduleNewTask(void)
 	SCHEDULER_ACKInterrupt(SCHEDULER_BASEADDR);
 }
 
-BaseType_t xPortInitScheduler( u8 numberOfTasks, u32 prvRTTasksListPtr, u32 prvRTTasksListByteSize, u32 prvOrderedQueuesPtr, u32 prvOrderedQueuesByteSize , u32 orderedDeadlineActivationQPayload, u32 orderedDeadlineActivationQPayloadByteSize, u32* pxCurrentTCBPtr)
+//BaseType_t xPortInitScheduler( u8 numberOfTasks, void* pxRTTasksList, size_t pxRTTasksListByteSize, void* orderedDeadlineQTaskNums, size_t orderedDeadlineQTaskNumsByteSize , void* orderedActivationQTaskNums, size_t orderedActivationQTaskNumsByteSize, void* orderedDeadlineQPayload, size_t orderedDeadlineQPayloadByteSize, void* orderedActivationQPayload, size_t orderedActivationQPayloadByteSize, u32* pxCurrentTCBPtr)
+
+BaseType_t xPortInitScheduler( u16 numberOfTasks, void* pxRTTasksList, void* orderedDeadlineQTaskNums, void* orderedActivationQTaskNums, void* orderedDeadlineQPayload, void* orderedActivationQPayload, u32* pxCurrentTCBPtr)
 {
 	pxCurrentTCB_ptr=pxCurrentTCBPtr;
 //	status=prvDmaInit();
@@ -830,7 +832,12 @@ BaseType_t xPortInitScheduler( u8 numberOfTasks, u32 prvRTTasksListPtr, u32 prvR
 //	prvWriteSchedControl();
 	int status;
 
-	SCHEDULER_copyTaskSet(SCHEDULER_BASEADDR, (void *) prvRTTasksListPtr, (prvRTTasksListByteSize + prvOrderedQueuesByteSize + orderedDeadlineActivationQPayloadByteSize));
+	SCHEDULER_copyTaskSet(SCHEDULER_BASEADDR, pxRTTasksList);
+	SCHEDULER_copyOrderedDeadlineQIndex(SCHEDULER_BASEADDR, orderedDeadlineQTaskNums);
+	SCHEDULER_copyOrderedActivationQIndex(SCHEDULER_BASEADDR, orderedActivationQTaskNums);
+	SCHEDULER_copyOrderedDeadlineQ(SCHEDULER_BASEADDR, orderedDeadlineQPayload);
+	SCHEDULER_copyOrderedActivationQ(SCHEDULER_BASEADDR, orderedActivationQPayload);
+
 	SCHEDULER_sendControl(SCHEDULER_BASEADDR, (u16) 1, (u16) numberOfTasks);
 
 

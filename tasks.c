@@ -271,14 +271,14 @@ PRIVILEGED_DATA static List_t pxReadyTasksLists[configMAX_PRIORITIES]; /*< Prior
 //PRIVILEGED_DATA static RTTask_t* pxRTTasksList[ configMAX_RT_TASKS ]; /*< Created tasks. */
 //pxRTTasksList array will be located at address indicated by prvDmaSourceAddr. This address must match hardware (on Vivado) DMA source address.
 
-//_________________________________
-PRIVILEGED_DATA static RTTask_t* pxRTTasksList = (RTTask_t*) configDMA_BASE_ADDR; /*< Created tasks. */ //size is configMAX_RT_TASKS
-PRIVILEGED_DATA static u32* orderedDeadlineActivationQTaskNums =
-		(u32*) (configDMA_BASE_ADDR + sizeof(RTTask_t) * configMAX_RT_TASKS); //size is 2*configMAX_RT_TASKS. First half cointains tasks nums ordered by deadlines ASC, second tasks nums ordered by activation times ASC
-PRIVILEGED_DATA static u32* orderedDeadlineActivationQPayload =
-		(u32*) (configDMA_BASE_ADDR + sizeof(RTTask_t) * configMAX_RT_TASKS
-				+ sizeof(u32) * configMAX_RT_TASKS * 2); //size is 2*configMAX_RT_TASKS. First half cointains tasks deadlines ordered ASC, second activation times ordered ASC
-//_________________________________
+//______________data structures which will be passed to hardware scheduler (FPGA)___________________
+PRIVILEGED_DATA static RTTask_t pxRTTasksList [configMAX_RT_TASKS]; /*< Created tasks. */ //size is configMAX_RT_TASKS
+PRIVILEGED_DATA static u32 orderedDeadlineQTaskNums [configMAX_RT_TASKS]; //tasks nums ordered by deadlines ASC
+PRIVILEGED_DATA static u32 orderedActivationQTaskNums [configMAX_RT_TASKS]; //tasks nums ordered by activation times ASC
+PRIVILEGED_DATA static u32 orderedDeadlineQPayload [configMAX_RT_TASKS]; //tasks deadlines ordered ASC
+PRIVILEGED_DATA static u32 orderedActivationQPayload [configMAX_RT_TASKS]; //activation times ordered ASC
+
+//______________________________________________________________________
 PRIVILEGED_DATA static List_t xDelayedTaskList1; /*< Delayed tasks. */
 PRIVILEGED_DATA static List_t xDelayedTaskList2; /*< Delayed tasks (two lists are used - one for delays that have overflowed the current tick count. */
 PRIVILEGED_DATA static List_t * volatile pxDelayedTaskList; /*< Points to the delayed task list currently being used. */
@@ -2050,19 +2050,24 @@ void vTaskStartScheduler(void) {
 	BaseType_t xReturn;
 
 	prvGenerateOrderedQueues(pxRTTasksList, uxRTTaskNumber,
-			orderedDeadlineActivationQTaskNums,
-			&(orderedDeadlineActivationQTaskNums[configMAX_RT_TASKS]),
-			orderedDeadlineActivationQPayload,
-			&(orderedDeadlineActivationQPayload[configMAX_RT_TASKS]));
+			orderedDeadlineQTaskNums,
+			orderedActivationQTaskNums,
+			orderedDeadlineQPayload,
+			orderedActivationQPayload);
 
 //	xil_printf("Size of task struct: %d /n", sizeof(RTTask_t));
 
-	if (xPortInitScheduler( configMAX_RT_TASKS, (u32) pxRTTasksList,
-			sizeof(RTTask_t) * configMAX_RT_TASKS,
-			(u32) orderedDeadlineActivationQTaskNums,
-			sizeof(u32) * configMAX_RT_TASKS * 2,
-			(u32) orderedDeadlineActivationQPayload,
-			sizeof(u32) * configMAX_RT_TASKS * 2, (u32*) &pxCurrentTCB) == pdPASS) {
+	if (xPortInitScheduler( (u16) configMAX_RT_TASKS, (void *) pxRTTasksList,
+//			sizeof(pxRTTasksList),
+			(void *) orderedDeadlineQTaskNums,
+//			sizeof(orderedDeadlineQTaskNums),
+			(void *) orderedActivationQTaskNums,
+//			sizeof(orderedActivationQTaskNums),
+			(void *) orderedDeadlineQPayload,
+//			sizeof(orderedDeadlineQPayload),
+			(void *) orderedActivationQPayload,
+//			sizeof(orderedActivationQPayload),
+			(u32*) &pxCurrentTCB) == pdPASS) {
 		/* Add the idle task at the lowest priority. */
 #if ( configSUPPORT_STATIC_ALLOCATION == 1 )
 		{

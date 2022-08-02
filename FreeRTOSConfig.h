@@ -77,13 +77,6 @@
 //fedit add
 #define configMAX_RT_TASKS (128)
 
-//fedit add
-
-#define configDMA_BASE_ADDR (0x20000000)
-
-//fedit add
-#define configDMA_TOP_ADDR (0x2fffffff)
-
 #define configMAX_CO_ROUTINE_PRIORITIES 2
 
 #define configMINIMAL_STACK_SIZE ( ( unsigned short ) 200)
