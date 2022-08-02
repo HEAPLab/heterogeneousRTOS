@@ -760,16 +760,23 @@ void prvOrderByDeadline( RTTask_t* prvRTTasksList, u8 numberOfTasks, u8* destArr
 #define INTC_DEVICE_ID	XPAR_SCUGIC_SINGLE_DEVICE_ID
 #define SCHEDULER_INTR XPAR_FABRIC_SCHEDULER_0_IRQ_INTR
 static XScuGic intControllerInstance;
+u32* pxCurrentTCB_ptr;
 
 void SchedulerNewTaskIntrHandl(void *HandlerRef)
 {
-	u32* newTaskPtr=(u32*)0x20018000;
-	xil_printf("new task, ptr: %X", *newTaskPtr);
+	//portDISABLE_INTERRUPTS();
+	//xil_printf("new task, ptr: %X", *((u32*)0x20018000));
+	//Xil_MemCpy(pxCurrentTCB_ptr, (u32*)0x20018000, (u32)4);
+	portCPU_IRQ_DISABLE();
+	//portSAVE_CONTEXT();
+	*pxCurrentTCB_ptr=*((u32*)0x20018000);
 	SCHEDULER_ACKInterrupt(SCHEDULER_BASEADDR);
+	vPortRestoreTaskContext();
 }
 
-BaseType_t xPortInitScheduler( u8 numberOfTasks, u32 prvRTTasksListPtr, u32 prvRTTasksListByteSize, u32 prvOrderedQueuesPtr, u32 prvOrderedQueuesByteSize , u32 orderedDeadlineActivationQPayload, u32 orderedDeadlineActivationQPayloadByteSize)
+BaseType_t xPortInitScheduler( u8 numberOfTasks, u32 prvRTTasksListPtr, u32 prvRTTasksListByteSize, u32 prvOrderedQueuesPtr, u32 prvOrderedQueuesByteSize , u32 orderedDeadlineActivationQPayload, u32 orderedDeadlineActivationQPayloadByteSize, u32* pxCurrentTCBPtr)
 {
+	pxCurrentTCB_ptr=pxCurrentTCBPtr;
 //	status=prvDmaInit();
 //	if (status!=XST_SUCCESS) {
 //		xil_printf("DMA init failed");
@@ -873,10 +880,7 @@ BaseType_t xPortInitScheduler( u8 numberOfTasks, u32 prvRTTasksListPtr, u32 prvR
 		/*
 		 * Enable interrupts in the Processor.
 		 */
-		Xil_ExceptionEnable();
-
-		SCHEDULER_EnableInterrupt(SCHEDULER_BASEADDR);
-
+		//Xil_ExceptionEnable(); In this case, interrupts will be automatically enabled when a new task is scheduled
 	return pdPASS;
 }
 
@@ -948,7 +952,7 @@ uint32_t ulAPSR;
 //			prvSchedControl.control=2;
 //			prvSchedControl.data = 0;
 //			prvWriteSchedControl();
-
+			SCHEDULER_EnableInterrupt(SCHEDULER_BASEADDR);
 			SCHEDULER_sendControl(SCHEDULER_BASEADDR, (u16) 2, (u16) 0);
 			/* Start the first task executing. */
 			vPortRestoreTaskContext();
