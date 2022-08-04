@@ -609,6 +609,61 @@ StackType_t *pxPortInitialiseStack( StackType_t *pxTopOfStack, TaskFunction_t px
 //	return XST_SUCCESS;
 //}
 //
+
+
+
+
+//	status=prvDmaInit();
+//	if (status!=XST_SUCCESS) {
+//		xil_printf("DMA init failed");
+//		return status;
+//	}
+////SINGLE TRANSACTION IF SOURCE ADDRESSES ARE CONTIGUOUS
+//	status=prvDmaBlockingTransferFreeByteSize( prvDmaRTTasksListDestAddr, prvRTTasksListPtr, prvRTTasksListByteSize + prvOrderedQueuesByteSize + orderedDeadlineActivationQPayloadByteSize);
+//	if (status!=XST_SUCCESS) {
+//		xil_printf("DMA RTTTaskSet transfer failed");
+//		return status;
+//	};
+//	//MULTIPLE TRANSACTIONS
+///*
+//	status=prvDmaBlockingTransferFreeByteSize( prvDmaRTTasksListDestAddr, prvRTTasksListPtr, prvRTTasksListByteSize);
+//	if (status!=XST_SUCCESS) {
+//		xil_printf("DMA RTTTaskSet transfer failed");
+//		return status;
+//	};
+//
+//	status=prvDmaBlockingTransferFreeByteSize( prvDmaRTTasksListDestAddr+prvRTTasksListByteSize, prvOrderedQueuesPtr, prvOrderedQueuesByteSize );
+//	if (status!=XST_SUCCESS) {
+//		xil_printf("DMA OrderedDeadlineActivationQueue transfer failed");
+//		return status;
+//	};
+//
+//	status=prvDmaBlockingTransferFreeByteSize( prvDmaRTTasksListDestAddr+prvRTTasksListByteSize+prvOrderedQueuesByteSize, orderedDeadlineActivationQPayload, orderedDeadlineActivationQPayloadByteSize );
+//	if (status!=XST_SUCCESS) {
+//		xil_printf("DMA OrderedDeadlineActivationQueue transfer failed");
+//		return status;
+//	};
+//
+//*/
+//	//TODO CHECK WHETHER DISABLE OR NOT
+//	//prvDmaDisableIntrSystem();
+//	enableNewTaskInterrupt();
+//
+//
+//	status = XGpio_Initialize(&prvGpio0, GPIO_START_SCHED_DEVICE_ID);
+//	if (status != XST_SUCCESS) {
+//		xil_printf("Gpio Initialization Failed\r\n");
+//		return status;
+//	}
+//
+//	XGpio_SetDataDirection(&prvGpio0, GPIO_START_SCHED_CHANNEL, ~GPIO0VAL);
+//
+//	prvSchedControl.control=1;
+//	prvSchedControl.data = numberOfTasks;
+//	prvWriteSchedControl();
+
+
+
 //// END OF DMA FUNCTIONS________________________________
 
 
@@ -726,35 +781,9 @@ int32_t lReturn;
 }
 /*-----------------------------------------------------------*/
 
-/*
-void prvOrderByDeadline( RTTask_t* prvRTTasksList, u8 numberOfTasks, u8* destArray) {
-	int lobound=-1;
-	int destArrayI=0;
-
-	for (int i=0; i < numberOfTasks; i++) {
-		int min = -1;
-		for (int i2=0; i2 < numberOfTasks; i2++) {
-			if (prvRTTasksList[i2].pxDeadline > lobound && (prvRTTasksList[i2].pxDeadline < min || min==-1)) {
-				min=prvRTTasksList[i2].pxDeadline;
-			}
-		}
-		if (min==-1) {
-			break;
-		} else {
-			lobound=min;
-			for (int i3=0; i3 < numberOfTasks; i3++) {
-				if (prvRTTasksList[i3].pxDeadline==min) {
-					destArray[i]=i3;
-					destArrayI++;
-				}
-			}
-		}
-	}
-}
-*/
 
 //fedit add
-/* Initializes the scheduler. Copies pxRTTasksList to FPGA */
+/* Initializes the scheduler. */
 
 #include "xparameters.h"
 #include "scheduler.h"
@@ -765,81 +794,28 @@ void prvOrderByDeadline( RTTask_t* prvRTTasksList, u8 numberOfTasks, u8* destArr
 static XScuGic intControllerInstance;
 u32* pxCurrentTCB_ptr;
 
-#define CPU_BASEADDR		XPAR_SCUGIC_CPU_BASEADDR            //ICCICR
+#define CPU_BASEADDR		XPAR_SCUGIC_CPU_BASEADDR
 
 void xPortScheduleNewTask(void)
 {
-	//portDISABLE_INTERRUPTS();
 	//xil_printf("new task, ptr: %X", *((u32*)0x20018000));
-	//Xil_MemCpy(pxCurrentTCB_ptr, (u32*)0x20018000, (u32)4);
-	//portCPU_IRQ_DISABLE();
 	*pxCurrentTCB_ptr=*((u32*) PXNEXTTCB );
 	SCHEDULER_ACKInterrupt(SCHEDULER_BASEADDR);
 }
 
-//BaseType_t xPortInitScheduler( u8 numberOfTasks, void* pxRTTasksList, size_t pxRTTasksListByteSize, void* orderedDeadlineQTaskNums, size_t orderedDeadlineQTaskNumsByteSize , void* orderedActivationQTaskNums, size_t orderedActivationQTaskNumsByteSize, void* orderedDeadlineQPayload, size_t orderedDeadlineQPayloadByteSize, void* orderedActivationQPayload, size_t orderedActivationQPayloadByteSize, u32* pxCurrentTCBPtr)
 
-BaseType_t xPortInitScheduler( u16 numberOfTasks, void* pxRTTasksList, void* orderedDeadlineQTaskNums, void* orderedActivationQTaskNums, void* orderedDeadlineQPayload, void* orderedActivationQPayload, u32* pxCurrentTCBPtr)
+BaseType_t xPortInitScheduler( u32 numberOfTasks, void* pxRTTasksList, void* orderedDeadlineQTaskNums, void* orderedActivationQTaskNums, void* orderedDeadlineQPayload, void* orderedActivationQPayload, u32* pxCurrentTCBPtr)
 {
 	pxCurrentTCB_ptr=pxCurrentTCBPtr;
-//	status=prvDmaInit();
-//	if (status!=XST_SUCCESS) {
-//		xil_printf("DMA init failed");
-//		return status;
-//	}
-////SINGLE TRANSACTION IF SOURCE ADDRESSES ARE CONTIGUOUS
-//	status=prvDmaBlockingTransferFreeByteSize( prvDmaRTTasksListDestAddr, prvRTTasksListPtr, prvRTTasksListByteSize + prvOrderedQueuesByteSize + orderedDeadlineActivationQPayloadByteSize);
-//	if (status!=XST_SUCCESS) {
-//		xil_printf("DMA RTTTaskSet transfer failed");
-//		return status;
-//	};
-//	//MULTIPLE TRANSACTIONS
-///*
-//	status=prvDmaBlockingTransferFreeByteSize( prvDmaRTTasksListDestAddr, prvRTTasksListPtr, prvRTTasksListByteSize);
-//	if (status!=XST_SUCCESS) {
-//		xil_printf("DMA RTTTaskSet transfer failed");
-//		return status;
-//	};
-//
-//	status=prvDmaBlockingTransferFreeByteSize( prvDmaRTTasksListDestAddr+prvRTTasksListByteSize, prvOrderedQueuesPtr, prvOrderedQueuesByteSize );
-//	if (status!=XST_SUCCESS) {
-//		xil_printf("DMA OrderedDeadlineActivationQueue transfer failed");
-//		return status;
-//	};
-//
-//	status=prvDmaBlockingTransferFreeByteSize( prvDmaRTTasksListDestAddr+prvRTTasksListByteSize+prvOrderedQueuesByteSize, orderedDeadlineActivationQPayload, orderedDeadlineActivationQPayloadByteSize );
-//	if (status!=XST_SUCCESS) {
-//		xil_printf("DMA OrderedDeadlineActivationQueue transfer failed");
-//		return status;
-//	};
-//
-//*/
-//	//TODO CHECK WHETHER DISABLE OR NOT
-//	//prvDmaDisableIntrSystem();
-//	enableNewTaskInterrupt();
-//
-//
-//	status = XGpio_Initialize(&prvGpio0, GPIO_START_SCHED_DEVICE_ID);
-//	if (status != XST_SUCCESS) {
-//		xil_printf("Gpio Initialization Failed\r\n");
-//		return status;
-//	}
-//
-//	XGpio_SetDataDirection(&prvGpio0, GPIO_START_SCHED_CHANNEL, ~GPIO0VAL);
-//
-//	prvSchedControl.control=1;
-//	prvSchedControl.data = numberOfTasks;
-//	prvWriteSchedControl();
 	int status;
+
+	SCHEDULER_setNumberOfTasks(SCHEDULER_BASEADDR, (u32) numberOfTasks);
 
 	SCHEDULER_copyTaskSet(SCHEDULER_BASEADDR, pxRTTasksList);
 	SCHEDULER_copyOrderedDeadlineQIndex(SCHEDULER_BASEADDR, orderedDeadlineQTaskNums);
 	SCHEDULER_copyOrderedActivationQIndex(SCHEDULER_BASEADDR, orderedActivationQTaskNums);
 	SCHEDULER_copyOrderedDeadlineQ(SCHEDULER_BASEADDR, orderedDeadlineQPayload);
 	SCHEDULER_copyOrderedActivationQ(SCHEDULER_BASEADDR, orderedActivationQPayload);
-
-	SCHEDULER_sendControl(SCHEDULER_BASEADDR, (u16) 1, (u16) numberOfTasks);
-
 
 //		/*
 //		 * Initialize the interrupt controller driver so that it is ready to
@@ -975,7 +951,7 @@ uint32_t ulAPSR;
 //			prvSchedControl.data = 0;
 //			prvWriteSchedControl();
 			SCHEDULER_EnableInterrupt(SCHEDULER_BASEADDR);
-			SCHEDULER_sendControl(SCHEDULER_BASEADDR, (u16) 2, (u16) 0);
+			SCHEDULER_start(SCHEDULER_BASEADDR);
 			/* Start the first task executing. */
 			vPortRestoreTaskContext();
 		}

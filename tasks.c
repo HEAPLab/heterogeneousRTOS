@@ -2057,16 +2057,11 @@ void vTaskStartScheduler(void) {
 
 //	xil_printf("Size of task struct: %d /n", sizeof(RTTask_t));
 
-	if (xPortInitScheduler( (u16) configMAX_RT_TASKS, (void *) pxRTTasksList,
-//			sizeof(pxRTTasksList),
+	if (xPortInitScheduler( (u32) uxRTTaskNumber, (void *) pxRTTasksList,
 			(void *) orderedDeadlineQTaskNums,
-//			sizeof(orderedDeadlineQTaskNums),
 			(void *) orderedActivationQTaskNums,
-//			sizeof(orderedActivationQTaskNums),
 			(void *) orderedDeadlineQPayload,
-//			sizeof(orderedDeadlineQPayload),
 			(void *) orderedActivationQPayload,
-//			sizeof(orderedActivationQPayload),
 			(u32*) &pxCurrentTCB) == pdPASS) {
 		/* Add the idle task at the lowest priority. */
 #if ( configSUPPORT_STATIC_ALLOCATION == 1 )
