@@ -971,6 +971,8 @@ void vPortEndScheduler( void )
 {
 	/* Not implemented in ports where there is nothing to return to.
 	Artificially force an assert. */
+	SCHEDULER_stop(SCHEDULER_BASEADDR);
+	SCHEDULER_DisableInterrupt(SCHEDULER_BASEADDR);
 	configASSERT( ulCriticalNesting == 1000UL );
 }
 /*-----------------------------------------------------------*/
