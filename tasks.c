@@ -317,7 +317,7 @@ PRIVILEGED_DATA static volatile TickType_t xPendedTicks = (TickType_t) 0U;
 PRIVILEGED_DATA static volatile BaseType_t xYieldPending = pdFALSE;
 PRIVILEGED_DATA static volatile BaseType_t xNumOfOverflows = (BaseType_t) 0;
 PRIVILEGED_DATA static UBaseType_t uxTaskNumber = (UBaseType_t) 0U;
-PRIVILEGED_DATA static UBaseType_t uxRTTaskNumber = (UBaseType_t) 0U;
+//PRIVILEGED_DATA static UBaseType_t uxRTTaskNumber = (UBaseType_t) 0U;
 PRIVILEGED_DATA static volatile TickType_t xNextTaskUnblockTime =
 		(TickType_t) 0U; /* Initialised to portMAX_DELAY before the scheduler starts. */
 PRIVILEGED_DATA static TaskHandle_t xIdleTaskHandle = NULL; /*< Holds the handle of the idle task.  The idle task is created automatically when the scheduler is started. */
@@ -1223,13 +1223,14 @@ static BaseType_t prvAddNewTaskToRTTasksList(RTTask_t pxNewRTTask) {
 			traceTASK_CREATE( pxNewTCB );
 
 			//fedit add
-			pxNewRTTask.uxTaskNumber = uxRTTaskNumber;
+			pxNewRTTask.uxTaskNumber = uxTaskNumber;
+			pxNewTCB->uxTaskNumber = uxTaskNumber;
 
 			//TODO STATIC INSTEAD OF POINTER!
 			//memcpy(pxRTTasksList+sizeof(*pxNewRTTask)*(uxTaskNumber-1), pxNewRTTask, sizeof(*pxNewRTTask));
 
-			pxRTTasksList[uxRTTaskNumber] = pxNewRTTask;
-			uxRTTaskNumber++;
+			pxRTTasksList[uxTaskNumber-1] = pxNewRTTask;
+			//uxRTTaskNumber++;
 
 			portSETUP_TCB(pxNewTCB);
 		}
@@ -1255,6 +1256,8 @@ void vTaskDelete(TaskHandle_t xTaskToDelete) {
 		/* If null is passed in here then it is the calling task that is
 		 * being deleted. */
 		pxTCB = prvGetTCBFromHandle(xTaskToDelete);
+
+		xPortSchedulerSignalTaskEnded(pxTCB->uxTaskNumber);
 
 		/* Remove task from the ready/delayed list. */
 		if (uxListRemove(&(pxTCB->xStateListItem)) == (UBaseType_t) 0) {
@@ -2049,7 +2052,7 @@ void prvGenerateOrderedQueues(RTTask_t prvRTTasksList[], u8 numberOfTasks,
 void vTaskStartScheduler(void) {
 	BaseType_t xReturn;
 
-	prvGenerateOrderedQueues(pxRTTasksList, uxRTTaskNumber,
+	prvGenerateOrderedQueues(pxRTTasksList, uxTaskNumber,
 			orderedDeadlineQTaskNums,
 			orderedActivationQTaskNums,
 			orderedDeadlineQPayload,
@@ -2057,7 +2060,7 @@ void vTaskStartScheduler(void) {
 
 //	xil_printf("Size of task struct: %d /n", sizeof(RTTask_t));
 
-	if (xPortInitScheduler( (u32) uxRTTaskNumber, (void *) pxRTTasksList,
+	if (xPortInitScheduler( (u32) uxTaskNumber, (void *) pxRTTasksList,
 			(void *) orderedDeadlineQTaskNums,
 			(void *) orderedActivationQTaskNums,
 			(void *) orderedDeadlineQPayload,

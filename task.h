@@ -105,9 +105,11 @@ typedef struct tskTaskControlBlock       /* The old naming convention is used to
        UBaseType_t uxCriticalNesting; /*< Holds the critical section nesting depth for ports that do not maintain their own count in the port layer. */
    #endif
 
+   UBaseType_t uxTaskNumber; /*< Stores a number specifically for use by third party trace code and by FPGA scheduler for Real Time tasks. */
+
    #if ( configUSE_TRACE_FACILITY == 1 )
        UBaseType_t uxTCBNumber;  /*< Stores a number that increments each time a TCB is created.  It allows debuggers to determine when a task has been deleted and then recreated. */
-       UBaseType_t uxTaskNumber; /*< Stores a number specifically for use by third party trace code. */
+       //UBaseType_t uxTaskNumber; /*< Stores a number specifically for use by third party trace code. */
    #endif
 
    #if ( configUSE_MUTEXES == 1 )

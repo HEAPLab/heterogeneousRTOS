@@ -803,6 +803,10 @@ void xPortScheduleNewTask(void)
 	SCHEDULER_ACKInterrupt(SCHEDULER_BASEADDR);
 }
 
+void xPortSchedulerSignalTaskEnded(u16 uxTaskNumber)
+{
+	SCHEDULER_signalTaskEnded(SCHEDULER_BASEADDR, uxTaskNumber);
+}
 
 BaseType_t xPortInitScheduler( u32 numberOfTasks, void* pxRTTasksList, void* orderedDeadlineQTaskNums, void* orderedActivationQTaskNums, void* orderedDeadlineQPayload, void* orderedActivationQPayload, u32* pxCurrentTCBPtr)
 {
