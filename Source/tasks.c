@@ -1220,7 +1220,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB )
 
                 /* Reset the next expected unblock time in case it referred to
                  * the task that has just been deleted. */
-                prvResetNextTaskUnblockTime();
+                //prvResetNextTaskUnblockTime();
             }
         }
         taskEXIT_CRITICAL();

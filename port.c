@@ -796,18 +796,26 @@ u32* pxCurrentTCB_ptr;
 
 #define CPU_BASEADDR		XPAR_SCUGIC_CPU_BASEADDR
 
-inline void xPortScheduleNewTask(void)
+void xPortScheduleNewTask(void)
 {
 	//xil_printf("new task, ptr: %X", *((u32*)0x20018000));
 	*pxCurrentTCB_ptr=*((u32*) PXNEXTTCB );
 	SCHEDULER_ACKInterrupt(SCHEDULER_BASEADDR);
 }
 
-inline void xPortSchedulerResumeTask(u16 uxTaskNumber) {
+void xPortSchedulerResumeTask(u16 uxTaskNumber) {
 	SCHEDULER_resumeTask(SCHEDULER_BASEADDR, uxTaskNumber);
 }
 
-inline void xPortSchedulerSignalTaskEnded(u16 uxTaskNumber)
+void xPortSchedulerSignalTaskSuspended(u16 uxTaskNumber) {
+	SCHEDULER_signalTaskSuspended(SCHEDULER_BASEADDR, uxTaskNumber);
+}
+
+void xPortSchedulerSignalJobEnded(u16 uxTaskNumber) {
+	SCHEDULER_signalJobEnded(SCHEDULER_BASEADDR, uxTaskNumber);
+}
+
+void xPortSchedulerSignalTaskEnded(u16 uxTaskNumber)
 {
 	SCHEDULER_signalTaskEnded(SCHEDULER_BASEADDR, uxTaskNumber);
 }
