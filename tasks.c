@@ -219,11 +219,17 @@
  * Place the task represented by pxTCB into the appropriate ready list for
  * the task.  It is inserted at the end of the list.
  */
+//#define prvAddTaskToReadyList( pxTCB )                                                                 \
+//    traceMOVED_TASK_TO_READY_STATE( pxTCB );                                                           \
+//    taskRECORD_READY_PRIORITY( ( pxTCB )->uxPriority );                                                \
+//    vListInsertEnd( &( pxReadyTasksLists[ ( pxTCB )->uxPriority ] ), &( ( pxTCB )->xStateListItem ) ); \
+//    tracePOST_MOVED_TASK_TO_READY_STATE( pxTCB )
+
 #define prvAddTaskToReadyList( pxTCB )                                                                 \
     traceMOVED_TASK_TO_READY_STATE( pxTCB );                                                           \
     taskRECORD_READY_PRIORITY( ( pxTCB )->uxPriority );                                                \
-    vListInsertEnd( &( pxReadyTasksLists[ ( pxTCB )->uxPriority ] ), &( ( pxTCB )->xStateListItem ) ); \
-    tracePOST_MOVED_TASK_TO_READY_STATE( pxTCB )
+    xPortSchedulerResumeTask( ( pxTCB )->uxTaskNumber );
+tracePOST_MOVED_TASK_TO_READY_STATE( pxTCB )
 /*-----------------------------------------------------------*/
 
 /*
