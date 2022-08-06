@@ -788,10 +788,10 @@ int32_t lReturn;
 #include "xparameters.h"
 #include "scheduler.h"
 #define SCHEDULER_BASEADDR XPAR_SCHEDULER_0_S_AXI_BASEADDR
-#define INTC_DEVICE_ID	XPAR_SCUGIC_SINGLE_DEVICE_ID
+//#define INTC_DEVICE_ID	XPAR_SCUGIC_SINGLE_DEVICE_ID
 #define SCHEDULER_INTR XPAR_FABRIC_SCHEDULER_0_IRQ_INTR
 #define PXNEXTTCB 0x20018000
-static XScuGic intControllerInstance;
+//static XScuGic intControllerInstance;
 u32* pxCurrentTCB_ptr;
 
 #define CPU_BASEADDR		XPAR_SCUGIC_CPU_BASEADDR
@@ -986,8 +986,8 @@ void vPortEndScheduler( void )
 {
 	/* Not implemented in ports where there is nothing to return to.
 	Artificially force an assert. */
-	SCHEDULER_stop(SCHEDULER_BASEADDR);
-	SCHEDULER_DisableInterrupt(SCHEDULER_BASEADDR);
+	SCHEDULER_stop((void*) SCHEDULER_BASEADDR);
+	SCHEDULER_DisableInterrupt((void*) SCHEDULER_BASEADDR);
 	configASSERT( ulCriticalNesting == 1000UL );
 }
 /*-----------------------------------------------------------*/
