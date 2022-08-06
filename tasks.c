@@ -3099,11 +3099,16 @@ void vTaskSwitchContext(void) {
 			pxCurrentTCB->iTaskErrno = FreeRTOS_errno;
 		}
 #endif
-
-		/* Select a new task to run using either the generic C or port
-		 * optimised asm code. */
-		taskSELECT_HIGHEST_PRIORITY_TASK()
-		; /*lint !e9079 void * is used as this macro is used with timers and co-routines too.  Alignment is known to be fine as the type of the pointer stored and retrieved is the same. */
+		//ORIG____________
+		///* Select a new task to run using either the generic C or port
+		// * optimised asm code. */
+		//taskSELECT_HIGHEST_PRIORITY_TASK()
+		//; /*lint !e9079 void * is used as this macro is used with timers and co-routines too.  Alignment is known to be fine as the type of the pointer stored and retrieved is the same. */
+		//ORIG______________
+		//fedit add
+		//always schedule the idle task, FPGA will cause an interrupt when a new task is available
+		pxCurrentTCB = pxIdleTCB;
+		
 		traceTASK_SWITCHED_IN();
 
 		/* After the new task is switched in, update the global errno. */
