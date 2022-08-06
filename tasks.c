@@ -1254,10 +1254,10 @@ static BaseType_t prvAddNewTaskToRTTasksList(RTTask_t pxNewRTTask) {
 #if ( INCLUDE_vTaskDelete == 1 )
 
 void vTaskDelete(TaskHandle_t xTaskToDelete) {
-	TCB_t * pxTCB;
+	TCB_t* pxTCB;
 
 	taskENTER_CRITICAL()
-	;
+		;
 	{
 		/* If null is passed in here then it is the calling task that is
 		 * being deleted. */
@@ -1265,17 +1265,18 @@ void vTaskDelete(TaskHandle_t xTaskToDelete) {
 
 		xPortSchedulerSignalTaskEnded(pxTCB->uxTaskNumber);
 
-		/* Remove task from the ready/delayed list. */
-		if (uxListRemove(&(pxTCB->xStateListItem)) == (UBaseType_t) 0) {
-			taskRESET_READY_PRIORITY(pxTCB->uxPriority);
-		} else {
-			mtCOVERAGE_TEST_MARKER();
-		}
+		//		/* Remove task from the ready/delayed list. */
+		//		if (uxListRemove(&(pxTCB->xStateListItem)) == (UBaseType_t) 0) {
+		//			taskRESET_READY_PRIORITY(pxTCB->uxPriority);
+		//		} else {
+		//			mtCOVERAGE_TEST_MARKER();
+		//		}
 
-		/* Is the task waiting on an event also? */
-		if ( listLIST_ITEM_CONTAINER( &( pxTCB->xEventListItem ) ) != NULL) {
-			(void) uxListRemove(&(pxTCB->xEventListItem));
-		} else {
+				/* Is the task waiting on an event also? */
+		if (listLIST_ITEM_CONTAINER(&(pxTCB->xEventListItem)) != NULL) {
+			(void)uxListRemove(&(pxTCB->xEventListItem));
+		}
+		else {
 			mtCOVERAGE_TEST_MARKER();
 		}
 
@@ -1300,17 +1301,18 @@ void vTaskDelete(TaskHandle_t xTaskToDelete) {
 
 			/* Call the delete hook before portPRE_TASK_DELETE_HOOK() as
 			 * portPRE_TASK_DELETE_HOOK() does not return in the Win32 port. */
-			traceTASK_DELETE( pxTCB );
+			traceTASK_DELETE(pxTCB);
 
 			/* The pre-delete hook is primarily for the Windows simulator,
 			 * in which Windows specific clean up operations are performed,
 			 * after which it is not possible to yield away from this task -
 			 * hence xYieldPending is used to latch that a context switch is
 			 * required. */
-			portPRE_TASK_DELETE_HOOK( pxTCB, &xYieldPending );
-		} else {
+			portPRE_TASK_DELETE_HOOK(pxTCB, &xYieldPending);
+		}
+		else {
 			--uxCurrentNumberOfTasks;
-			traceTASK_DELETE( pxTCB );
+			traceTASK_DELETE(pxTCB);
 			prvDeleteTCB(pxTCB);
 
 			/* Reset the next expected unblock time in case it referred to
@@ -1319,7 +1321,7 @@ void vTaskDelete(TaskHandle_t xTaskToDelete) {
 		}
 	}
 	taskEXIT_CRITICAL()
-	;
+		;
 
 	/* Force a reschedule if it is the currently running task that has just
 	 * been deleted. */
@@ -1327,8 +1329,9 @@ void vTaskDelete(TaskHandle_t xTaskToDelete) {
 		if (pxTCB == pxCurrentTCB) {
 			configASSERT(uxSchedulerSuspended == 0);
 			portYIELD_WITHIN_API()
-			;
-		} else {
+				;
+		}
+		else {
 			mtCOVERAGE_TEST_MARKER();
 		}
 	}
