@@ -1279,6 +1279,8 @@ void vTaskJobEnd(TaskHandle_t xTaskToEndJob) {
 	//if (pxTCB == pxCurrentTCB) {
 	//	portYIELD_WITHIN_API();
 	//}
+	TCB_t* pxTCB;
+
 	taskENTER_CRITICAL()
 		;
 	{
