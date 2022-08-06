@@ -2442,29 +2442,29 @@ BaseType_t xTaskResumeAll(void) {
 					prvResetNextTaskUnblockTime();
 				}
 
-				/* If any ticks occurred while the scheduler was suspended then
-				 * they should be processed now.  This ensures the tick count does
-				 * not  slip, and that any delayed tasks are resumed at the correct
-				 * time. */
-				{
-					TickType_t xPendedCounts = xPendedTicks; /* Non-volatile copy. */
+				///* If any ticks occurred while the scheduler was suspended then
+				// * they should be processed now.  This ensures the tick count does
+				// * not  slip, and that any delayed tasks are resumed at the correct
+				// * time. */
+				//{
+				//	TickType_t xPendedCounts = xPendedTicks; /* Non-volatile copy. */
 
-					if (xPendedCounts > (TickType_t) 0U) {
-						do {
-							if (xTaskIncrementTick() != pdFALSE) {
-								xYieldPending = pdTRUE;
-							} else {
-								mtCOVERAGE_TEST_MARKER();
-							}
+				//	if (xPendedCounts > (TickType_t) 0U) {
+				//		do {
+				//			if (xTaskIncrementTick() != pdFALSE) {
+				//				xYieldPending = pdTRUE;
+				//			} else {
+				//				mtCOVERAGE_TEST_MARKER();
+				//			}
 
-							--xPendedCounts;
-						} while (xPendedCounts > (TickType_t) 0U);
+				//			--xPendedCounts;
+				//		} while (xPendedCounts > (TickType_t) 0U);
 
-						xPendedTicks = 0;
-					} else {
-						mtCOVERAGE_TEST_MARKER();
-					}
-				}
+				//		xPendedTicks = 0;
+				//	} else {
+				//		mtCOVERAGE_TEST_MARKER();
+				//	}
+				//}
 
 				if (xYieldPending != pdFALSE) {
 #if ( configUSE_PREEMPTION != 0 )
@@ -2876,156 +2876,156 @@ BaseType_t xTaskAbortDelay( TaskHandle_t xTask )
 #endif /* INCLUDE_xTaskAbortDelay */
 /*----------------------------------------------------------*/
 
-BaseType_t xTaskIncrementTick(void) {
-	TCB_t * pxTCB;
-	TickType_t xItemValue;
-	BaseType_t xSwitchRequired = pdFALSE;
-
-	/* Called by the portable layer each time a tick interrupt occurs.
-	 * Increments the tick then checks to see if the new tick value will cause any
-	 * tasks to be unblocked. */
-	traceTASK_INCREMENT_TICK( xTickCount );
-
-	if (uxSchedulerSuspended == (UBaseType_t) pdFALSE) {
-		/* Minor optimisation.  The tick count cannot change in this
-		 * block. */
-		const TickType_t xConstTickCount = xTickCount + (TickType_t) 1;
-
-		/* Increment the RTOS tick, switching the delayed and overflowed
-		 * delayed lists if it wraps to 0. */
-		xTickCount = xConstTickCount;
-
-		if (xConstTickCount == (TickType_t) 0U) /*lint !e774 'if' does not always evaluate to false as it is looking for an overflow. */
-		{
-			taskSWITCH_DELAYED_LISTS()
-			;
-		} else {
-			mtCOVERAGE_TEST_MARKER();
-		}
-
-		/* See if this tick has made a timeout expire.  Tasks are stored in
-		 * the  queue in the order of their wake time - meaning once one task
-		 * has been found whose block time has not expired there is no need to
-		 * look any further down the list. */
-		if (xConstTickCount >= xNextTaskUnblockTime) {
-			for (;;) {
-				if ( listLIST_IS_EMPTY( pxDelayedTaskList ) != pdFALSE) {
-					/* The delayed list is empty.  Set xNextTaskUnblockTime
-					 * to the maximum possible value so it is extremely
-					 * unlikely that the
-					 * if( xTickCount >= xNextTaskUnblockTime ) test will pass
-					 * next time through. */
-					xNextTaskUnblockTime = portMAX_DELAY; /*lint !e961 MISRA exception as the casts are only redundant for some ports. */
-					break;
-				} else {
-					/* The delayed list is not empty, get the value of the
-					 * item at the head of the delayed list.  This is the time
-					 * at which the task at the head of the delayed list must
-					 * be removed from the Blocked state. */
-					pxTCB = listGET_OWNER_OF_HEAD_ENTRY(pxDelayedTaskList); /*lint !e9079 void * is used as this macro is used with timers and co-routines too.  Alignment is known to be fine as the type of the pointer stored and retrieved is the same. */
-					xItemValue = listGET_LIST_ITEM_VALUE(
-							&(pxTCB->xStateListItem));
-
-					if (xConstTickCount < xItemValue) {
-						/* It is not time to unblock this item yet, but the
-						 * item value is the time at which the task at the head
-						 * of the blocked list must be removed from the Blocked
-						 * state -  so record the item value in
-						 * xNextTaskUnblockTime. */
-						xNextTaskUnblockTime = xItemValue;
-						break; /*lint !e9011 Code structure here is deedmed easier to understand with multiple breaks. */
-					} else {
-						mtCOVERAGE_TEST_MARKER();
-					}
-
-					/* It is time to remove the item from the Blocked state. */
-					(void) uxListRemove(&(pxTCB->xStateListItem));
-
-					/* Is the task waiting on an event also?  If so remove
-					 * it from the event list. */
-					if ( listLIST_ITEM_CONTAINER(
-							&(pxTCB->xEventListItem)) != NULL) {
-						(void) uxListRemove(&(pxTCB->xEventListItem));
-					} else {
-						mtCOVERAGE_TEST_MARKER();
-					}
-
-					/* Place the unblocked task into the appropriate ready
-					 * list. */
-					prvAddTaskToReadyList(pxTCB);
-
-					/* A task being unblocked cannot cause an immediate
-					 * context switch if preemption is turned off. */
-#if ( configUSE_PREEMPTION == 1 )
-					{
-						/* Preemption is on, but a context switch should
-						 * only be performed if the unblocked task has a
-						 * priority that is equal to or higher than the
-						 * currently executing task. */
-						if (pxTCB->uxPriority >= pxCurrentTCB->uxPriority) {
-							xSwitchRequired = pdTRUE;
-						} else {
-							mtCOVERAGE_TEST_MARKER();
-						}
-					}
-#endif /* configUSE_PREEMPTION */
-				}
-			}
-		}
-
-		/* Tasks of equal priority to the currently running task will share
-		 * processing time (time slice) if preemption is on, and the application
-		 * writer has not explicitly turned time slicing off. */
-#if ( ( configUSE_PREEMPTION == 1 ) && ( configUSE_TIME_SLICING == 1 ) )
-		{
-			if ( listCURRENT_LIST_LENGTH(
-					&(pxReadyTasksLists[pxCurrentTCB->uxPriority]))
-					> (UBaseType_t) 1) {
-				xSwitchRequired = pdTRUE;
-			} else {
-				mtCOVERAGE_TEST_MARKER();
-			}
-		}
-#endif /* ( ( configUSE_PREEMPTION == 1 ) && ( configUSE_TIME_SLICING == 1 ) ) */
-
-#if ( configUSE_TICK_HOOK == 1 )
-		{
-			/* Guard against the tick hook being called when the pended tick
-			 * count is being unwound (when the scheduler is being unlocked). */
-			if( xPendedTicks == ( TickType_t ) 0 )
-			{
-				vApplicationTickHook();
-			}
-			else
-			{
-				mtCOVERAGE_TEST_MARKER();
-			}
-		}
-#endif /* configUSE_TICK_HOOK */
-
-#if ( configUSE_PREEMPTION == 1 )
-		{
-			if (xYieldPending != pdFALSE) {
-				xSwitchRequired = pdTRUE;
-			} else {
-				mtCOVERAGE_TEST_MARKER();
-			}
-		}
-#endif /* configUSE_PREEMPTION */
-	} else {
-		++xPendedTicks;
-
-		/* The tick hook gets called at regular intervals, even if the
-		 * scheduler is locked. */
-#if ( configUSE_TICK_HOOK == 1 )
-		{
-			vApplicationTickHook();
-		}
-#endif
-	}
-
-	return xSwitchRequired;
-}
+//BaseType_t xTaskIncrementTick(void) {
+//	TCB_t * pxTCB;
+//	TickType_t xItemValue;
+//	BaseType_t xSwitchRequired = pdFALSE;
+//
+//	/* Called by the portable layer each time a tick interrupt occurs.
+//	 * Increments the tick then checks to see if the new tick value will cause any
+//	 * tasks to be unblocked. */
+//	traceTASK_INCREMENT_TICK( xTickCount );
+//
+//	if (uxSchedulerSuspended == (UBaseType_t) pdFALSE) {
+//		/* Minor optimisation.  The tick count cannot change in this
+//		 * block. */
+//		const TickType_t xConstTickCount = xTickCount + (TickType_t) 1;
+//
+//		/* Increment the RTOS tick, switching the delayed and overflowed
+//		 * delayed lists if it wraps to 0. */
+//		xTickCount = xConstTickCount;
+//
+//		if (xConstTickCount == (TickType_t) 0U) /*lint !e774 'if' does not always evaluate to false as it is looking for an overflow. */
+//		{
+//			taskSWITCH_DELAYED_LISTS()
+//			;
+//		} else {
+//			mtCOVERAGE_TEST_MARKER();
+//		}
+//
+//		/* See if this tick has made a timeout expire.  Tasks are stored in
+//		 * the  queue in the order of their wake time - meaning once one task
+//		 * has been found whose block time has not expired there is no need to
+//		 * look any further down the list. */
+//		if (xConstTickCount >= xNextTaskUnblockTime) {
+//			for (;;) {
+//				if ( listLIST_IS_EMPTY( pxDelayedTaskList ) != pdFALSE) {
+//					/* The delayed list is empty.  Set xNextTaskUnblockTime
+//					 * to the maximum possible value so it is extremely
+//					 * unlikely that the
+//					 * if( xTickCount >= xNextTaskUnblockTime ) test will pass
+//					 * next time through. */
+//					xNextTaskUnblockTime = portMAX_DELAY; /*lint !e961 MISRA exception as the casts are only redundant for some ports. */
+//					break;
+//				} else {
+//					/* The delayed list is not empty, get the value of the
+//					 * item at the head of the delayed list.  This is the time
+//					 * at which the task at the head of the delayed list must
+//					 * be removed from the Blocked state. */
+//					pxTCB = listGET_OWNER_OF_HEAD_ENTRY(pxDelayedTaskList); /*lint !e9079 void * is used as this macro is used with timers and co-routines too.  Alignment is known to be fine as the type of the pointer stored and retrieved is the same. */
+//					xItemValue = listGET_LIST_ITEM_VALUE(
+//							&(pxTCB->xStateListItem));
+//
+//					if (xConstTickCount < xItemValue) {
+//						/* It is not time to unblock this item yet, but the
+//						 * item value is the time at which the task at the head
+//						 * of the blocked list must be removed from the Blocked
+//						 * state -  so record the item value in
+//						 * xNextTaskUnblockTime. */
+//						xNextTaskUnblockTime = xItemValue;
+//						break; /*lint !e9011 Code structure here is deedmed easier to understand with multiple breaks. */
+//					} else {
+//						mtCOVERAGE_TEST_MARKER();
+//					}
+//
+//					/* It is time to remove the item from the Blocked state. */
+//					(void) uxListRemove(&(pxTCB->xStateListItem));
+//
+//					/* Is the task waiting on an event also?  If so remove
+//					 * it from the event list. */
+//					if ( listLIST_ITEM_CONTAINER(
+//							&(pxTCB->xEventListItem)) != NULL) {
+//						(void) uxListRemove(&(pxTCB->xEventListItem));
+//					} else {
+//						mtCOVERAGE_TEST_MARKER();
+//					}
+//
+//					/* Place the unblocked task into the appropriate ready
+//					 * list. */
+//					prvAddTaskToReadyList(pxTCB);
+//
+//					/* A task being unblocked cannot cause an immediate
+//					 * context switch if preemption is turned off. */
+//#if ( configUSE_PREEMPTION == 1 )
+//					{
+//						/* Preemption is on, but a context switch should
+//						 * only be performed if the unblocked task has a
+//						 * priority that is equal to or higher than the
+//						 * currently executing task. */
+//						if (pxTCB->uxPriority >= pxCurrentTCB->uxPriority) {
+//							xSwitchRequired = pdTRUE;
+//						} else {
+//							mtCOVERAGE_TEST_MARKER();
+//						}
+//					}
+//#endif /* configUSE_PREEMPTION */
+//				}
+//			}
+//		}
+//
+//		/* Tasks of equal priority to the currently running task will share
+//		 * processing time (time slice) if preemption is on, and the application
+//		 * writer has not explicitly turned time slicing off. */
+//#if ( ( configUSE_PREEMPTION == 1 ) && ( configUSE_TIME_SLICING == 1 ) )
+//		{
+//			if ( listCURRENT_LIST_LENGTH(
+//					&(pxReadyTasksLists[pxCurrentTCB->uxPriority]))
+//					> (UBaseType_t) 1) {
+//				xSwitchRequired = pdTRUE;
+//			} else {
+//				mtCOVERAGE_TEST_MARKER();
+//			}
+//		}
+//#endif /* ( ( configUSE_PREEMPTION == 1 ) && ( configUSE_TIME_SLICING == 1 ) ) */
+//
+//#if ( configUSE_TICK_HOOK == 1 )
+//		{
+//			/* Guard against the tick hook being called when the pended tick
+//			 * count is being unwound (when the scheduler is being unlocked). */
+//			if( xPendedTicks == ( TickType_t ) 0 )
+//			{
+//				vApplicationTickHook();
+//			}
+//			else
+//			{
+//				mtCOVERAGE_TEST_MARKER();
+//			}
+//		}
+//#endif /* configUSE_TICK_HOOK */
+//
+//#if ( configUSE_PREEMPTION == 1 )
+//		{
+//			if (xYieldPending != pdFALSE) {
+//				xSwitchRequired = pdTRUE;
+//			} else {
+//				mtCOVERAGE_TEST_MARKER();
+//			}
+//		}
+//#endif /* configUSE_PREEMPTION */
+//	} else {
+//		++xPendedTicks;
+//
+//		/* The tick hook gets called at regular intervals, even if the
+//		 * scheduler is locked. */
+//#if ( configUSE_TICK_HOOK == 1 )
+//		{
+//			vApplicationTickHook();
+//		}
+//#endif
+//	}
+//
+//	return xSwitchRequired;
+//}
 /*-----------------------------------------------------------*/
 
 #if ( configUSE_APPLICATION_TASK_TAG == 1 )

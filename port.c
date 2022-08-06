@@ -1036,40 +1036,40 @@ void vPortExitCritical( void )
 
 void FreeRTOS_Tick_Handler( void )
 {
-	/*
-	 * The Xilinx implementation of generating run time task stats uses the same timer used for generating
-	 * FreeRTOS ticks. In case user decides to generate run time stats the tick handler is called more
-	 * frequently (10 times faster). The timer/tick handler uses logic to handle the same. It handles
-	 * the FreeRTOS tick once per 10 interrupts.
-	 * For handling generation of run time stats, it increments a pre-defined counter every time the
-	 * interrupt handler executes.
-	 */
-#if (configGENERATE_RUN_TIME_STATS == 1)
-	ulHighFrequencyTimerTicks++;
-	if (!(ulHighFrequencyTimerTicks % 10))
-#endif
-	{
-	/* Set interrupt mask before altering scheduler structures.   The tick
-	handler runs at the lowest priority, so interrupts cannot already be masked,
-	so there is no need to save and restore the current mask value.  It is
-	necessary to turn off interrupts in the CPU itself while the ICCPMR is being
-	updated. */
-	portCPU_IRQ_DISABLE();
-	portICCPMR_PRIORITY_MASK_REGISTER = ( uint32_t ) ( configMAX_API_CALL_INTERRUPT_PRIORITY << portPRIORITY_SHIFT );
-	__asm volatile (	"dsb		\n"
-						"isb		\n" ::: "memory" );
-	portCPU_IRQ_ENABLE();
-
-	/* Increment the RTOS tick. */
-	if( xTaskIncrementTick() != pdFALSE )
-	{
-		ulPortYieldRequired = pdTRUE;
-	}
-	}
-
-	/* Ensure all interrupt priorities are active again. */
-	portCLEAR_INTERRUPT_MASK();
-	configCLEAR_TICK_INTERRUPT();
+//	/*
+//	 * The Xilinx implementation of generating run time task stats uses the same timer used for generating
+//	 * FreeRTOS ticks. In case user decides to generate run time stats the tick handler is called more
+//	 * frequently (10 times faster). The timer/tick handler uses logic to handle the same. It handles
+//	 * the FreeRTOS tick once per 10 interrupts.
+//	 * For handling generation of run time stats, it increments a pre-defined counter every time the
+//	 * interrupt handler executes.
+//	 */
+//#if (configGENERATE_RUN_TIME_STATS == 1)
+//	ulHighFrequencyTimerTicks++;
+//	if (!(ulHighFrequencyTimerTicks % 10))
+//#endif
+//	{
+//	/* Set interrupt mask before altering scheduler structures.   The tick
+//	handler runs at the lowest priority, so interrupts cannot already be masked,
+//	so there is no need to save and restore the current mask value.  It is
+//	necessary to turn off interrupts in the CPU itself while the ICCPMR is being
+//	updated. */
+//	portCPU_IRQ_DISABLE();
+//	portICCPMR_PRIORITY_MASK_REGISTER = ( uint32_t ) ( configMAX_API_CALL_INTERRUPT_PRIORITY << portPRIORITY_SHIFT );
+//	__asm volatile (	"dsb		\n"
+//						"isb		\n" ::: "memory" );
+//	portCPU_IRQ_ENABLE();
+//
+//	/* Increment the RTOS tick. */
+//	if( xTaskIncrementTick() != pdFALSE )
+//	{
+//		ulPortYieldRequired = pdTRUE;
+//	}
+//	}
+//
+//	/* Ensure all interrupt priorities are active again. */
+//	portCLEAR_INTERRUPT_MASK();
+//	configCLEAR_TICK_INTERRUPT();
 }
 /*-----------------------------------------------------------*/
 
