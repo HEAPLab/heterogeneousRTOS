@@ -965,8 +965,8 @@ uint32_t ulAPSR;
 //			prvSchedControl.control=2;
 //			prvSchedControl.data = 0;
 //			prvWriteSchedControl();
-			SCHEDULER_EnableInterrupt(SCHEDULER_BASEADDR);
-			SCHEDULER_start(SCHEDULER_BASEADDR);
+			SCHEDULER_EnableInterrupt((void*) SCHEDULER_BASEADDR);
+			SCHEDULER_start((void*) SCHEDULER_BASEADDR);
 			/* Start the first task executing. */
 			vPortRestoreTaskContext();
 		}
