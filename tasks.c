@@ -1251,6 +1251,102 @@ static BaseType_t prvAddNewTaskToRTTasksList(RTTask_t pxNewRTTask) {
 }
 /*-----------------------------------------------------------*/
 
+void vTaskJobEnd(TaskHandle_t xTaskToEndJob) {
+	//TCB_t* pxTCB;
+
+	//taskENTER_CRITICAL()
+	//	;
+	//{
+	//	pxTCB = prvGetTCBFromHandle(xTaskToEndJob);
+
+	//	traceTASK_SUSPEND(pxTCB);
+
+	//	xPortSchedulerSignalJobEnded(pxTCB->uxTaskNumber);
+
+
+	//	/* Is the task waiting on an event also? */
+	//	if (listLIST_ITEM_CONTAINER(&(pxTCB->xEventListItem)) != NULL) {
+	//		(void)uxListRemove(&(pxTCB->xEventListItem));
+	//	}
+	//	else {
+	//		mtCOVERAGE_TEST_MARKER();
+	//	}
+	//}
+	//taskEXIT_CRITICAL()
+	//	;
+
+
+	//if (pxTCB == pxCurrentTCB) {
+	//	portYIELD_WITHIN_API();
+	//}
+	taskENTER_CRITICAL()
+		;
+	{
+		/* If null is passed in here then it is the running task that is
+		 * being suspended. */
+		pxTCB = prvGetTCBFromHandle(xTaskToEndJob);
+
+		traceTASK_SUSPEND(pxTCB);
+
+		/* Is the task waiting on an event also? */
+		if (listLIST_ITEM_CONTAINER(&(pxTCB->xEventListItem)) != NULL) {
+			(void)uxListRemove(&(pxTCB->xEventListItem));
+		}
+		else {
+			mtCOVERAGE_TEST_MARKER();
+		}
+
+		xPortSchedulerSignalJobEnded(pxTCB->uxTaskNumber);
+
+#if ( configUSE_TASK_NOTIFICATIONS == 1 )
+		{
+			BaseType_t x;
+
+			for (x = 0; x < configTASK_NOTIFICATION_ARRAY_ENTRIES; x++) {
+				if (pxTCB->ucNotifyState[x] == taskWAITING_NOTIFICATION) {
+					/* The task was blocked to wait for a notification, but is
+					 * now suspended, so no notification was received. */
+					pxTCB->ucNotifyState[x] = taskNOT_WAITING_NOTIFICATION;
+				}
+			}
+		}
+#endif /* if ( configUSE_TASK_NOTIFICATIONS == 1 ) */
+	}
+	taskEXIT_CRITICAL()
+		;
+
+	//if (xSchedulerRunning != pdFALSE) {
+	//	/* Reset the next expected unblock time in case it referred to the
+	//	 * task that is now in the Suspended state. */
+	//	taskENTER_CRITICAL()
+	//		;
+	//	{
+	//		prvResetNextTaskUnblockTime();
+	//	}
+	//	taskEXIT_CRITICAL()
+	//		;
+	//}
+	//else {
+	//	mtCOVERAGE_TEST_MARKER();
+	//}
+
+	if (pxTCB == pxCurrentTCB) {
+		if (xSchedulerRunning != pdFALSE) {
+			/* The current task has just been suspended. */
+			configASSERT(uxSchedulerSuspended == 0);
+			portYIELD_WITHIN_API()
+				;
+		}
+		else {
+			/* The scheduler is not running */
+			vTaskSwitchContext();
+		}
+	}
+	else {
+		mtCOVERAGE_TEST_MARKER();
+	}
+}
+
 #if ( INCLUDE_vTaskDelete == 1 )
 
 void vTaskDelete(TaskHandle_t xTaskToDelete) {
