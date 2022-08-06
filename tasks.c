@@ -1411,9 +1411,9 @@ void vTaskDelete(TaskHandle_t xTaskToDelete) {
 			traceTASK_DELETE(pxTCB);
 			prvDeleteTCB(pxTCB);
 
-			/* Reset the next expected unblock time in case it referred to
-			 * the task that has just been deleted. */
-			prvResetNextTaskUnblockTime();
+			///* Reset the next expected unblock time in case it referred to
+			// * the task that has just been deleted. */
+			//prvResetNextTaskUnblockTime();
 		}
 	}
 	taskEXIT_CRITICAL()
