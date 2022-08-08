@@ -174,7 +174,7 @@ typedef tskTCB TCB_t;
 /*Used to represent real time tasks, contain timing informations of task and pointer to its TCB_t. Will be used by RT scheduler. */
 
 typedef struct __attribute__((__packed__)) RealTimeTask_t {
-	u32 uxTaskNumber;
+//	u32 uxTaskNumber;
 	TCB_t* taskTCB;
 	u32 pxPeriod;
 	u32 pxWcet;

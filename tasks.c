@@ -1229,7 +1229,7 @@ static BaseType_t prvAddNewTaskToRTTasksList(RTTask_t pxNewRTTask) {
 			traceTASK_CREATE( pxNewTCB );
 
 			//fedit add
-			pxNewRTTask.uxTaskNumber = uxTaskNumber;
+			//pxNewRTTask.uxTaskNumber = uxTaskNumber;
 			pxNewTCB->uxTaskNumber = uxTaskNumber;
 
 			//TODO STATIC INSTEAD OF POINTER!
