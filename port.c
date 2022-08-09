@@ -798,7 +798,8 @@ u32* pxCurrentTCB_ptr;
 
 void xPortScheduleNewTask(void)
 {
-	//xil_printf("new task, ptr: %X", *((u32*)0x20018000));
+	xil_printf("new task, ptr: %X", *((u32*)0x20018000));
+
 	*pxCurrentTCB_ptr = *((u32*)PXNEXTTCB);
 	SCHEDULER_ACKInterrupt((void *) SCHEDULER_BASEADDR);
 }
