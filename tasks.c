@@ -2093,6 +2093,7 @@ BaseType_t xTaskResumeFromISR(TaskHandle_t xTaskToResume) {
 /*-----------------------------------------------------------*/
 
 void prvGenerateOrderedQueues(RTTask_t prvRTTasksList[], u8 numberOfTasks,
+		u8 maxTasks,
 		u32 destArrayDeadlineAscTaskNum[],
 		u32 destArrayNextActivationAscTaskNum[],
 		u32 destArrayDeadlineAscTaskDeadline[],
@@ -2108,6 +2109,11 @@ void prvGenerateOrderedQueues(RTTask_t prvRTTasksList[], u8 numberOfTasks,
 //	xil_printf("addr destArrayNextActivationAscTaskNum %x", destArrayNextActivationAscTaskNum);
 //	xil_printf("addr destArrayDeadlineAscTaskDeadline %x", destArrayDeadlineAscTaskDeadline);
 //	xil_printf("addr destArrayNextActivationAscTaskActivation%x", destArrayNextActivationAscTaskActivation);
+
+	for (int i=numberOfTasks; i < maxTasks; i++) {
+		destArrayDeadlineAscTaskDeadline[i]=0xFFFF;
+		destArrayDeadlineAscTaskActivation[i]=0xFFFF;
+	}
 
 	for (int i = 0; i < numberOfTasks; i++) {
 		u32 minDeadline = 0; //init
@@ -2159,6 +2165,7 @@ void vTaskStartScheduler(void) {
 	BaseType_t xReturn;
 
 	prvGenerateOrderedQueues(pxRTTasksList, uxTaskNumber,
+			configMAX_RT_TASKS,
 			orderedDeadlineQTaskNums,
 			orderedActivationQTaskNums,
 			orderedDeadlineQPayload,
