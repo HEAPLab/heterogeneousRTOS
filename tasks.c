@@ -2112,7 +2112,7 @@ void prvGenerateOrderedQueues(RTTask_t prvRTTasksList[], u8 numberOfTasks,
 
 	for (int i=numberOfTasks; i < maxTasks; i++) {
 		destArrayDeadlineAscTaskDeadline[i]=0xFFFF;
-		destArrayDeadlineAscTaskActivation[i]=0xFFFF;
+		destArrayNextActivationAscTaskActivation[i]=0xFFFF;
 	}
 
 	for (int i = 0; i < numberOfTasks; i++) {
@@ -2120,7 +2120,7 @@ void prvGenerateOrderedQueues(RTTask_t prvRTTasksList[], u8 numberOfTasks,
 		u32 minActivation = 0; //init
 
 		destArrayDeadlineAscTaskDeadline[i] = prvRTTasksList[i].pxDeadline;
-		destArrayDeadlineAscTaskActivation[i] = prvRTTasksList[i].pxPeriod;
+		destArrayNextActivationAscTaskActivation[i] = prvRTTasksList[i].pxPeriod;
 
 		for (int i2 = 0; i2 < numberOfTasks; i2++) {
 			if (prvRTTasksList[i2].pxDeadline > loboundDeadline

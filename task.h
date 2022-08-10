@@ -1396,10 +1396,12 @@ BaseType_t xTaskResumeFromISR( TaskHandle_t xTaskToResume ) PRIVILEGED_FUNCTION;
  */
 
 void prvGenerateOrderedQueues(RTTask_t prvRTTasksList[], u8 numberOfTasks,
+		u8 maxTasks,
 		u32 destArrayDeadlineAscTaskNum[],
 		u32 destArrayNextActivationAscTaskNum[],
 		u32 destArrayDeadlineAscTaskDeadline[],
 		u32 destArrayNextActivationAscTaskActivation[]) PRIVILEGED_FUNCTION;
+
 void vTaskStartScheduler( void ) PRIVILEGED_FUNCTION;
 
 /**
