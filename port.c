@@ -825,6 +825,8 @@ BaseType_t xPortInitScheduler( u32 numberOfTasks, void* pxRTTasksList, void* ord
 	pxCurrentTCB_ptr=pxCurrentTCBPtr;
 	int status;
 
+	Xil_DisableMMU();
+
 	SCHEDULER_setNumberOfTasks((void*) SCHEDULER_BASEADDR, (u32) numberOfTasks);
 
 	SCHEDULER_copyTaskSet((void*) SCHEDULER_BASEADDR, pxRTTasksList);
