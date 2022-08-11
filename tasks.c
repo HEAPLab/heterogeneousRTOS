@@ -283,7 +283,8 @@ PRIVILEGED_DATA static u32 orderedDeadlineQTaskNums [configMAX_RT_TASKS]; //task
 PRIVILEGED_DATA static u32 orderedActivationQTaskNums [configMAX_RT_TASKS]; //tasks nums ordered by activation times ASC
 PRIVILEGED_DATA static u32 orderedDeadlineQPayload [configMAX_RT_TASKS]; //tasks deadlines ordered ASC
 PRIVILEGED_DATA static u32 orderedActivationQPayload [configMAX_RT_TASKS]; //activation times ordered ASC
-
+PRIVILEGED_DATA static u32 orderedReverseDeadlineQTaskNums [configMAX_RT_TASKS];
+PRIVILEGED_DATA static u32 orderedReverseActivationQTaskNums [configMAX_RT_TASKS];
 //______________________________________________________________________
 PRIVILEGED_DATA static List_t xDelayedTaskList1; /*< Delayed tasks. */
 PRIVILEGED_DATA static List_t xDelayedTaskList2; /*< Delayed tasks (two lists are used - one for delays that have overflowed the current tick count. */
@@ -2116,7 +2117,9 @@ void prvGenerateOrderedQueues(RTTask_t prvRTTasksList[], u8 numberOfTasks,
 		u32 destArrayDeadlineAscTaskNum[],
 		u32 destArrayNextActivationAscTaskNum[],
 		u32 destArrayDeadlineAscTaskDeadline[],
-		u32 destArrayNextActivationAscTaskActivation[]) {
+		u32 destArrayNextActivationAscTaskActivation[],
+		u32 destArrayReverseDeadlineAscTaskNum[],
+		u32 destArrayReverseNextActivationAscTaskNum[]) {
 	u32 loboundDeadline = 0; //init
 	u32 loboundActivation = 0; //init
 
@@ -2132,6 +2135,8 @@ void prvGenerateOrderedQueues(RTTask_t prvRTTasksList[], u8 numberOfTasks,
 	for (int i=numberOfTasks; i < maxTasks; i++) {
 		destArrayDeadlineAscTaskDeadline[i]=0xFFFFFFFF;
 		destArrayNextActivationAscTaskActivation[i]=0xFFFFFFFF;
+		destArrayReverseDeadlineAscTaskNum[i]=0xFFFFFFFF;
+		destArrayReverseNextActivationAscTaskNum[i]=0xFFFFFFFF;
 	}
 
 	for (int i = 0; i < numberOfTasks; i++) {
@@ -2167,12 +2172,14 @@ void prvGenerateOrderedQueues(RTTask_t prvRTTasksList[], u8 numberOfTasks,
 				if (minDeadline != 0
 						&& prvRTTasksList[i3].pxDeadline == minDeadline) {
 					destArrayDeadlineAscTaskNum[destArrayDeadlineI] = i3;
+					destArrayReverseDeadlineAscTaskNum[i3] = destArrayDeadlineI;
 					destArrayDeadlineI++;
 				}
 				if (minActivation != 0
 						&& prvRTTasksList[i3].pxPeriod == minActivation) {
 					destArrayNextActivationAscTaskNum[destArrayActivationI] =
 							i3;
+					destArrayReverseNextActivationAscTaskNum[i3]=destArrayActivationI;
 					destArrayActivationI++;
 				}
 			}
@@ -2188,7 +2195,10 @@ void vTaskStartScheduler(void) {
 			orderedDeadlineQTaskNums,
 			orderedActivationQTaskNums,
 			orderedDeadlineQPayload,
-			orderedActivationQPayload);
+			orderedActivationQPayload,
+			orderedReverseDeadlineQTaskNums,
+			orderedReverseActivationQTaskNums
+	);
 
 //	xil_printf("Size of task struct: %d /n", sizeof(RTTask_t));
 
@@ -2197,6 +2207,8 @@ void vTaskStartScheduler(void) {
 			(void *) orderedActivationQTaskNums,
 			(void *) orderedDeadlineQPayload,
 			(void *) orderedActivationQPayload,
+			(void *) orderedReverseDeadlineQTaskNums,
+			(void *) orderedReverseActivationQTaskNums,
 			(u32*) &pxCurrentTCB) == pdPASS) {
 		/* Add the idle task at the lowest priority. */
 #if ( configSUPPORT_STATIC_ALLOCATION == 1 )

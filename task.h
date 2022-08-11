@@ -1400,7 +1400,9 @@ void prvGenerateOrderedQueues(RTTask_t prvRTTasksList[], u8 numberOfTasks,
 		u32 destArrayDeadlineAscTaskNum[],
 		u32 destArrayNextActivationAscTaskNum[],
 		u32 destArrayDeadlineAscTaskDeadline[],
-		u32 destArrayNextActivationAscTaskActivation[]) PRIVILEGED_FUNCTION;
+		u32 destArrayNextActivationAscTaskActivation[],
+		u32 destArrayReverseDeadlineAscTaskNum[],
+		u32 destArrayReverseNextActivationAscTaskNum[]) PRIVILEGED_FUNCTION;
 
 void vTaskStartScheduler( void ) PRIVILEGED_FUNCTION;
 

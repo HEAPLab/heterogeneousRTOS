@@ -820,7 +820,7 @@ void xPortSchedulerSignalTaskEnded(u16 uxTaskNumber)
 {
 	SCHEDULER_signalTaskEnded((void*) SCHEDULER_BASEADDR, uxTaskNumber);
 }
-BaseType_t xPortInitScheduler( u32 numberOfTasks, void* pxRTTasksList, void* orderedDeadlineQTaskNums, void* orderedActivationQTaskNums, void* orderedDeadlineQPayload, void* orderedActivationQPayload, u32* pxCurrentTCBPtr)
+BaseType_t xPortInitScheduler( u32 numberOfTasks, void* pxRTTasksList, void* orderedDeadlineQTaskNums, void* orderedActivationQTaskNums, void* orderedDeadlineQPayload, void* orderedActivationQPayload, void* orderedReverseDeadlineQTaskNums, void* orderedReverseActivationQTaskNums, u32* pxCurrentTCBPtr)
 {
 	pxCurrentTCB_ptr=pxCurrentTCBPtr;
 	int status;
@@ -834,7 +834,8 @@ BaseType_t xPortInitScheduler( u32 numberOfTasks, void* pxRTTasksList, void* ord
 	SCHEDULER_copyOrderedActivationQIndex((void*) SCHEDULER_BASEADDR, orderedActivationQTaskNums);
 	SCHEDULER_copyOrderedDeadlineQ((void*) SCHEDULER_BASEADDR, orderedDeadlineQPayload);
 	SCHEDULER_copyOrderedActivationQ((void*) SCHEDULER_BASEADDR, orderedActivationQPayload);
-
+	SCHEDULER_copyOrderedDeadlineQReverseIndex((void*) SCHEDULER_BASEADDR, orderedReverseDeadlineQTaskNums);
+	SCHEDULER_copyOrderedActivationQReverseIndex((void*) SCHEDULER_BASEADDR, orderedReverseActivationQTaskNums);
 //		/*
 //		 * Initialize the interrupt controller driver so that it is ready to
 //		 * use.
