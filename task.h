@@ -1395,14 +1395,12 @@ BaseType_t xTaskResumeFromISR( TaskHandle_t xTaskToResume ) PRIVILEGED_FUNCTION;
  * \ingroup SchedulerControl
  */
 
-void prvGenerateOrderedQueues(RTTask_t prvRTTasksList[], u8 numberOfTasks,
+void prvSplitRTTasksList(RTTask_t prvRTTasksList[], u8 numberOfTasks,
 		u8 maxTasks,
-		u32 destArrayDeadlineAscTaskNum[],
-		u32 destArrayNextActivationAscTaskNum[],
-		u32 destArrayDeadlineAscTaskDeadline[],
-		u32 destArrayNextActivationAscTaskActivation[],
-		u32 destArrayReverseDeadlineAscTaskNum[],
-		u32 destArrayReverseNextActivationAscTaskNum[]) PRIVILEGED_FUNCTION;
+		u32 tasksTCBPtrs[],
+		u32 tasksWCETs[],
+		u32 tasksDeadlines[],
+		u32 tasksPeriods[]) PRIVILEGED_FUNCTION;
 
 void vTaskStartScheduler( void ) PRIVILEGED_FUNCTION;
 

@@ -192,7 +192,12 @@ void xPortSchedulerSignalJobEnded(u16 uxTaskNumber) PRIVILEGED_FUNCTION;
 
 void xPortSchedulerSignalTaskEnded(u16 uxTaskNumber) PRIVILEGED_FUNCTION;
 
-BaseType_t xPortInitScheduler( u32 numberOfTasks, void* pxRTTasksList, void* orderedDeadlineQTaskNums, void* orderedActivationQTaskNums, void* orderedDeadlineQPayload, void* orderedActivationQPayload, void* orderedReverseDeadlineQTaskNums, void* orderedReverseActivationQTaskNums, u32* pxCurrentTCBPtr) PRIVILEGED_FUNCTION;
+BaseType_t xPortInitScheduler( u32 numberOfTasks,
+		void* tasksTCBPtrs,
+		void* tasksWCETs,
+		void* tasksDeadlines,
+		void* tasksPeriods,
+		u32* pxCurrentTCBPtr ) PRIVILEGED_FUNCTION;
 
 void newTaskHandler(void *HandlerRef) PRIVILEGED_FUNCTION;
 

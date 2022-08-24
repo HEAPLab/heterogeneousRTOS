@@ -279,12 +279,12 @@ PRIVILEGED_DATA static List_t pxReadyTasksLists[configMAX_PRIORITIES]; /*< Prior
 
 //______________data structures which will be passed to hardware scheduler (FPGA)___________________
 PRIVILEGED_DATA static RTTask_t pxRTTasksList [configMAX_RT_TASKS]; /*< Created tasks. */ //size is configMAX_RT_TASKS
-PRIVILEGED_DATA static u32 orderedDeadlineQTaskNums [configMAX_RT_TASKS]; //tasks nums ordered by deadlines ASC
-PRIVILEGED_DATA static u32 orderedActivationQTaskNums [configMAX_RT_TASKS]; //tasks nums ordered by activation times ASC
-PRIVILEGED_DATA static u32 orderedDeadlineQPayload [configMAX_RT_TASKS]; //tasks deadlines ordered ASC
-PRIVILEGED_DATA static u32 orderedActivationQPayload [configMAX_RT_TASKS]; //activation times ordered ASC
-PRIVILEGED_DATA static u32 orderedReverseDeadlineQTaskNums [configMAX_RT_TASKS];
-PRIVILEGED_DATA static u32 orderedReverseActivationQTaskNums [configMAX_RT_TASKS];
+//PRIVILEGED_DATA static u32 orderedDeadlineQTaskNums [configMAX_RT_TASKS]; //tasks nums ordered by deadlines ASC
+//PRIVILEGED_DATA static u32 orderedActivationQTaskNums [configMAX_RT_TASKS]; //tasks nums ordered by activation times ASC
+//PRIVILEGED_DATA static u32 orderedDeadlineQPayload [configMAX_RT_TASKS]; //tasks deadlines ordered ASC
+//PRIVILEGED_DATA static u32 orderedActivationQPayload [configMAX_RT_TASKS]; //activation times ordered ASC
+//PRIVILEGED_DATA static u32 orderedReverseDeadlineQTaskNums [configMAX_RT_TASKS];
+//PRIVILEGED_DATA static u32 orderedReverseActivationQTaskNums [configMAX_RT_TASKS];
 //______________________________________________________________________
 PRIVILEGED_DATA static List_t xDelayedTaskList1; /*< Delayed tasks. */
 PRIVILEGED_DATA static List_t xDelayedTaskList2; /*< Delayed tasks (two lists are used - one for delays that have overflowed the current tick count. */
@@ -2112,103 +2112,111 @@ BaseType_t xTaskResumeFromISR(TaskHandle_t xTaskToResume) {
 #endif /* ( ( INCLUDE_xTaskResumeFromISR == 1 ) && ( INCLUDE_vTaskSuspend == 1 ) ) */
 /*-----------------------------------------------------------*/
 
-void prvGenerateOrderedQueues(RTTask_t prvRTTasksList[], u8 numberOfTasks,
+void prvSplitRTTasksList(RTTask_t prvRTTasksList[], u8 numberOfTasks,
 		u8 maxTasks,
-		u32 destArrayDeadlineAscTaskNum[],
-		u32 destArrayNextActivationAscTaskNum[],
-		u32 destArrayDeadlineAscTaskDeadline[],
-		u32 destArrayNextActivationAscTaskActivation[],
-		u32 destArrayReverseDeadlineAscTaskNum[],
-		u32 destArrayReverseNextActivationAscTaskNum[]) {
-	u32 loboundDeadline = 0; //init
-	u32 loboundActivation = 0; //init
+		u32 tasksTCBPtrs[],
+		u32 tasksWCETs[],
+		u32 tasksDeadlines[],
+		u32 tasksPeriods[]) {
 
-	u32 destArrayDeadlineI = 0;
-	u32 destArrayActivationI = 0;
+//		u32 destArrayDeadlineAscTaskNum[],
+//		u32 destArrayNextActivationAscTaskNum[],
+//		u32 destArrayDeadlineAscTaskDeadline[],
+//		u32 destArrayNextActivationAscTaskActivation[],
+//		u32 destArrayReverseDeadlineAscTaskNum[],
+//		u32 destArrayReverseNextActivationAscTaskNum[]) {
+//	u32 loboundDeadline = 0; //init
+//	u32 loboundActivation = 0; //init
 
-//	xil_printf("addr prvRTTasksList %x", prvRTTasksList);
-//	xil_printf("addr destArrayDeadlineAscTaskNum %x", destArrayDeadlineAscTaskNum);
-//	xil_printf("addr destArrayNextActivationAscTaskNum %x", destArrayNextActivationAscTaskNum);
-//	xil_printf("addr destArrayDeadlineAscTaskDeadline %x", destArrayDeadlineAscTaskDeadline);
-//	xil_printf("addr destArrayNextActivationAscTaskActivation%x", destArrayNextActivationAscTaskActivation);
-
-	for (int i=numberOfTasks; i < maxTasks; i++) {
-		destArrayDeadlineAscTaskDeadline[i]=0xFFFFFFFF;
-		destArrayNextActivationAscTaskActivation[i]=0xFFFFFFFF;
-		destArrayReverseDeadlineAscTaskNum[i]=0xFFFFFFFF;
-		destArrayReverseNextActivationAscTaskNum[i]=0xFFFFFFFF;
-	}
+//	u32 destArrayDeadlineI = 0;
+//	u32 destArrayActivationI = 0;
 
 	for (int i = 0; i < numberOfTasks; i++) {
-		u32 minDeadline = 0; //init
-		u32 minActivation = 0; //init
-
-		destArrayDeadlineAscTaskDeadline[i] = prvRTTasksList[i].pxDeadline;
-		destArrayNextActivationAscTaskActivation[i] = prvRTTasksList[i].pxPeriod;
-
-		for (int i2 = 0; i2 < numberOfTasks; i2++) {
-			if (prvRTTasksList[i2].pxDeadline > loboundDeadline
-					&& (prvRTTasksList[i2].pxDeadline < minDeadline
-							|| minDeadline == 0)) {
-				minDeadline = prvRTTasksList[i2].pxDeadline;
-			}
-			if (prvRTTasksList[i2].pxPeriod > loboundActivation
-					&& (prvRTTasksList[i2].pxPeriod < minActivation
-							|| minActivation == 0)) {
-				minActivation = prvRTTasksList[i2].pxPeriod;
-			}
-		}
-
-		if (minDeadline == 0 && minActivation == 0) {
-			break;
-		} else {
-			if (minDeadline != 0)
-				loboundDeadline = minDeadline;
-
-			if (minActivation != 0)
-				loboundActivation = minActivation;
-
-			for (int i3 = 0; i3 < numberOfTasks; i3++) {
-				if (minDeadline != 0
-						&& prvRTTasksList[i3].pxDeadline == minDeadline) {
-					destArrayDeadlineAscTaskNum[destArrayDeadlineI] = i3;
-					destArrayReverseDeadlineAscTaskNum[i3] = destArrayDeadlineI;
-					destArrayDeadlineI++;
-				}
-				if (minActivation != 0
-						&& prvRTTasksList[i3].pxPeriod == minActivation) {
-					destArrayNextActivationAscTaskNum[destArrayActivationI] =
-							i3;
-					destArrayReverseNextActivationAscTaskNum[i3]=destArrayActivationI;
-					destArrayActivationI++;
-				}
-			}
-		}
+		tasksTCBPtrs[i]=prvRTTasksList[i].taskTCB;
+		tasksWCETs[i]=prvRTTasksList[i].pxWcet;
+		tasksDeadlines[i]=prvRTTasksList[i].pxDeadline;
+		tasksPeriods[i]=prvRTTasksList[i].pxPeriod;
 	}
+
+
+	for (int i=numberOfTasks; i < maxTasks; i++) {
+		tasksTCBPtrs[i]=0x0;
+		tasksWCETs[i]=0xFFFFFFFF;
+		tasksDeadlines[i]=0xFFFFFFFF;
+		tasksPeriods[i]=0xFFFFFFFF;
+	}
+
+//	for (int i = 0; i < numberOfTasks; i++) {
+//		u32 minDeadline = 0; //init
+//		u32 minActivation = 0; //init
+//
+//		destArrayDeadlineAscTaskDeadline[i] = prvRTTasksList[i].pxDeadline;
+//		destArrayNextActivationAscTaskActivation[i] = prvRTTasksList[i].pxPeriod;
+//
+//		for (int i2 = 0; i2 < numberOfTasks; i2++) {
+//			if (prvRTTasksList[i2].pxDeadline > loboundDeadline
+//					&& (prvRTTasksList[i2].pxDeadline < minDeadline
+//							|| minDeadline == 0)) {
+//				minDeadline = prvRTTasksList[i2].pxDeadline;
+//			}
+//			if (prvRTTasksList[i2].pxPeriod > loboundActivation
+//					&& (prvRTTasksList[i2].pxPeriod < minActivation
+//							|| minActivation == 0)) {
+//				minActivation = prvRTTasksList[i2].pxPeriod;
+//			}
+//		}
+//
+//		if (minDeadline == 0 && minActivation == 0) {
+//			break;
+//		} else {
+//			if (minDeadline != 0)
+//				loboundDeadline = minDeadline;
+//
+//			if (minActivation != 0)
+//				loboundActivation = minActivation;
+//
+//			for (int i3 = 0; i3 < numberOfTasks; i3++) {
+//				if (minDeadline != 0
+//						&& prvRTTasksList[i3].pxDeadline == minDeadline) {
+//					destArrayDeadlineAscTaskNum[destArrayDeadlineI] = i3;
+//					destArrayReverseDeadlineAscTaskNum[i3] = destArrayDeadlineI;
+//					destArrayDeadlineI++;
+//				}
+//				if (minActivation != 0
+//						&& prvRTTasksList[i3].pxPeriod == minActivation) {
+//					destArrayNextActivationAscTaskNum[destArrayActivationI] =
+//							i3;
+//					destArrayReverseNextActivationAscTaskNum[i3]=destArrayActivationI;
+//					destArrayActivationI++;
+//				}
+//			}
+//		}
+//	}
 }
 
 void vTaskStartScheduler(void) {
 	BaseType_t xReturn;
 
-	prvGenerateOrderedQueues(pxRTTasksList, uxTaskNumber,
+	u32 tasksTCBPtrs[ configMAX_RT_TASKS ];
+	u32 tasksWCETs[ configMAX_RT_TASKS ];
+	u32 tasksDeadlines[ configMAX_RT_TASKS ];
+	u32 tasksPeriods[ configMAX_RT_TASKS ];
+
+	prvSplitRTTasksList(pxRTTasksList, uxTaskNumber,
 			configMAX_RT_TASKS,
-			orderedDeadlineQTaskNums,
-			orderedActivationQTaskNums,
-			orderedDeadlineQPayload,
-			orderedActivationQPayload,
-			orderedReverseDeadlineQTaskNums,
-			orderedReverseActivationQTaskNums
+			tasksTCBPtrs,
+			tasksWCETs,
+			tasksDeadlines,
+			tasksPeriods
 	);
 
 //	xil_printf("Size of task struct: %d /n", sizeof(RTTask_t));
 
-	if (xPortInitScheduler( (u32) uxTaskNumber, (void *) pxRTTasksList,
-			(void *) orderedDeadlineQTaskNums,
-			(void *) orderedActivationQTaskNums,
-			(void *) orderedDeadlineQPayload,
-			(void *) orderedActivationQPayload,
-			(void *) orderedReverseDeadlineQTaskNums,
-			(void *) orderedReverseActivationQTaskNums,
+	if (xPortInitScheduler( (u32) uxTaskNumber,
+			(void *) tasksTCBPtrs,
+			(void *) tasksWCETs,
+			(void *) tasksDeadlines,
+			(void *) tasksPeriods,
 			(u32*) &pxCurrentTCB) == pdPASS) {
 		/* Add the idle task at the lowest priority. */
 #if ( configSUPPORT_STATIC_ALLOCATION == 1 )

@@ -798,7 +798,7 @@ u32* pxCurrentTCB_ptr;
 
 void xPortScheduleNewTask(void)
 {
-	xil_printf("new task, ptr: %X", *((u32*)0x20018000));
+	xil_printf(" new task, ptr: %X ", *((u32*)0x20018000));
 
 	*pxCurrentTCB_ptr = *((u32*)PXNEXTTCB);
 	SCHEDULER_ACKInterrupt((void *) SCHEDULER_BASEADDR);
@@ -820,7 +820,12 @@ void xPortSchedulerSignalTaskEnded(u16 uxTaskNumber)
 {
 	SCHEDULER_signalTaskEnded((void*) SCHEDULER_BASEADDR, uxTaskNumber);
 }
-BaseType_t xPortInitScheduler( u32 numberOfTasks, void* pxRTTasksList, void* orderedDeadlineQTaskNums, void* orderedActivationQTaskNums, void* orderedDeadlineQPayload, void* orderedActivationQPayload, void* orderedReverseDeadlineQTaskNums, void* orderedReverseActivationQTaskNums, u32* pxCurrentTCBPtr)
+BaseType_t xPortInitScheduler( u32 numberOfTasks,
+		void* tasksTCBPtrs,
+		void* tasksWCETs,
+		void* tasksDeadlines,
+		void* tasksPeriods,
+		u32* pxCurrentTCBPtr )
 {
 	pxCurrentTCB_ptr=pxCurrentTCBPtr;
 	int status;
@@ -829,13 +834,17 @@ BaseType_t xPortInitScheduler( u32 numberOfTasks, void* pxRTTasksList, void* ord
 
 	SCHEDULER_setNumberOfTasks((void*) SCHEDULER_BASEADDR, (u32) numberOfTasks);
 
-	SCHEDULER_copyTaskSet((void*) SCHEDULER_BASEADDR, pxRTTasksList);
-	SCHEDULER_copyOrderedDeadlineQIndex((void*) SCHEDULER_BASEADDR, orderedDeadlineQTaskNums);
-	SCHEDULER_copyOrderedActivationQIndex((void*) SCHEDULER_BASEADDR, orderedActivationQTaskNums);
-	SCHEDULER_copyOrderedDeadlineQ((void*) SCHEDULER_BASEADDR, orderedDeadlineQPayload);
-	SCHEDULER_copyOrderedActivationQ((void*) SCHEDULER_BASEADDR, orderedActivationQPayload);
-	SCHEDULER_copyOrderedDeadlineQReverseIndex((void*) SCHEDULER_BASEADDR, orderedReverseDeadlineQTaskNums);
-	SCHEDULER_copyOrderedActivationQReverseIndex((void*) SCHEDULER_BASEADDR, orderedReverseActivationQTaskNums);
+	SCHEDULER_copyTCBPtrs((void*) SCHEDULER_BASEADDR, tasksTCBPtrs);
+	SCHEDULER_copyWCETs((void*) SCHEDULER_BASEADDR, tasksWCETs);
+	SCHEDULER_copyDeadlines((void*) SCHEDULER_BASEADDR, tasksDeadlines);
+	SCHEDULER_copyPeriods((void*) SCHEDULER_BASEADDR, tasksPeriods);
+
+//	SCHEDULER_copyOrderedDeadlineQIndex((void*) SCHEDULER_BASEADDR, orderedDeadlineQTaskNums);
+//	SCHEDULER_copyOrderedActivationQIndex((void*) SCHEDULER_BASEADDR, orderedActivationQTaskNums);
+//	SCHEDULER_copyOrderedDeadlineQ((void*) SCHEDULER_BASEADDR, orderedDeadlineQPayload);
+//	SCHEDULER_copyOrderedActivationQ((void*) SCHEDULER_BASEADDR, orderedActivationQPayload);
+//	SCHEDULER_copyOrderedDeadlineQReverseIndex((void*) SCHEDULER_BASEADDR, orderedReverseDeadlineQTaskNums);
+//	SCHEDULER_copyOrderedActivationQReverseIndex((void*) SCHEDULER_BASEADDR, orderedReverseActivationQTaskNums);
 //		/*
 //		 * Initialize the interrupt controller driver so that it is ready to
 //		 * use.
