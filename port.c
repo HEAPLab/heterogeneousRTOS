@@ -792,15 +792,18 @@ int32_t lReturn;
 #define SCHEDULER_INTR XPAR_FABRIC_SCHEDULER_0_IRQ_INTR
 #define PXNEXTTCB 0x20018000
 //static XScuGic intControllerInstance;
-u32* pxCurrentTCB_ptr;
+TCB_t** pxCurrentTCB_ptr;
 
 #define CPU_BASEADDR		XPAR_SCUGIC_CPU_BASEADDR
 
 void xPortScheduleNewTask(void)
 {
-	xil_printf(" new task, ptr: %X ", *((u32*)0x20018000));
 
-	*pxCurrentTCB_ptr = *((u32*)PXNEXTTCB);
+	*pxCurrentTCB_ptr = *((TCB_t**) PXNEXTTCB);
+
+	xil_printf("| new task, ptr: %X ", *pxCurrentTCB_ptr);
+	xil_printf(" SP: %X ", (*pxCurrentTCB_ptr)->pxTopOfStack);
+
 	SCHEDULER_ACKInterrupt((void *) SCHEDULER_BASEADDR);
 }
 
@@ -827,7 +830,7 @@ BaseType_t xPortInitScheduler( u32 numberOfTasks,
 		void* tasksPeriods,
 		u32* pxCurrentTCBPtr )
 {
-	pxCurrentTCB_ptr=pxCurrentTCBPtr;
+	pxCurrentTCB_ptr=(TCB_t **)pxCurrentTCBPtr;
 	int status;
 
 	Xil_DisableMMU();
