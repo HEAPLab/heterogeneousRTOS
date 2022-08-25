@@ -162,6 +162,9 @@ typedef struct tskTaskControlBlock       /* The old naming convention is used to
    #if ( configUSE_POSIX_ERRNO == 1 )
        int iTaskErrno;
    #endif
+
+   volatile uint8_t jobEnded;
+
 } tskTCB;
 
 /* The old tskTCB name is maintained above then typedefed to the new TCB_t name
