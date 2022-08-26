@@ -1255,9 +1255,9 @@ static BaseType_t prvAddNewTaskToRTTasksList(RTTask_t pxNewRTTask) {
 void vTaskJobEnd() { //(TaskHandle_t xTaskToEndJob) {
 	//TCB_t* pxTCB;
 
-	taskENTER_CRITICAL()
-		;
-		{
+	//taskENTER_CRITICAL()
+	//	;
+	//	{
 		/* If null is passed in here then it is the running task that is
 		 * being suspended. */
 		//pxTCB = prvGetTCBFromHandle(xTaskToEndJob);
@@ -1271,9 +1271,9 @@ void vTaskJobEnd() { //(TaskHandle_t xTaskToEndJob) {
 		//if (pxTCB == pxCurrentTCB) {
 		//		portYIELD_WITHIN_API()
 		//			;
-			}
-		taskEXIT_CRITICAL()
-			;
+	//		}
+	//	taskEXIT_CRITICAL()
+	//		;
 
 		while(pxCurrentTCB->jobEnded) {
 		}
