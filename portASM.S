@@ -170,6 +170,8 @@ vPortHandleNewTask:
 /*	CPSID	i
 	DSB
 	ISB*/
+	//subs	pc, lr, #4			/* adjust return */
+	subs	lr, lr, #4			/* adjust return */
 	portSAVE_CONTEXT
 /*	LDR R0, pxCurrentTCBConst
 	LDR R2, pxNextTCBConst
@@ -182,6 +184,7 @@ vPortHandleNewTask:
 	LDR R0, xPortScheduleNewTaskConst
 	BLX	R0
 	portRESTORE_CONTEXT
+	subs	pc, lr, #0			/* adjust return */
 
 .align 4
 .type FreeRTOS_IRQ_Handler, %function

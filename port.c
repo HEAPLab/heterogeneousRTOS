@@ -800,15 +800,15 @@ void xPortScheduleNewTask(void)
 {
 
 	*pxCurrentTCB_ptr = *((TCB_t**) PXNEXTTCB);
-
 	xil_printf("| NEW, %X ", *pxCurrentTCB_ptr);
 	(*(pxCurrentTCB_ptr))->jobEnded=0;
+	SCHEDULER_ACKInterrupt((void *) SCHEDULER_BASEADDR);
+
 /*	xil_printf(" initial SP: %X ", ((*pxCurrentTCB_ptr)->pxStack));
 	xil_printf(" SP: %X ", ((*pxCurrentTCB_ptr)->pxTopOfStack));
 	xil_printf(" PC address: %X ", ((*pxCurrentTCB_ptr)->pxTopOfStack + 13));
 	xil_printf(" PC instr: %X |", *((*pxCurrentTCB_ptr)->pxTopOfStack + 13));*/
 
-	SCHEDULER_ACKInterrupt((void *) SCHEDULER_BASEADDR);
 }
 
 void xPortSchedulerResumeTask(u16 uxTaskNumber) {
