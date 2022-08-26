@@ -184,7 +184,7 @@ vPortHandleNewTask:
 	LDR R0, xPortScheduleNewTaskConst
 	BLX	R0
 	portRESTORE_CONTEXT
-	subs	pc, lr, #0			/* adjust return */
+//	subs	pc, lr, #0			/* adjust return */
 
 .align 4
 .type FreeRTOS_IRQ_Handler, %function
