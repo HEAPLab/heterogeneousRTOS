@@ -790,20 +790,50 @@ int32_t lReturn;
 #define SCHEDULER_BASEADDR XPAR_SCHEDULER_0_S_AXI_BASEADDR
 //#define INTC_DEVICE_ID	XPAR_SCUGIC_SINGLE_DEVICE_ID
 #define SCHEDULER_INTR XPAR_FABRIC_SCHEDULER_0_IRQ_INTR
-#define PXNEXTTCB 0x10000000
+
+typedef struct __attribute__((__packed__)) {
+	TCB_t ** pxNextTcb;
+	char executionMode; //normal, reexecution due to fault, reexecution due to timing fail
+} newTaskDescrStr;
+//#define PXNEXTTCB 0x10000000
+#define NEWTASKDESCRPTR 0x10000000
 //static XScuGic intControllerInstance;
 TCB_t** pxCurrentTCB_ptr;
 
 #define CPU_BASEADDR		XPAR_SCUGIC_CPU_BASEADDR
+#define EXECUTIONMODE_NORMAL 0
+#define EXECUTIONMODE_REEXECUTION_TIMING 1
+#define EXECUTIONMODE_REEXECUTION_FAULT 2
+
+typedef struct {
+	u8 checkId=0xFF;
+	u16 uniId=0xFFFF;
+	float AOV[MAX_AOV_DIM];
+} OutcomeStr;
+
+char ExecutionMode[configMAX_RT_TASKS];
+OutcomeStr Errors[configMAX_RT_TASKS];
 
 void xPortScheduleNewTask(void)
 {
 
-	*pxCurrentTCB_ptr = *((TCB_t**) PXNEXTTCB);
+	newTaskDescrStr* newtaskdesc=(newTaskDescrStr*) NEWTASKDESCRPTR;
+	//*pxCurrentTCB_ptr = *((TCB_t**) NEWTASKDESCRPTR);
+	*pxCurrentTCB_ptr = *(newtaskdesc->pxNextTcb);
 	xil_printf("| NEW, %X ", *pxCurrentTCB_ptr);
 	(*(pxCurrentTCB_ptr))->jobEnded=0;
-	SCHEDULER_ACKInterrupt((void *) SCHEDULER_BASEADDR);
 
+	if (newtaskdesc->executionMode!=EXECUTIONMODE_NORMAL) {
+		ExecutionMode[(*(pxCurrentTCB_ptr))->uxTCBNumber-1]=newtaskdesc->executionMode;
+		//reset to begin
+	}
+
+	if (newtaskdesc->executionMode==EXECUTIONMODE_REEXECUTION_FAULT) {
+		//reset to begin
+		//Errors[configMAX_RT_TASKS]=copyFromFaultDetector
+	}
+
+	SCHEDULER_ACKInterrupt((void *) SCHEDULER_BASEADDR);
 /*	xil_printf(" initial SP: %X ", ((*pxCurrentTCB_ptr)->pxStack));
 	xil_printf(" SP: %X ", ((*pxCurrentTCB_ptr)->pxTopOfStack));
 	xil_printf(" PC address: %X ", ((*pxCurrentTCB_ptr)->pxTopOfStack + 13));
