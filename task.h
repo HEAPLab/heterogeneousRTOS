@@ -83,6 +83,12 @@ typedef struct tskTaskControlBlock * TaskHandle_t;
 * and stores task state information, including a pointer to the task's context
 * (the task's run time environment, including register values)
 */
+typedef struct {
+	u8 checkId;
+	u16 uniId;
+	float AOV[MAX_AOV_DIM];
+} FAULTDETECTOR_OutcomeStr;
+
 typedef struct tskTaskControlBlock       /* The old naming convention is used to prevent breaking kernel aware debuggers. */
 {
    volatile StackType_t * pxTopOfStack; /*< Points to the location of the last item placed on the tasks stack.  THIS MUST BE THE FIRST MEMBER OF THE TCB STRUCT. */
@@ -164,7 +170,8 @@ typedef struct tskTaskControlBlock       /* The old naming convention is used to
    #endif
 
    volatile uint8_t jobEnded;
-
+   volatile char executionMode;
+   FAULTDETECTOR_OutcomeStr lastError;
 } tskTCB;
 
 /* The old tskTCB name is maintained above then typedefed to the new TCB_t name

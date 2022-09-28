@@ -1118,6 +1118,8 @@ static void prvInitialiseNewTask(TaskFunction_t pxTaskCode,
 	if (pxCreatedTask != NULL) {
 		/* Pass the handle out in an anonymous way.  The handle can be used to
 		 * change the created task's priority, delete the created task, etc.*/
+		pxNewTCB->lastError.checkId=0xFF;
+		pxNewTCB->lastError.uniId=0xFFFF;
 		*pxCreatedTask = (TaskHandle_t) pxNewTCB;
 	} else {
 		mtCOVERAGE_TEST_MARKER();

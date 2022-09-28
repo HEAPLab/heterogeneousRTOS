@@ -806,13 +806,61 @@ TCB_t** pxCurrentTCB_ptr;
 #define EXECUTIONMODE_REEXECUTION_FAULT 2
 
 typedef struct {
-	u8 checkId=0xFF;
-	u16 uniId=0xFFFF;
-	float AOV[MAX_AOV_DIM];
-} OutcomeStr;
+	u8 checkId;
+	u8 taskId;
+	u16 uniId;
+	char command;
+	float AOV[configMAX_AOV_DIM];
+} FAULTDETECTOR_controlStr;
 
-char ExecutionMode[configMAX_RT_TASKS];
-OutcomeStr Errors[configMAX_RT_TASKS];
+//char ExecutionMode[configMAX_RT_TASKS];
+//OutcomeStr Errors[configMAX_RT_TASKS];
+FAULTDETECTOR_OutcomeStr FAULTDETECTOR_getLastError();
+void FAULTDETECTOR_Train(FAULTDETECTOR_controlStr contr);
+void FAULTDETECTOR_Test(FAULTDETECTOR_controlStr contr);
+
+void initFaultDetector() {
+	//int taskId=(*pxCurrentTCB_ptr)->uxTaskNumber;
+	if ((*pxCurrentTCB_ptr)->executionMode==EXECUTIONMODE_REEXECUTION_FAULT)
+		(*pxCurrentTCB_ptr)->lastError=FAULTDETECTOR_getLastError();
+	//Errors[taskId]=copyFromFaultDetector
+}
+
+void testPoint(int taskId, int uniId, int checkId, int argCount, ...) {
+    va_list ap;
+	va_start(ap, argCount);
+	if (argCount>configMAX_AOV_DIM) //MAX_AOV_DIM
+		return; //error
+
+	FAULTDETECTOR_controlStr contr;
+
+	contr.uniId=uniId;
+	contr.checkId=checkId;
+	contr.taskId=taskId;
+
+	for (int i=0; i<argCount; i++) {
+		contr.AOV[i]=*(va_arg(ap, float*));
+	}
+	for (int i=argCount; i<configMAX_AOV_DIM; i++) {
+		contr.AOV[i]=0.0;
+	}
+
+	TCB_t* tcbPtr=*pxCurrentTCB_ptr;
+
+	if (tcbPtr->executionMode==EXECUTIONMODE_REEXECUTION_FAULT && tcbPtr->lastError.uniId==uniId && tcbPtr->lastError.checkId==checkId) {
+		tcbPtr->lastError.uniId=-1;
+		tcbPtr->lastError.checkId=-1;
+		if (memcmp(tcbPtr->lastError.AOV, contr.AOV, sizeof(contr.AOV))==0)
+			FAULTDETECTOR_Train(contr);
+		else
+			FAULTDETECTOR_Test(contr);
+	} else {
+		FAULTDETECTOR_Test(contr);
+	}
+
+    va_end(ap);
+}
+
 
 void xPortScheduleNewTask(void)
 {
@@ -824,13 +872,13 @@ void xPortScheduleNewTask(void)
 	(*(pxCurrentTCB_ptr))->jobEnded=0;
 
 	if (newtaskdesc->executionMode!=EXECUTIONMODE_NORMAL) {
-		ExecutionMode[(*(pxCurrentTCB_ptr))->uxTCBNumber-1]=newtaskdesc->executionMode;
+		//ExecutionMode[(*(pxCurrentTCB_ptr))->uxTCBNumber-1]=newtaskdesc->executionMode;
 		//reset to begin
+		(*pxCurrentTCB_ptr)->executionMode=newtaskdesc->executionMode;
 	}
 
 	if (newtaskdesc->executionMode==EXECUTIONMODE_REEXECUTION_FAULT) {
 		//reset to begin
-		//Errors[configMAX_RT_TASKS]=copyFromFaultDetector
 	}
 
 	SCHEDULER_ACKInterrupt((void *) SCHEDULER_BASEADDR);
