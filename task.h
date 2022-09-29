@@ -83,11 +83,12 @@ typedef struct tskTaskControlBlock * TaskHandle_t;
 * and stores task state information, including a pointer to the task's context
 * (the task's run time environment, including register values)
 */
-typedef struct {
-	u8 checkId;
-	u16 uniId;
-	float AOV[MAX_AOV_DIM];
-} FAULTDETECTOR_OutcomeStr;
+//typedef struct {
+//	u8 checkId;
+//	u16 uniId;
+//	float AOV[configMAX_AOV_DIM];
+//} FAULTDETECTOR_OutcomeStr;
+#include "xrun.h"
 
 typedef struct tskTaskControlBlock       /* The old naming convention is used to prevent breaking kernel aware debuggers. */
 {

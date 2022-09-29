@@ -77,8 +77,6 @@
 //fedit add
 #define configMAX_RT_TASKS (4)
 
-#define configMAX_AOV_DIM 8
-
 #define configMAX_CO_ROUTINE_PRIORITIES 2
 
 #define configMINIMAL_STACK_SIZE ( ( unsigned short ) 200)

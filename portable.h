@@ -200,10 +200,15 @@ BaseType_t xPortInitScheduler( u32 numberOfTasks,
 		u32* pxCurrentTCBPtr ) PRIVILEGED_FUNCTION;
 
 void newTaskHandler(void *HandlerRef) PRIVILEGED_FUNCTION;
+#include "xrun.h"
+void FAULTDETECTOR_Train(FAULTDETECTOR_controlStr contr) PRIVILEGED_FUNCTION;
+void FAULTDETECTOR_Test(FAULTDETECTOR_controlStr contr) PRIVILEGED_FUNCTION;
+void initFaultDetection() PRIVILEGED_FUNCTION;
+void endFaultDetection() PRIVILEGED_FUNCTION;
 
-int prvDmaBlockingTransferFreeByteSize( u32 prvDmaDestAddr, u32 prvDmaSourceAddr, u32 byteSize ) PRIVILEGED_FUNCTION;
-
-int prvDmaInit() PRIVILEGED_FUNCTION;
+//int prvDmaBlockingTransferFreeByteSize( u32 prvDmaDestAddr, u32 prvDmaSourceAddr, u32 byteSize ) PRIVILEGED_FUNCTION;
+//
+//int prvDmaInit() PRIVILEGED_FUNCTION;
 
 /*
  * Setup the hardware ready for the scheduler to take control.  This generally

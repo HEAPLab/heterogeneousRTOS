@@ -36,49 +36,49 @@
 #include "xscugic.h"
 
 #ifndef configINTERRUPT_CONTROLLER_BASE_ADDRESS
-	#error configINTERRUPT_CONTROLLER_BASE_ADDRESS must be defined.  See https://www.FreeRTOS.org/Using-FreeRTOS-on-Cortex-A-Embedded-Processors.html
+#error configINTERRUPT_CONTROLLER_BASE_ADDRESS must be defined.  See https://www.FreeRTOS.org/Using-FreeRTOS-on-Cortex-A-Embedded-Processors.html
 #endif
 
 #ifndef configINTERRUPT_CONTROLLER_CPU_INTERFACE_OFFSET
-	#error configINTERRUPT_CONTROLLER_CPU_INTERFACE_OFFSET must be defined.  See https://www.FreeRTOS.org/Using-FreeRTOS-on-Cortex-A-Embedded-Processors.html
+#error configINTERRUPT_CONTROLLER_CPU_INTERFACE_OFFSET must be defined.  See https://www.FreeRTOS.org/Using-FreeRTOS-on-Cortex-A-Embedded-Processors.html
 #endif
 
 #ifndef configUNIQUE_INTERRUPT_PRIORITIES
-	#error configUNIQUE_INTERRUPT_PRIORITIES must be defined.  See https://www.FreeRTOS.org/Using-FreeRTOS-on-Cortex-A-Embedded-Processors.html
+#error configUNIQUE_INTERRUPT_PRIORITIES must be defined.  See https://www.FreeRTOS.org/Using-FreeRTOS-on-Cortex-A-Embedded-Processors.html
 #endif
 
 #ifndef configSETUP_TICK_INTERRUPT
-	#error configSETUP_TICK_INTERRUPT() must be defined.  See https://www.FreeRTOS.org/Using-FreeRTOS-on-Cortex-A-Embedded-Processors.html
+#error configSETUP_TICK_INTERRUPT() must be defined.  See https://www.FreeRTOS.org/Using-FreeRTOS-on-Cortex-A-Embedded-Processors.html
 #endif /* configSETUP_TICK_INTERRUPT */
 
 #ifndef configMAX_API_CALL_INTERRUPT_PRIORITY
-	#error configMAX_API_CALL_INTERRUPT_PRIORITY must be defined.  See https://www.FreeRTOS.org/Using-FreeRTOS-on-Cortex-A-Embedded-Processors.html
+#error configMAX_API_CALL_INTERRUPT_PRIORITY must be defined.  See https://www.FreeRTOS.org/Using-FreeRTOS-on-Cortex-A-Embedded-Processors.html
 #endif
 
 #if configMAX_API_CALL_INTERRUPT_PRIORITY == 0
-	#error configMAX_API_CALL_INTERRUPT_PRIORITY must not be set to 0
+#error configMAX_API_CALL_INTERRUPT_PRIORITY must not be set to 0
 #endif
 
 #if configMAX_API_CALL_INTERRUPT_PRIORITY > configUNIQUE_INTERRUPT_PRIORITIES
-	#error configMAX_API_CALL_INTERRUPT_PRIORITY must be less than or equal to configUNIQUE_INTERRUPT_PRIORITIES as the lower the numeric priority value the higher the logical interrupt priority
+#error configMAX_API_CALL_INTERRUPT_PRIORITY must be less than or equal to configUNIQUE_INTERRUPT_PRIORITIES as the lower the numeric priority value the higher the logical interrupt priority
 #endif
 
 #if configUSE_PORT_OPTIMISED_TASK_SELECTION == 1
-	/* Check the configuration. */
-	#if( configMAX_PRIORITIES > 32 )
-		#error configUSE_PORT_OPTIMISED_TASK_SELECTION can only be set to 1 when configMAX_PRIORITIES is less than or equal to 32.  It is very rare that a system requires more than 10 to 15 difference priorities as tasks that share a priority will time slice.
-	#endif
+/* Check the configuration. */
+#if( configMAX_PRIORITIES > 32 )
+#error configUSE_PORT_OPTIMISED_TASK_SELECTION can only be set to 1 when configMAX_PRIORITIES is less than or equal to 32.  It is very rare that a system requires more than 10 to 15 difference priorities as tasks that share a priority will time slice.
+#endif
 #endif /* configUSE_PORT_OPTIMISED_TASK_SELECTION */
 
 /* In case security extensions are implemented. */
 #if configMAX_API_CALL_INTERRUPT_PRIORITY <= ( configUNIQUE_INTERRUPT_PRIORITIES / 2 )
-	#error configMAX_API_CALL_INTERRUPT_PRIORITY must be greater than ( configUNIQUE_INTERRUPT_PRIORITIES / 2 )
+#error configMAX_API_CALL_INTERRUPT_PRIORITY must be greater than ( configUNIQUE_INTERRUPT_PRIORITIES / 2 )
 #endif
 
 /* Some vendor specific files default configCLEAR_TICK_INTERRUPT() in
 portmacro.h. */
 #ifndef configCLEAR_TICK_INTERRUPT
-	#define configCLEAR_TICK_INTERRUPT()
+#define configCLEAR_TICK_INTERRUPT()
 #endif
 
 /* A critical section is exited when the critical section nesting count reaches
@@ -117,25 +117,25 @@ mode. */
 determined priority level.  Sometimes it is necessary to turn interrupt off in
 the CPU itself before modifying certain hardware registers. */
 #define portCPU_IRQ_DISABLE()										\
-	__asm volatile ( "CPSID i" ::: "memory" );						\
-	__asm volatile ( "DSB" );										\
-	__asm volatile ( "ISB" );
+		__asm volatile ( "CPSID i" ::: "memory" );						\
+		__asm volatile ( "DSB" );										\
+		__asm volatile ( "ISB" );
 
 #define portCPU_IRQ_ENABLE()										\
-	__asm volatile ( "CPSIE i" ::: "memory" );						\
-	__asm volatile ( "DSB" );										\
-	__asm volatile ( "ISB" );
+		__asm volatile ( "CPSIE i" ::: "memory" );						\
+		__asm volatile ( "DSB" );										\
+		__asm volatile ( "ISB" );
 
 
 /* Macro to unmask all interrupt priorities. */
 #define portCLEAR_INTERRUPT_MASK()									\
-{																	\
+		{																	\
 	portCPU_IRQ_DISABLE();											\
 	portICCPMR_PRIORITY_MASK_REGISTER = portUNMASK_VALUE;			\
 	__asm volatile (	"DSB		\n"								\
-						"ISB		\n" );							\
-	portCPU_IRQ_ENABLE();											\
-}
+			"ISB		\n" );							\
+			portCPU_IRQ_ENABLE();											\
+		}
 
 #define portINTERRUPT_PRIORITY_REGISTER_OFFSET		0x400UL
 #define portMAX_8_BIT_VALUE							( ( uint8_t ) 0xff )
@@ -302,7 +302,7 @@ StackType_t *pxPortInitialiseStack( StackType_t *pxTopOfStack, TaskFunction_t px
 	enabled. */
 	*pxTopOfStack = portNO_CRITICAL_NESTING;
 
-	#if( configUSE_TASK_FPU_SUPPORT == 1 )
+#if( configUSE_TASK_FPU_SUPPORT == 1 )
 	{
 		/* The task will start without a floating point context.  A task that
 		uses the floating point hardware must call vPortTaskUsesFPU() before
@@ -310,7 +310,7 @@ StackType_t *pxPortInitialiseStack( StackType_t *pxTopOfStack, TaskFunction_t px
 		pxTopOfStack--;
 		*pxTopOfStack = portNO_FLOATING_POINT_CONTEXT;
 	}
-	#elif( configUSE_TASK_FPU_SUPPORT == 2 )
+#elif( configUSE_TASK_FPU_SUPPORT == 2 )
 	{
 		/* The task will start with a floating point context.  Leave enough
 		space for the registers - and ensure they are initialised to 0. */
@@ -321,11 +321,11 @@ StackType_t *pxPortInitialiseStack( StackType_t *pxTopOfStack, TaskFunction_t px
 		*pxTopOfStack = pdTRUE;
 		ulPortTaskHasFPUContext = pdTRUE;
 	}
-	#else
+#else
 	{
-		#error Invalid configUSE_TASK_FPU_SUPPORT setting - configUSE_TASK_FPU_SUPPORT must be set to 1, 2, or left undefined.
+#error Invalid configUSE_TASK_FPU_SUPPORT setting - configUSE_TASK_FPU_SUPPORT must be set to 1, 2, or left undefined.
 	}
-	#endif
+#endif
 
 	return pxTopOfStack;
 }
@@ -686,7 +686,7 @@ static void prvTaskExitError( void )
 
 BaseType_t xPortInstallInterruptHandler( uint8_t ucInterruptID, XInterruptHandler pxHandler, void *pvCallBackRef )
 {
-int32_t lReturn;
+	int32_t lReturn;
 
 	/* An API function is provided to install an interrupt handler */
 	lReturn = prvEnsureInterruptControllerIsInitialised();
@@ -699,15 +699,15 @@ int32_t lReturn;
 		lReturn = pdPASS;
 	}
 	configASSERT( lReturn == pdPASS );
-	
+
 	return lReturn;
 }
 /*-----------------------------------------------------------*/
 
 static int32_t prvEnsureInterruptControllerIsInitialised( void )
 {
-static int32_t lInterruptControllerInitialised = pdFALSE;
-int32_t lReturn;
+	static int32_t lInterruptControllerInitialised = pdFALSE;
+	int32_t lReturn;
 
 	/* Ensure the interrupt controller instance variable is initialised before
 	it is used, and that the initialisation only happens once. */
@@ -731,20 +731,20 @@ int32_t lReturn;
 
 static int32_t prvInitialiseInterruptController( void )
 {
-BaseType_t xStatus;
-XScuGic_Config *pxGICConfig;
+	BaseType_t xStatus;
+	XScuGic_Config *pxGICConfig;
 
 	/* Initialize the interrupt controller driver. */
 	pxGICConfig = XScuGic_LookupConfig( XPAR_SCUGIC_SINGLE_DEVICE_ID );
 	xStatus = XScuGic_CfgInitialize( &xInterruptController, pxGICConfig, pxGICConfig->CpuBaseAddress );	
-		if( xStatus == XST_SUCCESS )
-		{
-			xStatus = pdPASS;
-		}
-		else
-		{
-			xStatus = pdFAIL;
-		}	
+	if( xStatus == XST_SUCCESS )
+	{
+		xStatus = pdPASS;
+	}
+	else
+	{
+		xStatus = pdFAIL;
+	}
 	configASSERT( xStatus == pdPASS );
 
 	return xStatus;
@@ -753,7 +753,7 @@ XScuGic_Config *pxGICConfig;
 
 void vPortEnableInterrupt( uint8_t ucInterruptID )
 {
-int32_t lReturn;
+	int32_t lReturn;
 
 	/* An API function is provided to enable an interrupt in the interrupt
 	controller. */
@@ -768,7 +768,7 @@ int32_t lReturn;
 
 void vPortDisableInterrupt( uint8_t ucInterruptID )
 {
-int32_t lReturn;
+	int32_t lReturn;
 
 	/* An API function is provided to disable an interrupt in the interrupt
 	controller. */
@@ -806,31 +806,67 @@ TCB_t** pxCurrentTCB_ptr;
 #define EXECUTIONMODE_REEXECUTION_TIMING 1
 #define EXECUTIONMODE_REEXECUTION_FAULT 2
 
-typedef struct {
-	u8 checkId;
-	u8 taskId;
-	u16 uniId;
-	char command;
-	float AOV[configMAX_AOV_DIM];
-} FAULTDETECTOR_controlStr;
+//typedef struct {
+//	u8 checkId;
+//	u8 taskId;
+//	u16 uniId;
+//	char command;
+//	float AOV[configMAX_AOV_DIM];
+//} FAULTDETECTOR_controlStr;
 
 //char ExecutionMode[configMAX_RT_TASKS];
 //OutcomeStr Errors[configMAX_RT_TASKS];
-FAULTDETECTOR_OutcomeStr FAULTDETECTOR_getLastError();
-void FAULTDETECTOR_Train(FAULTDETECTOR_controlStr contr);
-void FAULTDETECTOR_Test(FAULTDETECTOR_controlStr contr);
+#define FAULTDETECTOR_CONTROLSTREAM_BASEADDR XPAR_AXI_MM2S_MAPPER_0_BASEADDR
+#define FAULTDETECTOR_BASEADDR XPAR_RUN_0_S_AXI_CONTROL_BASEADDR
 
-void initFaultDetector() {
+#define COMMAND_INIT 1
+#define COMMAND_TEST 2
+#define COMMAND_TRAIN 3
+
+//#include "xrun.h"
+
+void FAULTDETECTOR_Train(FAULTDETECTOR_controlStr contr) {
+	contr.command=COMMAND_TRAIN;
+	FAULTDETECTOR_controlStr* dest=(FAULTDETECTOR_controlStr*) FAULTDETECTOR_CONTROLSTREAM_BASEADDR;
+	*dest=contr;
+	//memcpy((FAULTDETECTOR_controlStr*)FAULTDETECTOR_CONTROLSTREAM_BASEADDR, (void*) contr, sizeof(FAULTDETECTOR_controlStr));
+}
+void FAULTDETECTOR_Test(FAULTDETECTOR_controlStr contr) {
+	contr.command=COMMAND_TEST;
+	FAULTDETECTOR_controlStr* dest=(FAULTDETECTOR_controlStr*) FAULTDETECTOR_CONTROLSTREAM_BASEADDR;
+	*dest=contr;
+	//memcpy(FAULTDETECTOR_CONTROLSTREAM_BASEADDR, (void*) contr, sizeof(FAULTDETECTOR_controlStr));
+}
+
+XRun FAULTDETECTOR_InstancePtr;
+#define FAULTDETECTOR_DEVICEID XPAR_RUN_0_DEVICE_ID
+
+void FAULTDETECTOR_init(region_t trainedRegions[FAULTDETECTOR_MAX_REGIONS]) {
+	XRun_Config* configPtr=XRun_LookupConfig(FAULTDETECTOR_DEVICEID);
+	XRun_CfgInitialize(&FAULTDETECTOR_InstancePtr, configPtr);
+	FAULTDETECTOR_MoveRegions(&FAULTDETECTOR_InstancePtr, trainedRegions);
+	XRun_Start(&FAULTDETECTOR_InstancePtr);
+}
+
+void initFaultDetection() {
 	//int taskId=(*pxCurrentTCB_ptr)->uxTaskNumber;
 	if ((*pxCurrentTCB_ptr)->executionMode==EXECUTIONMODE_REEXECUTION_FAULT)
-		(*pxCurrentTCB_ptr)->lastError=FAULTDETECTOR_getLastError();
+		FAULTDETECTOR_getLastError(&FAULTDETECTOR_InstancePtr, (*pxCurrentTCB_ptr)->uxTaskNumber-1, &((*pxCurrentTCB_ptr)->lastError));
 	//Errors[taskId]=copyFromFaultDetector
+}
+void endFaultDetection() {
+	//int taskId=(*pxCurrentTCB_ptr)->uxTaskNumber;
+	(*pxCurrentTCB_ptr)->executionMode=EXECUTIONMODE_NORMAL;
+}
+void readOutcome() {
+	FAULTDETECTOR_OutcomeStr out;
+	FAULTDETECTOR_getLastError(&FAULTDETECTOR_InstancePtr, (*pxCurrentTCB_ptr)->uxTaskNumber-1, &out);
 }
 
 void testPoint(int taskId, int uniId, int checkId, int argCount, ...) {
-    va_list ap;
+	va_list ap;
 	va_start(ap, argCount);
-	if (argCount>configMAX_AOV_DIM) //MAX_AOV_DIM
+	if (argCount>FAULTDETECTOR_MAX_AOV_DIM) //MAX_AOV_DIM
 		return; //error
 
 	FAULTDETECTOR_controlStr contr;
@@ -842,7 +878,7 @@ void testPoint(int taskId, int uniId, int checkId, int argCount, ...) {
 	for (int i=0; i<argCount; i++) {
 		contr.AOV[i]=*(va_arg(ap, float*));
 	}
-	for (int i=argCount; i<configMAX_AOV_DIM; i++) {
+	for (int i=argCount; i<FAULTDETECTOR_MAX_AOV_DIM; i++) {
 		contr.AOV[i]=0.0;
 	}
 
@@ -858,8 +894,7 @@ void testPoint(int taskId, int uniId, int checkId, int argCount, ...) {
 	} else {
 		FAULTDETECTOR_Test(contr);
 	}
-
-    va_end(ap);
+	va_end(ap);
 }
 
 
@@ -883,7 +918,7 @@ void xPortScheduleNewTask(void)
 	}
 
 	SCHEDULER_ACKInterrupt((void *) SCHEDULER_BASEADDR);
-/*	xil_printf(" initial SP: %X ", ((*pxCurrentTCB_ptr)->pxStack));
+	/*	xil_printf(" initial SP: %X ", ((*pxCurrentTCB_ptr)->pxStack));
 	xil_printf(" SP: %X ", ((*pxCurrentTCB_ptr)->pxTopOfStack));
 	xil_printf(" PC address: %X ", ((*pxCurrentTCB_ptr)->pxTopOfStack + 13));
 	xil_printf(" PC instr: %X |", *((*pxCurrentTCB_ptr)->pxTopOfStack + 13));*/
@@ -925,67 +960,67 @@ BaseType_t xPortInitScheduler( u32 numberOfTasks,
 	SCHEDULER_copyDeadlines((void*) SCHEDULER_BASEADDR, tasksDeadlines);
 	SCHEDULER_copyPeriods((void*) SCHEDULER_BASEADDR, tasksPeriods);
 
-//	SCHEDULER_copyOrderedDeadlineQIndex((void*) SCHEDULER_BASEADDR, orderedDeadlineQTaskNums);
-//	SCHEDULER_copyOrderedActivationQIndex((void*) SCHEDULER_BASEADDR, orderedActivationQTaskNums);
-//	SCHEDULER_copyOrderedDeadlineQ((void*) SCHEDULER_BASEADDR, orderedDeadlineQPayload);
-//	SCHEDULER_copyOrderedActivationQ((void*) SCHEDULER_BASEADDR, orderedActivationQPayload);
-//	SCHEDULER_copyOrderedDeadlineQReverseIndex((void*) SCHEDULER_BASEADDR, orderedReverseDeadlineQTaskNums);
-//	SCHEDULER_copyOrderedActivationQReverseIndex((void*) SCHEDULER_BASEADDR, orderedReverseActivationQTaskNums);
-//		/*
-//		 * Initialize the interrupt controller driver so that it is ready to
-//		 * use.
-//		 */
-//		XScuGic_Config* intCConfig = XScuGic_LookupConfig(INTC_DEVICE_ID);
-//		if (intCConfig == NULL) {
-//			return XST_FAILURE;
-//		}
-//
-//		status = XScuGic_CfgInitialize(&intControllerInstance, intCConfig,
-//				intCConfig->CpuBaseAddress);
-//		if (status != XST_SUCCESS) {
-//			return XST_FAILURE;
-//		}
+	//	SCHEDULER_copyOrderedDeadlineQIndex((void*) SCHEDULER_BASEADDR, orderedDeadlineQTaskNums);
+	//	SCHEDULER_copyOrderedActivationQIndex((void*) SCHEDULER_BASEADDR, orderedActivationQTaskNums);
+	//	SCHEDULER_copyOrderedDeadlineQ((void*) SCHEDULER_BASEADDR, orderedDeadlineQPayload);
+	//	SCHEDULER_copyOrderedActivationQ((void*) SCHEDULER_BASEADDR, orderedActivationQPayload);
+	//	SCHEDULER_copyOrderedDeadlineQReverseIndex((void*) SCHEDULER_BASEADDR, orderedReverseDeadlineQTaskNums);
+	//	SCHEDULER_copyOrderedActivationQReverseIndex((void*) SCHEDULER_BASEADDR, orderedReverseActivationQTaskNums);
+	//		/*
+	//		 * Initialize the interrupt controller driver so that it is ready to
+	//		 * use.
+	//		 */
+	//		XScuGic_Config* intCConfig = XScuGic_LookupConfig(INTC_DEVICE_ID);
+	//		if (intCConfig == NULL) {
+	//			return XST_FAILURE;
+	//		}
+	//
+	//		status = XScuGic_CfgInitialize(&intControllerInstance, intCConfig,
+	//				intCConfig->CpuBaseAddress);
+	//		if (status != XST_SUCCESS) {
+	//			return XST_FAILURE;
+	//		}
 
-//		XScuGic_SetPriorityTriggerType(&intControllerInstance, SCHEDULER_INTR, 0xA0, 0x3);
-//		/*
-//		 * Connect the device driver handler that will be called when an
-//		 * interrupt for the device occurs, the handler defined above performs
-//		 * the specific interrupt processing for the device.
-//		 */
-//
-//		status = XScuGic_Connect(&intControllerInstance, SCHEDULER_INTR,
-//					(Xil_InterruptHandler)vPortHandleNewTask,
-//					(void *) &intControllerInstance);
-//		if (status != XST_SUCCESS) {
-//			return status;
-//		}
-//
-//		/*
-//		 * Enable the interrupt for the SCHEDULER device.
-//		 */
-//
-//		XScuGic_Enable(&intControllerInstance, SCHEDULER_INTR);
-//
-//		Xil_ExceptionInit();
-//
-//		/*
-//		 * Connect the interrupt controller interrupt handler to the hardware
-//		 * interrupt handling logic in the processor.
-//		 */
-//		Xil_ExceptionRegisterHandler(XIL_EXCEPTION_ID_IRQ_INT,
-//					(Xil_ExceptionHandler)XScuGic_InterruptHandler,
-//					&intControllerInstance);
+	//		XScuGic_SetPriorityTriggerType(&intControllerInstance, SCHEDULER_INTR, 0xA0, 0x3);
+	//		/*
+	//		 * Connect the device driver handler that will be called when an
+	//		 * interrupt for the device occurs, the handler defined above performs
+	//		 * the specific interrupt processing for the device.
+	//		 */
+	//
+	//		status = XScuGic_Connect(&intControllerInstance, SCHEDULER_INTR,
+	//					(Xil_InterruptHandler)vPortHandleNewTask,
+	//					(void *) &intControllerInstance);
+	//		if (status != XST_SUCCESS) {
+	//			return status;
+	//		}
+	//
+	//		/*
+	//		 * Enable the interrupt for the SCHEDULER device.
+	//		 */
+	//
+	//		XScuGic_Enable(&intControllerInstance, SCHEDULER_INTR);
+	//
+	//		Xil_ExceptionInit();
+	//
+	//		/*
+	//		 * Connect the interrupt controller interrupt handler to the hardware
+	//		 * interrupt handling logic in the processor.
+	//		 */
+	//		Xil_ExceptionRegisterHandler(XIL_EXCEPTION_ID_IRQ_INT,
+	//					(Xil_ExceptionHandler)XScuGic_InterruptHandler,
+	//					&intControllerInstance);
 
 
-		/*
-		 * Enable interrupts in the Processor.
-		 */
-		//Xil_ExceptionEnable(); In this case, interrupts will be automatically enabled when a new task is scheduled
+	/*
+	 * Enable interrupts in the Processor.
+	 */
+	//Xil_ExceptionEnable(); In this case, interrupts will be automatically enabled when a new task is scheduled
 	Xil_ExceptionInit();
 
 	Xil_ExceptionRegisterHandler(XIL_EXCEPTION_ID_FIQ_INT,
-				(Xil_ExceptionHandler) vPortHandleNewTask,
-				(void *)CPU_BASEADDR);
+			(Xil_ExceptionHandler) vPortHandleNewTask,
+			(void *)CPU_BASEADDR);
 	/*
 	 * Enable FIQ/IRQ in the ARM
 	 */
@@ -998,9 +1033,9 @@ BaseType_t xPortInitScheduler( u32 numberOfTasks,
 
 BaseType_t xPortStartScheduler( void )
 {
-uint32_t ulAPSR;
+	uint32_t ulAPSR;
 
-	#if( configASSERT_DEFINED == 1 )
+#if( configASSERT_DEFINED == 1 )
 	{
 		volatile uint32_t ulOriginalPriority;
 		volatile uint8_t * const pucFirstUserPriorityRegister = ( volatile uint8_t * const ) ( configINTERRUPT_CONTROLLER_BASE_ADDRESS + portINTERRUPT_PRIORITY_REGISTER_OFFSET );
@@ -1032,7 +1067,7 @@ uint32_t ulAPSR;
 		value. */
 		*pucFirstUserPriorityRegister = ulOriginalPriority;
 	}
-	#endif /* conifgASSERT_DEFINED */
+#endif /* conifgASSERT_DEFINED */
 
 
 	/* Only continue if the CPU is not in User mode.  The CPU must be in a
@@ -1061,9 +1096,9 @@ uint32_t ulAPSR;
 			//configSETUP_TICK_INTERRUPT();
 
 			/* Start the scheduler on hardware */
-//			prvSchedControl.control=2;
-//			prvSchedControl.data = 0;
-//			prvWriteSchedControl();
+			//			prvSchedControl.control=2;
+			//			prvSchedControl.data = 0;
+			//			prvWriteSchedControl();
 			SCHEDULER_EnableInterrupt((void*) SCHEDULER_BASEADDR);
 			SCHEDULER_start((void*) SCHEDULER_BASEADDR);
 			/* Start the first task executing. */
@@ -1135,56 +1170,56 @@ void vPortExitCritical( void )
 
 void FreeRTOS_Tick_Handler( void )
 {
-//	/*
-//	 * The Xilinx implementation of generating run time task stats uses the same timer used for generating
-//	 * FreeRTOS ticks. In case user decides to generate run time stats the tick handler is called more
-//	 * frequently (10 times faster). The timer/tick handler uses logic to handle the same. It handles
-//	 * the FreeRTOS tick once per 10 interrupts.
-//	 * For handling generation of run time stats, it increments a pre-defined counter every time the
-//	 * interrupt handler executes.
-//	 */
-//#if (configGENERATE_RUN_TIME_STATS == 1)
-//	ulHighFrequencyTimerTicks++;
-//	if (!(ulHighFrequencyTimerTicks % 10))
-//#endif
-//	{
-//	/* Set interrupt mask before altering scheduler structures.   The tick
-//	handler runs at the lowest priority, so interrupts cannot already be masked,
-//	so there is no need to save and restore the current mask value.  It is
-//	necessary to turn off interrupts in the CPU itself while the ICCPMR is being
-//	updated. */
-//	portCPU_IRQ_DISABLE();
-//	portICCPMR_PRIORITY_MASK_REGISTER = ( uint32_t ) ( configMAX_API_CALL_INTERRUPT_PRIORITY << portPRIORITY_SHIFT );
-//	__asm volatile (	"dsb		\n"
-//						"isb		\n" ::: "memory" );
-//	portCPU_IRQ_ENABLE();
-//
-//	/* Increment the RTOS tick. */
-//	if( xTaskIncrementTick() != pdFALSE )
-//	{
-//		ulPortYieldRequired = pdTRUE;
-//	}
-//	}
-//
-//	/* Ensure all interrupt priorities are active again. */
-//	portCLEAR_INTERRUPT_MASK();
-//	configCLEAR_TICK_INTERRUPT();
+	//	/*
+	//	 * The Xilinx implementation of generating run time task stats uses the same timer used for generating
+	//	 * FreeRTOS ticks. In case user decides to generate run time stats the tick handler is called more
+	//	 * frequently (10 times faster). The timer/tick handler uses logic to handle the same. It handles
+	//	 * the FreeRTOS tick once per 10 interrupts.
+	//	 * For handling generation of run time stats, it increments a pre-defined counter every time the
+	//	 * interrupt handler executes.
+	//	 */
+	//#if (configGENERATE_RUN_TIME_STATS == 1)
+	//	ulHighFrequencyTimerTicks++;
+	//	if (!(ulHighFrequencyTimerTicks % 10))
+	//#endif
+	//	{
+	//	/* Set interrupt mask before altering scheduler structures.   The tick
+	//	handler runs at the lowest priority, so interrupts cannot already be masked,
+	//	so there is no need to save and restore the current mask value.  It is
+	//	necessary to turn off interrupts in the CPU itself while the ICCPMR is being
+	//	updated. */
+	//	portCPU_IRQ_DISABLE();
+	//	portICCPMR_PRIORITY_MASK_REGISTER = ( uint32_t ) ( configMAX_API_CALL_INTERRUPT_PRIORITY << portPRIORITY_SHIFT );
+	//	__asm volatile (	"dsb		\n"
+	//						"isb		\n" ::: "memory" );
+	//	portCPU_IRQ_ENABLE();
+	//
+	//	/* Increment the RTOS tick. */
+	//	if( xTaskIncrementTick() != pdFALSE )
+	//	{
+	//		ulPortYieldRequired = pdTRUE;
+	//	}
+	//	}
+	//
+	//	/* Ensure all interrupt priorities are active again. */
+	//	portCLEAR_INTERRUPT_MASK();
+	//	configCLEAR_TICK_INTERRUPT();
 }
 /*-----------------------------------------------------------*/
 
 #if( configUSE_TASK_FPU_SUPPORT != 2 )
 
-	void vPortTaskUsesFPU( void )
-	{
+void vPortTaskUsesFPU( void )
+{
 	uint32_t ulInitialFPSCR = 0;
 
-		/* A task is registering the fact that it needs an FPU context.  Set the
+	/* A task is registering the fact that it needs an FPU context.  Set the
 		FPU flag (which is saved as part of the task context). */
-		ulPortTaskHasFPUContext = pdTRUE;
+	ulPortTaskHasFPUContext = pdTRUE;
 
-		/* Initialise the floating point status register. */
-		__asm volatile ( "FMXR 	FPSCR, %0" :: "r" (ulInitialFPSCR) : "memory" );
-	}
+	/* Initialise the floating point status register. */
+	__asm volatile ( "FMXR 	FPSCR, %0" :: "r" (ulInitialFPSCR) : "memory" );
+}
 
 #endif /* configUSE_TASK_FPU_SUPPORT */
 /*-----------------------------------------------------------*/
@@ -1200,7 +1235,7 @@ void vPortClearInterruptMask( uint32_t ulNewMaskValue )
 
 uint32_t ulPortSetInterruptMask( void )
 {
-uint32_t ulReturn;
+	uint32_t ulReturn;
 
 	/* Interrupt in the CPU must be turned off while the ICCPMR is being
 	updated. */
@@ -1215,7 +1250,7 @@ uint32_t ulReturn;
 		ulReturn = pdFALSE;
 		portICCPMR_PRIORITY_MASK_REGISTER = ( uint32_t ) ( configMAX_API_CALL_INTERRUPT_PRIORITY << portPRIORITY_SHIFT );
 		__asm volatile (	"dsb		\n"
-							"isb		\n" ::: "memory" );
+				"isb		\n" ::: "memory" );
 	}
 	portCPU_IRQ_ENABLE();
 
@@ -1225,9 +1260,9 @@ uint32_t ulReturn;
 
 #if( configASSERT_DEFINED == 1 )
 
-	void vPortValidateInterruptPriority( void )
-	{
-		/* The following assertion will fail if a service routine (ISR) for
+void vPortValidateInterruptPriority( void )
+{
+	/* The following assertion will fail if a service routine (ISR) for
 		an interrupt that has been assigned a priority above
 		configMAX_SYSCALL_INTERRUPT_PRIORITY calls an ISR safe FreeRTOS API
 		function.  ISR safe FreeRTOS API functions must *only* be called
@@ -1241,9 +1276,9 @@ uint32_t ulReturn;
 
 		FreeRTOS maintains separate thread and ISR API functions to ensure
 		interrupt entry is as fast and simple as possible. */
-		configASSERT( portICCRPR_RUNNING_PRIORITY_REGISTER >= ( uint32_t ) ( configMAX_API_CALL_INTERRUPT_PRIORITY << portPRIORITY_SHIFT ) );
+	configASSERT( portICCRPR_RUNNING_PRIORITY_REGISTER >= ( uint32_t ) ( configMAX_API_CALL_INTERRUPT_PRIORITY << portPRIORITY_SHIFT ) );
 
-		/* Priority grouping:  The interrupt controller (GIC) allows the bits
+	/* Priority grouping:  The interrupt controller (GIC) allows the bits
 		that define each interrupt's priority to be split between bits that
 		define the interrupt's pre-emption priority bits and bits that define
 		the interrupt's sub-priority.  For simplicity all bits must be defined
@@ -1253,8 +1288,8 @@ uint32_t ulReturn;
 		The priority grouping is configured by the GIC's binary point register
 		(ICCBPR).  Writing 0 to ICCBPR will ensure it is set to its lowest
 		possible value (which may be above 0). */
-		configASSERT( ( portICCBPR_BINARY_POINT_REGISTER & portBINARY_POINT_BITS ) <= portMAX_BINARY_POINT_VALUE );
-	}
+	configASSERT( ( portICCBPR_BINARY_POINT_REGISTER & portBINARY_POINT_BITS ) <= portMAX_BINARY_POINT_VALUE );
+}
 
 #endif /* configASSERT_DEFINED */
 /*-----------------------------------------------------------*/
