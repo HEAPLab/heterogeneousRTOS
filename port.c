@@ -798,6 +798,7 @@ typedef struct __attribute__((__packed__)) {
 //#define PXNEXTTCB 0x10000000
 #define NEWTASKDESCRPTR 0x10000000
 //static XScuGic intControllerInstance;
+
 TCB_t** pxCurrentTCB_ptr;
 
 #define CPU_BASEADDR		XPAR_SCUGIC_CPU_BASEADDR
