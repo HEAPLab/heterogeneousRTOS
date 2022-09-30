@@ -2222,6 +2222,9 @@ void vTaskStartScheduler(void) {
 
 //	xil_printf("Size of task struct: %d /n", sizeof(RTTask_t));
 
+	region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS];
+	FAULTDETECTOR_init(trainedRegions);
+
 	if (xPortInitScheduler( (u32) uxTaskNumber,
 			(void *) tasksTCBPtrs,
 			(void *) tasksWCETs,

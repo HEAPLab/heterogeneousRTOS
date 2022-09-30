@@ -841,10 +841,11 @@ void FAULTDETECTOR_Test(FAULTDETECTOR_controlStr contr) {
 XRun FAULTDETECTOR_InstancePtr;
 #define FAULTDETECTOR_DEVICEID XPAR_RUN_0_DEVICE_ID
 
-void FAULTDETECTOR_init(region_t trainedRegions[FAULTDETECTOR_MAX_REGIONS]) {
+void FAULTDETECTOR_init(region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS]) {
 	XRun_Config* configPtr=XRun_LookupConfig(FAULTDETECTOR_DEVICEID);
 	XRun_CfgInitialize(&FAULTDETECTOR_InstancePtr, configPtr);
-	FAULTDETECTOR_MoveRegions(&FAULTDETECTOR_InstancePtr, trainedRegions);
+	region_t traineddRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS];
+	FAULTDETECTOR_MoveRegions(&FAULTDETECTOR_InstancePtr, traineddRegions);
 	XRun_Start(&FAULTDETECTOR_InstancePtr);
 }
 
@@ -858,22 +859,30 @@ void endFaultDetection() {
 	//int taskId=(*pxCurrentTCB_ptr)->uxTaskNumber;
 	(*pxCurrentTCB_ptr)->executionMode=EXECUTIONMODE_NORMAL;
 }
+char isFault() {
+	FAULTDETECTOR_isFault(&FAULTDETECTOR_InstancePtr, ((*pxCurrentTCB_ptr)->uxTaskNumber)-1);
+}
+void resetFault() {
+	FAULTDETECTOR_resetFault(&FAULTDETECTOR_InstancePtr, ((*pxCurrentTCB_ptr)->uxTaskNumber)-1);
+}
 void readOutcome() {
 	FAULTDETECTOR_OutcomeStr out;
 	FAULTDETECTOR_getLastError(&FAULTDETECTOR_InstancePtr, (*pxCurrentTCB_ptr)->uxTaskNumber-1, &out);
 }
 
-void testPoint(int taskId, int uniId, int checkId, int argCount, ...) {
+void testPoint(int uniId, int checkId, int argCount, ...) {
 	va_list ap;
 	va_start(ap, argCount);
 	if (argCount>FAULTDETECTOR_MAX_AOV_DIM) //MAX_AOV_DIM
 		return; //error
 
 	FAULTDETECTOR_controlStr contr;
+	TCB_t* tcbPtr=*pxCurrentTCB_ptr;
 
 	contr.uniId=uniId;
 	contr.checkId=checkId;
-	contr.taskId=taskId;
+	//contr.taskId=taskId;
+	contr.taskId=tcbPtr->uxTaskNumber-1;
 
 	for (int i=0; i<argCount; i++) {
 		contr.AOV[i]=*(va_arg(ap, float*));
@@ -881,8 +890,6 @@ void testPoint(int taskId, int uniId, int checkId, int argCount, ...) {
 	for (int i=argCount; i<FAULTDETECTOR_MAX_AOV_DIM; i++) {
 		contr.AOV[i]=0.0;
 	}
-
-	TCB_t* tcbPtr=*pxCurrentTCB_ptr;
 
 	if (tcbPtr->executionMode==EXECUTIONMODE_REEXECUTION_FAULT && tcbPtr->lastError.uniId==uniId && tcbPtr->lastError.checkId==checkId) {
 		tcbPtr->lastError.uniId=-1;
@@ -894,6 +901,42 @@ void testPoint(int taskId, int uniId, int checkId, int argCount, ...) {
 	} else {
 		FAULTDETECTOR_Test(contr);
 	}
+	va_end(ap);
+}
+
+void trainPoint(int checkId, int argCount, ...) {
+	va_list ap;
+	va_start(ap, argCount);
+	if (argCount>FAULTDETECTOR_MAX_AOV_DIM) //MAX_AOV_DIM
+		return; //error
+
+	FAULTDETECTOR_controlStr contr;
+	TCB_t* tcbPtr=*pxCurrentTCB_ptr;
+
+	contr.uniId=-1;
+	contr.checkId=checkId;
+	//contr.taskId=taskId;
+	contr.taskId=tcbPtr->uxTaskNumber-1;
+
+	for (int i=0; i<argCount; i++) {
+		contr.AOV[i]=*(va_arg(ap, float*));
+	}
+	for (int i=argCount; i<FAULTDETECTOR_MAX_AOV_DIM; i++) {
+		contr.AOV[i]=0.0;
+	}
+
+	FAULTDETECTOR_Train(contr);
+
+	/*if (tcbPtr->executionMode==EXECUTIONMODE_REEXECUTION_FAULT && tcbPtr->lastError.uniId==uniId && tcbPtr->lastError.checkId==checkId) {
+		tcbPtr->lastError.uniId=-1;
+		tcbPtr->lastError.checkId=-1;
+		if (memcmp(tcbPtr->lastError.AOV, contr.AOV, sizeof(contr.AOV))==0)
+			FAULTDETECTOR_Train(contr);
+		else
+			FAULTDETECTOR_Test(contr);
+	} else {
+		FAULTDETECTOR_Test(contr);
+	}*/
 	va_end(ap);
 }
 
