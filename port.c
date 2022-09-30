@@ -792,7 +792,7 @@ void vPortDisableInterrupt( uint8_t ucInterruptID )
 #define SCHEDULER_INTR XPAR_FABRIC_SCHEDULER_0_IRQ_INTR
 
 typedef struct __attribute__((__packed__)) {
-	TCB_t ** pxNextTcb;
+	TCB_t * pxNextTcb;
 	char executionMode; //normal, reexecution due to fault, reexecution due to timing fail
 } newTaskDescrStr;
 //#define PXNEXTTCB 0x10000000
@@ -946,7 +946,7 @@ void xPortScheduleNewTask(void)
 
 	newTaskDescrStr* newtaskdesc=(newTaskDescrStr*) NEWTASKDESCRPTR;
 	//*pxCurrentTCB_ptr = *((TCB_t**) NEWTASKDESCRPTR);
-	*pxCurrentTCB_ptr = *(newtaskdesc->pxNextTcb);
+	*pxCurrentTCB_ptr = newtaskdesc->pxNextTcb;
 	xil_printf("| NEW, %X ", *pxCurrentTCB_ptr);
 	(*(pxCurrentTCB_ptr))->jobEnded=0;
 
