@@ -831,11 +831,12 @@ void FAULTDETECTOR_Train(FAULTDETECTOR_controlStr contr) {
 	*dest=contr;
 	//memcpy((FAULTDETECTOR_controlStr*)FAULTDETECTOR_CONTROLSTREAM_BASEADDR, (void*) contr, sizeof(FAULTDETECTOR_controlStr));
 }
-void FAULTDETECTOR_Test(FAULTDETECTOR_controlStr contr) {
-	contr.command=COMMAND_TEST;
-	FAULTDETECTOR_controlStr* dest=(FAULTDETECTOR_controlStr*) FAULTDETECTOR_CONTROLSTREAM_BASEADDR;
-	*dest=contr;
-	//memcpy(FAULTDETECTOR_CONTROLSTREAM_BASEADDR, (void*) contr, sizeof(FAULTDETECTOR_controlStr));
+void FAULTDETECTOR_Test(FAULTDETECTOR_controlStr* contr) {
+	contr->command=COMMAND_TEST;
+	//FAULTDETECTOR_controlStr* dest=(FAULTDETECTOR_controlStr*) FAULTDETECTOR_CONTROLSTREAM_BASEADDR;
+	//*dest=contr;
+//	int pip=2;
+//	memcpy((void*)FAULTDETECTOR_CONTROLSTREAM_BASEADDR, (void*) &pip, 1);
 }
 
 XRun FAULTDETECTOR_InstancePtr;
@@ -844,8 +845,7 @@ XRun FAULTDETECTOR_InstancePtr;
 void FAULTDETECTOR_init(region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS]) {
 	XRun_Config* configPtr=XRun_LookupConfig(FAULTDETECTOR_DEVICEID);
 	XRun_CfgInitialize(&FAULTDETECTOR_InstancePtr, configPtr);
-	region_t traineddRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS];
-	FAULTDETECTOR_MoveRegions(&FAULTDETECTOR_InstancePtr, traineddRegions);
+	FAULTDETECTOR_MoveRegions(&FAULTDETECTOR_InstancePtr, trainedRegions);
 	XRun_Start(&FAULTDETECTOR_InstancePtr);
 }
 
@@ -897,10 +897,11 @@ void testPoint(int uniId, int checkId, int argCount, ...) {
 		if (memcmp(tcbPtr->lastError.AOV, contr.AOV, sizeof(contr.AOV))==0)
 			FAULTDETECTOR_Train(contr);
 		else
-			FAULTDETECTOR_Test(contr);
+			FAULTDETECTOR_Test(&contr);
 	} else {
-		FAULTDETECTOR_Test(contr);
+		FAULTDETECTOR_Test(&contr);
 	}
+	xil_printf("pippo");
 	va_end(ap);
 }
 
