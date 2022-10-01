@@ -2224,6 +2224,8 @@ void vTaskStartScheduler(void) {
 
 	region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS];
 	u8 n_regions[FAULTDETECTOR_MAX_CHECKS];
+	for (int i=0; i<FAULTDETECTOR_MAX_CHECKS; i++)
+		n_regions[i]=5;
 	FAULTDETECTOR_init(trainedRegions, n_regions);
 
 	if (xPortInitScheduler( (u32) uxTaskNumber,

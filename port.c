@@ -879,7 +879,7 @@ void FAULTDETECTOR_Train(FAULTDETECTOR_controlStr contr) {
 
 	int Status = XAxiDma_SimpleTransfer(&AxiDma,(UINTPTR) &contr,
 			sizeof(FAULTDETECTOR_controlStr), XAXIDMA_DMA_TO_DEVICE);
-	xil_printf("status %d", Status);
+	//xil_printf("status %d", Status);
 	while (XAxiDma_Busy(&AxiDma,XAXIDMA_DMA_TO_DEVICE)) //||
 		//(XAxiDma_Busy(&AxiDma,XAXIDMA_DMA_TO_DEVICE)))
 	{
@@ -896,7 +896,7 @@ void FAULTDETECTOR_Test(FAULTDETECTOR_controlStr* contr) {
 	int Status;
 	Status = XAxiDma_SimpleTransfer(&AxiDma,(UINTPTR) &contr,
 				sizeof(FAULTDETECTOR_controlStr), XAXIDMA_DMA_TO_DEVICE);
-	xil_printf("%d", Status);
+//	xil_printf("%d", Status);
 	while (XAxiDma_Busy(&AxiDma,XAXIDMA_DMA_TO_DEVICE)) //||
 		//(XAxiDma_Busy(&AxiDma,XAXIDMA_DMA_TO_DEVICE)))
 	{
@@ -957,7 +957,6 @@ void testPoint(int uniId, int checkId, int argCount, ...) {
 	} else {
 		FAULTDETECTOR_Test(&contr);
 	}
-	xil_printf("pippo");
 	va_end(ap);
 }
 
