@@ -842,10 +842,11 @@ void FAULTDETECTOR_Test(FAULTDETECTOR_controlStr* contr) {
 XRun FAULTDETECTOR_InstancePtr;
 #define FAULTDETECTOR_DEVICEID XPAR_RUN_0_DEVICE_ID
 
-void FAULTDETECTOR_init(region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS]) {
+void FAULTDETECTOR_init(region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS], u8 n_regions[FAULTDETECTOR_MAX_CHECKS]) {
 	XRun_Config* configPtr=XRun_LookupConfig(FAULTDETECTOR_DEVICEID);
 	XRun_CfgInitialize(&FAULTDETECTOR_InstancePtr, configPtr);
 	FAULTDETECTOR_MoveRegions(&FAULTDETECTOR_InstancePtr, trainedRegions);
+	FAULTDETECTOR_MoveNRegions(&FAULTDETECTOR_InstancePtr, n_regions);
 	XRun_Start(&FAULTDETECTOR_InstancePtr);
 }
 
