@@ -2204,7 +2204,7 @@
 			//	}
 		}
 
-		void vTaskStartScheduler(void) {
+		void vTaskStartScheduler(region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS], u8 n_regions[FAULTDETECTOR_MAX_CHECKS]) {
 			BaseType_t xReturn;
 
 			u32 tasksTCBPtrs[ configMAX_RT_TASKS ];
@@ -2221,17 +2221,6 @@
 			);
 
 			//	xil_printf("Size of task struct: %d /n", sizeof(RTTask_t));
-
-			region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS];
-			u8 n_regions[FAULTDETECTOR_MAX_CHECKS];
-			for (int i=0; i<FAULTDETECTOR_MAX_CHECKS; i++) {
-				n_regions[i]=0;
-				for (j=0; j<FAULTDETECTOR_MAX_REGIONS; j++) {
-					trainedRegions[i][j].center=0.0;
-					trainedRegions[i][j].max=0.0;
-					trainedRegions[i][j].min=0.0;
-				}
-			}
 
 			FAULTDETECTOR_init(trainedRegions, n_regions);
 

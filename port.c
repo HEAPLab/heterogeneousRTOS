@@ -832,6 +832,11 @@ XRun FAULTDETECTOR_InstancePtr;
 XAxiDma AxiDma;
 #define FAULTDETECTOR_DEVICEID XPAR_RUN_0_DEVICE_ID
 #define DMA_DEV_ID		XPAR_AXIDMA_0_DEVICE_ID
+
+void FAULTDET_getLastError(FAULTDETECTOR_OutcomeStr* dest) {
+	FAULTDETECTOR_getLastError(&FAULTDETECTOR_InstancePtr, ((*pxCurrentTCB_ptr)->uxTaskNumber)-1, dest);
+}
+
 void FAULTDETECTOR_init(region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS], u8 n_regions[FAULTDETECTOR_MAX_CHECKS]) {
 	XRun_Config* configPtr=XRun_LookupConfig(FAULTDETECTOR_DEVICEID);
 	XRun_CfgInitialize(&FAULTDETECTOR_InstancePtr, configPtr);
@@ -940,11 +945,14 @@ void testPoint(int uniId, int checkId, int argCount, ...) {
 	//contr.taskId=taskId;
 	contr.taskId=tcbPtr->uxTaskNumber-1;
 
-	for (int i=0; i<argCount; i++) {
-		contr.AOV[i]=*(va_arg(ap, float*));
-	}
-	for (int i=argCount; i<FAULTDETECTOR_MAX_AOV_DIM; i++) {
-		contr.AOV[i]=0.0;
+//	for (int i=0; i<argCount; i++) {
+//		contr.AOV[i]=*va_arg(ap, float*);
+//	}
+//	for (int i=argCount; i<FAULTDETECTOR_MAX_AOV_DIM; i++) {
+//		contr.AOV[i]=0.0;
+//	}
+	for (int i=0; i<FAULTDETECTOR_MAX_AOV_DIM; i++) {
+		contr.AOV[i]=100.0;
 	}
 
 	if (tcbPtr->executionMode==EXECUTIONMODE_REEXECUTION_FAULT && tcbPtr->lastError.uniId==uniId && tcbPtr->lastError.checkId==checkId) {
