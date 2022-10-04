@@ -882,9 +882,12 @@ void FAULTDETECTOR_Train(FAULTDETECTOR_controlStr* contr) {
 	while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {}
 	controlForFaultDet=*contr;
 	FAULTDETECTOR_processNextControl(&FAULTDETECTOR_InstancePtr);
-	while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {
-		xil_printf("notReady");
-	}
+//	while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {
+//		xil_printf("notReady");
+//	}
+
+
+
 //	int Status = XAxiDma_SimpleTransfer(&AxiDma,(UINTPTR) &contr,
 //			sizeof(FAULTDETECTOR_controlStr), XAXIDMA_DMA_TO_DEVICE);
 //	//xil_printf("status %d", Status);
@@ -901,9 +904,9 @@ void FAULTDETECTOR_Test(FAULTDETECTOR_controlStr* contr) {
 	while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {}
 	controlForFaultDet=*contr;
 	FAULTDETECTOR_processNextControl(&FAULTDETECTOR_InstancePtr);
-	while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {
-		xil_printf("notReady");
-	}
+//	while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {
+//		xil_printf("notReady");
+//	}
 //	int Status;
 //	Status = XAxiDma_SimpleTransfer(&AxiDma,(UINTPTR) &contr,
 //				sizeof(FAULTDETECTOR_controlStr), XAXIDMA_DMA_TO_DEVICE);
