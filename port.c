@@ -843,7 +843,7 @@ void FAULTDETECTOR_init(region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTD
 	XRun_CfgInitialize(&FAULTDETECTOR_InstancePtr, configPtr);
 	FAULTDETECTOR_MoveRegions(&FAULTDETECTOR_InstancePtr, trainedRegions);
 	FAULTDETECTOR_MoveNRegions(&FAULTDETECTOR_InstancePtr, n_regions);
-	XRun_Set_inputAOV(&FAULTDETECTOR_InstancePtr, &controlForFaultDet);
+	XRun_Set_inputAOV(&FAULTDETECTOR_InstancePtr, (u64) (&controlForFaultDet));
 	XRun_Set_copyInputAOV(&FAULTDETECTOR_InstancePtr, 0x0);
 	XRun_Start(&FAULTDETECTOR_InstancePtr);
 
@@ -882,6 +882,9 @@ void FAULTDETECTOR_Train(FAULTDETECTOR_controlStr* contr) {
 	while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {}
 	controlForFaultDet=*contr;
 	FAULTDETECTOR_processNextControl(&FAULTDETECTOR_InstancePtr);
+	while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {
+		xil_printf("notReady");
+	}
 //	int Status = XAxiDma_SimpleTransfer(&AxiDma,(UINTPTR) &contr,
 //			sizeof(FAULTDETECTOR_controlStr), XAXIDMA_DMA_TO_DEVICE);
 //	//xil_printf("status %d", Status);
@@ -898,6 +901,9 @@ void FAULTDETECTOR_Test(FAULTDETECTOR_controlStr* contr) {
 	while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {}
 	controlForFaultDet=*contr;
 	FAULTDETECTOR_processNextControl(&FAULTDETECTOR_InstancePtr);
+	while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {
+		xil_printf("notReady");
+	}
 //	int Status;
 //	Status = XAxiDma_SimpleTransfer(&AxiDma,(UINTPTR) &contr,
 //				sizeof(FAULTDETECTOR_controlStr), XAXIDMA_DMA_TO_DEVICE);
@@ -921,7 +927,7 @@ void endFaultDetection() {
 	(*pxCurrentTCB_ptr)->executionMode=EXECUTIONMODE_NORMAL;
 }
 char isFault() {
-	FAULTDETECTOR_isFault(&FAULTDETECTOR_InstancePtr, ((*pxCurrentTCB_ptr)->uxTaskNumber)-1);
+	return FAULTDETECTOR_isFault(&FAULTDETECTOR_InstancePtr, ((*pxCurrentTCB_ptr)->uxTaskNumber)-1);
 }
 void resetFault() {
 	FAULTDETECTOR_resetFault(&FAULTDETECTOR_InstancePtr, ((*pxCurrentTCB_ptr)->uxTaskNumber)-1);
@@ -1056,7 +1062,7 @@ BaseType_t xPortInitScheduler( u32 numberOfTasks,
 		u32* pxCurrentTCBPtr )
 {
 	pxCurrentTCB_ptr=(TCB_t **)pxCurrentTCBPtr;
-	int status;
+//	int status;
 
 	Xil_DisableMMU();
 
