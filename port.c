@@ -843,10 +843,16 @@ void FAULTDETECTOR_init(region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTD
 	XRun_CfgInitialize(&FAULTDETECTOR_InstancePtr, configPtr);
 	FAULTDETECTOR_MoveRegions(&FAULTDETECTOR_InstancePtr, trainedRegions);
 	FAULTDETECTOR_MoveNRegions(&FAULTDETECTOR_InstancePtr, n_regions);
-	XRun_Set_inputAOV(&FAULTDETECTOR_InstancePtr, (u32) (&controlForFaultDet));
 //	XRun_Set_copyInputAOV(&FAULTDETECTOR_InstancePtr, 0x0);
+//	*((u32*) 0x40000020)=(u32) (&controlForFaultDet);
+	XRun_Set_inputAOV(&FAULTDETECTOR_InstancePtr, (u32) (&controlForFaultDet));
+	u32 inputAov=XRun_Get_inputAOV(&FAULTDETECTOR_InstancePtr);
+	xil_printf("inputAov: %x", inputAov);
 	FAULTDETECTOR_processNextControl(&FAULTDETECTOR_InstancePtr);
 	XRun_Start(&FAULTDETECTOR_InstancePtr);
+	u32 ctr=*((u32*) 0x40000000);
+	xil_printf("ctrl: %x", ctr);
+
 
 
 //	XAxiDma_Config *CfgPtr;
