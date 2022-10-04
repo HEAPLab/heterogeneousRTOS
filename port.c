@@ -844,7 +844,8 @@ void FAULTDETECTOR_init(region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTD
 	FAULTDETECTOR_MoveRegions(&FAULTDETECTOR_InstancePtr, trainedRegions);
 	FAULTDETECTOR_MoveNRegions(&FAULTDETECTOR_InstancePtr, n_regions);
 	XRun_Set_inputAOV(&FAULTDETECTOR_InstancePtr, (u64) (&controlForFaultDet));
-	XRun_Set_copyInputAOV(&FAULTDETECTOR_InstancePtr, 0x0);
+//	XRun_Set_copyInputAOV(&FAULTDETECTOR_InstancePtr, 0x0);
+	FAULTDETECTOR_processNextControl(&FAULTDETECTOR_InstancePtr);
 	XRun_Start(&FAULTDETECTOR_InstancePtr);
 
 
@@ -1143,6 +1144,8 @@ BaseType_t xPortInitScheduler( u32 numberOfTasks,
 	//Xil_ExceptionEnableMask(XIL_EXCEPTION_ALL);
 
 	Xil_ExceptionEnable();
+
+	while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {}
 
 	return pdPASS;
 }
