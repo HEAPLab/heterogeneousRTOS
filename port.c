@@ -826,12 +826,13 @@ TCB_t** pxCurrentTCB_ptr;
 //#include "xrun.h"
 
 
-
 XRun FAULTDETECTOR_InstancePtr;
-#include "xaxidma.h"
-XAxiDma AxiDma;
+FAULTDETECTOR_controlStr controlForFaultDet;
+
+//#include "xaxidma.h"
+//XAxiDma AxiDma;
 #define FAULTDETECTOR_DEVICEID XPAR_RUN_0_DEVICE_ID
-#define DMA_DEV_ID		XPAR_AXIDMA_0_DEVICE_ID
+//#define DMA_DEV_ID		XPAR_AXIDMA_0_DEVICE_ID
 
 void FAULTDET_getLastError(FAULTDETECTOR_OutcomeStr* dest) {
 	FAULTDETECTOR_getLastError(&FAULTDETECTOR_InstancePtr, ((*pxCurrentTCB_ptr)->uxTaskNumber)-1, dest);
@@ -842,71 +843,70 @@ void FAULTDETECTOR_init(region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTD
 	XRun_CfgInitialize(&FAULTDETECTOR_InstancePtr, configPtr);
 	FAULTDETECTOR_MoveRegions(&FAULTDETECTOR_InstancePtr, trainedRegions);
 	FAULTDETECTOR_MoveNRegions(&FAULTDETECTOR_InstancePtr, n_regions);
+	XRun_Set_inputAOV(&FAULTDETECTOR_InstancePtr, &controlForFaultDet);
+	XRun_Set_copyInputAOV(&FAULTDETECTOR_InstancePtr, 0x0);
 	XRun_Start(&FAULTDETECTOR_InstancePtr);
 
 
-
-
-	XAxiDma_Config *CfgPtr;
-	int Status;
-
-	/* Initialize the XAxiDma device.
-	 */
-	CfgPtr = XAxiDma_LookupConfig(DMA_DEV_ID);
-//	if (!CfgPtr) {
-//		xil_printf("No config found for %d\r\n", DMA_DEV_ID);
-//		return XST_FAILURE;
-//	}
-
-	Status = XAxiDma_CfgInitialize(&AxiDma, CfgPtr);
-//	if (Status != XST_SUCCESS) {
-//		xil_printf("Initialization failed %d\r\n", Status);
-//		return XST_FAILURE;
-//	}
-
-	/* Disable interrupts, we use polling mode
-	 */
-	XAxiDma_IntrDisable(&AxiDma, XAXIDMA_IRQ_ALL_MASK,
-						XAXIDMA_DEVICE_TO_DMA);
-	XAxiDma_IntrDisable(&AxiDma, XAXIDMA_IRQ_ALL_MASK,
-						XAXIDMA_DMA_TO_DEVICE);
+//	XAxiDma_Config *CfgPtr;
+//	int Status;
+//
+//	/* Initialize the XAxiDma device.
+//	 */
+//	CfgPtr = XAxiDma_LookupConfig(DMA_DEV_ID);
+////	if (!CfgPtr) {
+////		xil_printf("No config found for %d\r\n", DMA_DEV_ID);
+////		return XST_FAILURE;
+////	}
+//
+//	Status = XAxiDma_CfgInitialize(&AxiDma, CfgPtr);
+////	if (Status != XST_SUCCESS) {
+////		xil_printf("Initialization failed %d\r\n", Status);
+////		return XST_FAILURE;
+////	}
+//
+//	/* Disable interrupts, we use polling mode
+//	 */
+//	XAxiDma_IntrDisable(&AxiDma, XAXIDMA_IRQ_ALL_MASK,
+//						XAXIDMA_DEVICE_TO_DMA);
+//	XAxiDma_IntrDisable(&AxiDma, XAXIDMA_IRQ_ALL_MASK,
+//						XAXIDMA_DMA_TO_DEVICE);
 
 
 
 }
 
-void FAULTDETECTOR_Train(FAULTDETECTOR_controlStr contr) {
-	contr.command=COMMAND_TRAIN;
+void FAULTDETECTOR_Train(FAULTDETECTOR_controlStr* contr) {
+	contr->command=COMMAND_TRAIN;
 
-	//FAULTDETECTOR_controlStr* dest=(FAULTDETECTOR_controlStr*) FAULTDETECTOR_CONTROLSTREAM_BASEADDR;
-	//*dest=contr;
-	//memcpy((FAULTDETECTOR_controlStr*)FAULTDETECTOR_CONTROLSTREAM_BASEADDR, (void*) contr, sizeof(FAULTDETECTOR_controlStr));
-
-	int Status = XAxiDma_SimpleTransfer(&AxiDma,(UINTPTR) &contr,
-			sizeof(FAULTDETECTOR_controlStr), XAXIDMA_DMA_TO_DEVICE);
-	//xil_printf("status %d", Status);
-	while (XAxiDma_Busy(&AxiDma,XAXIDMA_DMA_TO_DEVICE)) //||
-		//(XAxiDma_Busy(&AxiDma,XAXIDMA_DMA_TO_DEVICE)))
-	{
-			/* Wait */
-	}
+	while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {}
+	controlForFaultDet=*contr;
+	FAULTDETECTOR_processNextControl(&FAULTDETECTOR_InstancePtr);
+//	int Status = XAxiDma_SimpleTransfer(&AxiDma,(UINTPTR) &contr,
+//			sizeof(FAULTDETECTOR_controlStr), XAXIDMA_DMA_TO_DEVICE);
+//	//xil_printf("status %d", Status);
+//	while (XAxiDma_Busy(&AxiDma,XAXIDMA_DMA_TO_DEVICE)) //||
+//		//(XAxiDma_Busy(&AxiDma,XAXIDMA_DMA_TO_DEVICE)))
+//	{
+//			/* Wait */
+//	}
 
 }
 void FAULTDETECTOR_Test(FAULTDETECTOR_controlStr* contr) {
 	contr->command=COMMAND_TEST;
-	//FAULTDETECTOR_controlStr* dest=(FAULTDETECTOR_controlStr*) FAULTDETECTOR_CONTROLSTREAM_BASEADDR;
-	//*dest=contr;
-//	int pip=2;
-//	memcpy((void*)FAULTDETECTOR_CONTROLSTREAM_BASEADDR, (void*) &pip, 1);
-	int Status;
-	Status = XAxiDma_SimpleTransfer(&AxiDma,(UINTPTR) &contr,
-				sizeof(FAULTDETECTOR_controlStr), XAXIDMA_DMA_TO_DEVICE);
-//	xil_printf("%d", Status);
-	while (XAxiDma_Busy(&AxiDma,XAXIDMA_DMA_TO_DEVICE)) //||
-		//(XAxiDma_Busy(&AxiDma,XAXIDMA_DMA_TO_DEVICE)))
-	{
-			/* Wait */
-	}
+
+	while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {}
+	controlForFaultDet=*contr;
+	FAULTDETECTOR_processNextControl(&FAULTDETECTOR_InstancePtr);
+//	int Status;
+//	Status = XAxiDma_SimpleTransfer(&AxiDma,(UINTPTR) &contr,
+//				sizeof(FAULTDETECTOR_controlStr), XAXIDMA_DMA_TO_DEVICE);
+////	xil_printf("%d", Status);
+//	while (XAxiDma_Busy(&AxiDma,XAXIDMA_DMA_TO_DEVICE)) //||
+//		//(XAxiDma_Busy(&AxiDma,XAXIDMA_DMA_TO_DEVICE)))
+//	{
+//			/* Wait */
+//	}
 
 }
 
@@ -959,7 +959,7 @@ void testPoint(int uniId, int checkId, int argCount, ...) {
 		tcbPtr->lastError.uniId=-1;
 		tcbPtr->lastError.checkId=-1;
 		if (memcmp(tcbPtr->lastError.AOV, contr.AOV, sizeof(contr.AOV))==0)
-			FAULTDETECTOR_Train(contr);
+			FAULTDETECTOR_Train(&contr);
 		else
 			FAULTDETECTOR_Test(&contr);
 	} else {
@@ -989,7 +989,7 @@ void trainPoint(int checkId, int argCount, ...) {
 		contr.AOV[i]=0.0;
 	}
 
-	FAULTDETECTOR_Train(contr);
+	FAULTDETECTOR_Train(&contr);
 
 	/*if (tcbPtr->executionMode==EXECUTIONMODE_REEXECUTION_FAULT && tcbPtr->lastError.uniId==uniId && tcbPtr->lastError.checkId==checkId) {
 		tcbPtr->lastError.uniId=-1;
