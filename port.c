@@ -847,11 +847,8 @@ void FAULTDETECTOR_init(region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTD
 //	*((u32*) 0x40000020)=(u32) (&controlForFaultDet);
 	XRun_Set_inputAOV(&FAULTDETECTOR_InstancePtr, (u32) (&controlForFaultDet));
 	u32 inputAov=XRun_Get_inputAOV(&FAULTDETECTOR_InstancePtr);
-	xil_printf("inputAov: %x", inputAov);
 	FAULTDETECTOR_processNextControl(&FAULTDETECTOR_InstancePtr);
-	XRun_Start(&FAULTDETECTOR_InstancePtr);
-	u32 ctr=*((u32*) 0x40000000);
-	xil_printf("ctrl: %x", ctr);
+//	XRun_Start(&FAULTDETECTOR_InstancePtr);
 
 
 
@@ -908,9 +905,15 @@ void FAULTDETECTOR_Train(FAULTDETECTOR_controlStr* contr) {
 void FAULTDETECTOR_Test(FAULTDETECTOR_controlStr* contr) {
 	contr->command=COMMAND_TEST;
 
-	while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {}
-	controlForFaultDet=*contr;
-	FAULTDETECTOR_processNextControl(&FAULTDETECTOR_InstancePtr);
+
+	XRun_Start(&FAULTDETECTOR_InstancePtr);
+
+//	while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {}
+//	controlForFaultDet=*contr;
+//	FAULTDETECTOR_processNextControl(&FAULTDETECTOR_InstancePtr);
+
+
+
 //	while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {
 //		xil_printf("notReady");
 //	}
@@ -971,16 +974,18 @@ void testPoint(int uniId, int checkId, int argCount, ...) {
 		contr.AOV[i]=100.0;
 	}
 
-	if (tcbPtr->executionMode==EXECUTIONMODE_REEXECUTION_FAULT && tcbPtr->lastError.uniId==uniId && tcbPtr->lastError.checkId==checkId) {
-		tcbPtr->lastError.uniId=-1;
-		tcbPtr->lastError.checkId=-1;
-		if (memcmp(tcbPtr->lastError.AOV, contr.AOV, sizeof(contr.AOV))==0)
-			FAULTDETECTOR_Train(&contr);
-		else
-			FAULTDETECTOR_Test(&contr);
-	} else {
-		FAULTDETECTOR_Test(&contr);
-	}
+	controlForFaultDet=contr;
+
+//	if (tcbPtr->executionMode==EXECUTIONMODE_REEXECUTION_FAULT && tcbPtr->lastError.uniId==uniId && tcbPtr->lastError.checkId==checkId) {
+//		tcbPtr->lastError.uniId=-1;
+//		tcbPtr->lastError.checkId=-1;
+//		if (memcmp(tcbPtr->lastError.AOV, contr.AOV, sizeof(contr.AOV))==0)
+//			FAULTDETECTOR_Train(&controlForFaultDet);
+//		else
+//			FAULTDETECTOR_Test(&controlForFaultDet);
+//	} else {
+		FAULTDETECTOR_Test(&controlForFaultDet);
+//	}
 	va_end(ap);
 }
 
@@ -1151,7 +1156,7 @@ BaseType_t xPortInitScheduler( u32 numberOfTasks,
 
 	Xil_ExceptionEnable();
 
-	while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {}
+//	while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {}
 
 	return pdPASS;
 }
