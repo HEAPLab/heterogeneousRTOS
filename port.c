@@ -971,7 +971,7 @@ void testPoint(int uniId, int checkId, int argCount, ...) {
 //		contr.AOV[i]=0.0;
 //	}
 	for (int i=0; i<FAULTDETECTOR_MAX_AOV_DIM; i++) {
-		contr.AOV[i]=100.0;
+		contr.AOV[i]=5000.0;
 	}
 
 	controlForFaultDet=contr;
