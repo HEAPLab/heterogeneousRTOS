@@ -912,12 +912,12 @@ void FAULTDETECTOR_Test(FAULTDETECTOR_controlStr* contr) {
 	contr->command=COMMAND_TEST;
 
 
-	if (XRun_IsIdle(&FAULTDETECTOR_InstancePtr))
+//	if (XRun_IsIdle(&FAULTDETECTOR_InstancePtr))
 		XRun_Start(&FAULTDETECTOR_InstancePtr);
-	else if (XRun_IsDone(&FAULTDETECTOR_InstancePtr))
-		XRun_Continue(&FAULTDETECTOR_InstancePtr);
-	else
-		xil_printf("err");
+//	else if (XRun_IsDone(&FAULTDETECTOR_InstancePtr))
+//		XRun_Continue(&FAULTDETECTOR_InstancePtr);
+//	else
+//		xil_printf("err");
 
 //	while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {}
 //	controlForFaultDet=*contr;
