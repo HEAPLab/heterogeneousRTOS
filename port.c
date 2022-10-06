@@ -841,13 +841,13 @@ void FAULTDET_getLastError(FAULTDETECTOR_OutcomeStr* dest) {
 void FAULTDETECTOR_init(region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS], u8 n_regions[FAULTDETECTOR_MAX_CHECKS]) {
 	XRun_Config* configPtr=XRun_LookupConfig(FAULTDETECTOR_DEVICEID);
 	XRun_CfgInitialize(&FAULTDETECTOR_InstancePtr, configPtr);
-	FAULTDETECTOR_MoveRegions(&FAULTDETECTOR_InstancePtr, trainedRegions);
-	FAULTDETECTOR_MoveNRegions(&FAULTDETECTOR_InstancePtr, n_regions);
+
 //	XRun_Set_copyInputAOV(&FAULTDETECTOR_InstancePtr, 0x0);
 //	*((u32*) 0x40000020)=(u32) (&controlForFaultDet);
 	XRun_Set_inputAOV(&FAULTDETECTOR_InstancePtr, (u32) (&controlForFaultDet));
-	u32 inputAov=XRun_Get_inputAOV(&FAULTDETECTOR_InstancePtr);
-	FAULTDETECTOR_processNextControl(&FAULTDETECTOR_InstancePtr);
+	FAULTDETECTOR_initHW(&FAULTDETECTOR_InstancePtr, trainedRegions, n_regions);
+
+	//	FAULTDETECTOR_processNextControl(&FAULTDETECTOR_InstancePtr);
 //	XRun_Start(&FAULTDETECTOR_InstancePtr);
 
 
@@ -880,6 +880,10 @@ void FAULTDETECTOR_init(region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTD
 
 }
 
+void FAULTDETECTOR_dumpRegionsSW(region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS], u8 n_regions[FAULTDETECTOR_MAX_CHECKS]) {
+	FAULTDETECTOR_dumpRegions(&FAULTDETECTOR_InstancePtr, trainedRegions, n_regions);
+}
+
 void FAULTDETECTOR_Train(FAULTDETECTOR_controlStr* contr) {
 	contr->command=COMMAND_TRAIN;
 
@@ -906,7 +910,12 @@ void FAULTDETECTOR_Test(FAULTDETECTOR_controlStr* contr) {
 	contr->command=COMMAND_TEST;
 
 
-	XRun_Start(&FAULTDETECTOR_InstancePtr);
+	if (XRun_IsIdle(&FAULTDETECTOR_InstancePtr))
+		XRun_Start(&FAULTDETECTOR_InstancePtr);
+	else if (XRun_IsDone(&FAULTDETECTOR_InstancePtr))
+		XRun_Continue(&FAULTDETECTOR_InstancePtr);
+	else
+		xil_printf("err");
 
 //	while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {}
 //	controlForFaultDet=*contr;
