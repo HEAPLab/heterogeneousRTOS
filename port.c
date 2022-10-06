@@ -847,6 +847,8 @@ void FAULTDETECTOR_init(region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTD
 	XRun_Set_inputAOV(&FAULTDETECTOR_InstancePtr, (u32) (&controlForFaultDet));
 	FAULTDETECTOR_initHW(&FAULTDETECTOR_InstancePtr, trainedRegions, n_regions);
 
+	//*((u32*) 0x40000044)=0x11111;
+
 	//	FAULTDETECTOR_processNextControl(&FAULTDETECTOR_InstancePtr);
 //	XRun_Start(&FAULTDETECTOR_InstancePtr);
 
@@ -1041,7 +1043,7 @@ void xPortScheduleNewTask(void)
 	newTaskDescrStr* newtaskdesc=(newTaskDescrStr*) NEWTASKDESCRPTR;
 	//*pxCurrentTCB_ptr = *((TCB_t**) NEWTASKDESCRPTR);
 	*pxCurrentTCB_ptr = newtaskdesc->pxNextTcb;
-	xil_printf("| NEW, %X ", *pxCurrentTCB_ptr);
+//	xil_printf("| NEW, %X ", *pxCurrentTCB_ptr);
 	(*(pxCurrentTCB_ptr))->jobEnded=0;
 
 	if (newtaskdesc->executionMode!=EXECUTIONMODE_NORMAL) {
