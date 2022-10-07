@@ -834,25 +834,15 @@ FAULTDETECTOR_controlStr controlForFaultDet;
 #define FAULTDETECTOR_DEVICEID XPAR_RUN_0_DEVICE_ID
 //#define DMA_DEV_ID		XPAR_AXIDMA_0_DEVICE_ID
 
-void FAULTDET_getLastError(FAULTDETECTOR_OutcomeStr* dest) {
-	FAULTDETECTOR_getLastError(&FAULTDETECTOR_InstancePtr, ((*pxCurrentTCB_ptr)->uxTaskNumber)-1, dest);
+void FAULTDET_getLastFault(FAULTDETECTOR_OutcomeStr* dest) {
+	FAULTDETECTOR_getLastFault(&FAULTDETECTOR_InstancePtr, ((*pxCurrentTCB_ptr)->uxTaskNumber)-1, dest);
 }
 
-void FAULTDETECTOR_init(region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS], u8 n_regions[FAULTDETECTOR_MAX_CHECKS]) {
+void FAULTDET_init(region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS], u8 n_regions[FAULTDETECTOR_MAX_CHECKS]) {
 	XRun_Config* configPtr=XRun_LookupConfig(FAULTDETECTOR_DEVICEID);
 	XRun_CfgInitialize(&FAULTDETECTOR_InstancePtr, configPtr);
-
-//	XRun_Set_copyInputAOV(&FAULTDETECTOR_InstancePtr, 0x0);
-//	*((u32*) 0x40000020)=(u32) (&controlForFaultDet);
 	XRun_Set_inputAOV(&FAULTDETECTOR_InstancePtr, (u32) (&controlForFaultDet));
-	FAULTDETECTOR_initHW(&FAULTDETECTOR_InstancePtr, trainedRegions, n_regions);
-
-	//*((u32*) 0x40000044)=0x11111;
-
-	//	FAULTDETECTOR_processNextControl(&FAULTDETECTOR_InstancePtr);
-//	XRun_Start(&FAULTDETECTOR_InstancePtr);
-
-
+	FAULTDETECTOR_initRegions(&FAULTDETECTOR_InstancePtr, trainedRegions, n_regions);
 
 //	XAxiDma_Config *CfgPtr;
 //	int Status;
@@ -879,19 +869,18 @@ void FAULTDETECTOR_init(region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTD
 //						XAXIDMA_DMA_TO_DEVICE);
 
 
-
 }
 
-void FAULTDETECTOR_dumpRegionsSW(region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS], u8 n_regions[FAULTDETECTOR_MAX_CHECKS]) {
+void FAULTDET_dumpRegions(region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS], u8 n_regions[FAULTDETECTOR_MAX_CHECKS]) {
 	FAULTDETECTOR_dumpRegions(&FAULTDETECTOR_InstancePtr, trainedRegions, n_regions);
 }
 
-void FAULTDETECTOR_Train(FAULTDETECTOR_controlStr* contr) {
+void FAULTDET_Train(FAULTDETECTOR_controlStr* contr) {
 	contr->command=COMMAND_TRAIN;
 
-	while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {}
+	while(!XRun_IsReady(&FAULTDETECTOR_InstancePtr)) {}
 	controlForFaultDet=*contr;
-	FAULTDETECTOR_processNextControl(&FAULTDETECTOR_InstancePtr);
+	XRun_Start(&FAULTDETECTOR_InstancePtr);
 //	while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {
 //		xil_printf("notReady");
 //	}
@@ -908,13 +897,13 @@ void FAULTDETECTOR_Train(FAULTDETECTOR_controlStr* contr) {
 //	}
 
 }
-void FAULTDETECTOR_Test(FAULTDETECTOR_controlStr* contr) {
+void FAULTDET_Test(FAULTDETECTOR_controlStr* contr) {
 	contr->command=COMMAND_TEST;
 
-
 //	if (XRun_IsIdle(&FAULTDETECTOR_InstancePtr))
-		XRun_Start(&FAULTDETECTOR_InstancePtr);
-//	else if (XRun_IsDone(&FAULTDETECTOR_InstancePtr))
+	while(!XRun_IsReady(&FAULTDETECTOR_InstancePtr)) {}
+	controlForFaultDet=*contr;
+	XRun_Start(&FAULTDETECTOR_InstancePtr);//	else if (XRun_IsDone(&FAULTDETECTOR_InstancePtr))
 //		XRun_Continue(&FAULTDETECTOR_InstancePtr);
 //	else
 //		xil_printf("err");
@@ -940,28 +929,24 @@ void FAULTDETECTOR_Test(FAULTDETECTOR_controlStr* contr) {
 
 }
 
-void initFaultDetection() {
+void FAULTDET_initFaultDetection() {
 	//int taskId=(*pxCurrentTCB_ptr)->uxTaskNumber;
 	if ((*pxCurrentTCB_ptr)->executionMode==EXECUTIONMODE_REEXECUTION_FAULT)
-		FAULTDETECTOR_getLastError(&FAULTDETECTOR_InstancePtr, (*pxCurrentTCB_ptr)->uxTaskNumber-1, &((*pxCurrentTCB_ptr)->lastError));
+		FAULTDETECTOR_getLastFault(&FAULTDETECTOR_InstancePtr, (*pxCurrentTCB_ptr)->uxTaskNumber-1, &((*pxCurrentTCB_ptr)->lastError));
 	//Errors[taskId]=copyFromFaultDetector
 }
-void endFaultDetection() {
+void FAULTDET_endFaultDetection() {
 	//int taskId=(*pxCurrentTCB_ptr)->uxTaskNumber;
 	(*pxCurrentTCB_ptr)->executionMode=EXECUTIONMODE_NORMAL;
 }
-char isFault() {
+char FAULTDET_isFault() {
 	return FAULTDETECTOR_isFault(&FAULTDETECTOR_InstancePtr, ((*pxCurrentTCB_ptr)->uxTaskNumber)-1);
 }
-void resetFault() {
+void FAULTDET_resetFault() {
 	FAULTDETECTOR_resetFault(&FAULTDETECTOR_InstancePtr, ((*pxCurrentTCB_ptr)->uxTaskNumber)-1);
 }
-void readOutcome() {
-	FAULTDETECTOR_OutcomeStr out;
-	FAULTDETECTOR_getLastError(&FAULTDETECTOR_InstancePtr, (*pxCurrentTCB_ptr)->uxTaskNumber-1, &out);
-}
 
-void testPoint(int uniId, int checkId, int argCount, ...) {
+void FAULTDET_testPoint(int uniId, int checkId, int argCount, ...) {
 	va_list ap;
 	va_start(ap, argCount);
 	if (argCount>FAULTDETECTOR_MAX_AOV_DIM) //MAX_AOV_DIM
@@ -995,12 +980,12 @@ void testPoint(int uniId, int checkId, int argCount, ...) {
 //		else
 //			FAULTDETECTOR_Test(&controlForFaultDet);
 //	} else {
-		FAULTDETECTOR_Test(&controlForFaultDet);
+		FAULTDET_Test(&controlForFaultDet);
 //	}
 	va_end(ap);
 }
 
-void trainPoint(int checkId, int argCount, ...) {
+void FAULTDET_trainPoint(int checkId, int argCount, ...) {
 	va_list ap;
 	va_start(ap, argCount);
 	if (argCount>FAULTDETECTOR_MAX_AOV_DIM) //MAX_AOV_DIM
@@ -1021,7 +1006,7 @@ void trainPoint(int checkId, int argCount, ...) {
 		contr.AOV[i]=0.0;
 	}
 
-	FAULTDETECTOR_Train(&contr);
+	FAULTDET_Train(&contr);
 
 	/*if (tcbPtr->executionMode==EXECUTIONMODE_REEXECUTION_FAULT && tcbPtr->lastError.uniId==uniId && tcbPtr->lastError.checkId==checkId) {
 		tcbPtr->lastError.uniId=-1;

@@ -2222,7 +2222,7 @@
 
 			//	xil_printf("Size of task struct: %d /n", sizeof(RTTask_t));
 
-			FAULTDETECTOR_init(trainedRegions, n_regions);
+			FAULTDET_init(trainedRegions, n_regions);
 
 			if (xPortInitScheduler( (u32) uxTaskNumber,
 					(void *) tasksTCBPtrs,

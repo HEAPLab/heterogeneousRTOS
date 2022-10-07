@@ -202,17 +202,17 @@ BaseType_t xPortInitScheduler( u32 numberOfTasks,
 void newTaskHandler(void *HandlerRef) PRIVILEGED_FUNCTION;
 #include "xrun.h"
 
-void FAULTDETECTOR_init(region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS], u8 n_regions[FAULTDETECTOR_MAX_CHECKS]) PRIVILEGED_FUNCTION;
-void FAULTDETECTOR_dumpRegionsSW(region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS], u8 n_regions[FAULTDETECTOR_MAX_CHECKS]) PRIVILEGED_FUNCTION;
-void FAULTDETECTOR_Train(FAULTDETECTOR_controlStr* contr) PRIVILEGED_FUNCTION;
-void FAULTDETECTOR_Test(FAULTDETECTOR_controlStr* contr) PRIVILEGED_FUNCTION;
-void FAULTDET_getLastError(FAULTDETECTOR_OutcomeStr* dest) PRIVILEGED_FUNCTION;
-void initFaultDetection() PRIVILEGED_FUNCTION;
-void endFaultDetection() PRIVILEGED_FUNCTION;
-void trainPoint(int checkId, int argCount, ...) PRIVILEGED_FUNCTION;
-void testPoint(int uniId, int checkId, int argCount, ...) PRIVILEGED_FUNCTION;
-char isFault()  PRIVILEGED_FUNCTION;
-void resetFault() PRIVILEGED_FUNCTION;
+void FAULTDET_init(region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS], u8 n_regions[FAULTDETECTOR_MAX_CHECKS]) PRIVILEGED_FUNCTION;
+void FAULTDET_dumpRegions(region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS], u8 n_regions[FAULTDETECTOR_MAX_CHECKS]) PRIVILEGED_FUNCTION;
+void FAULTDET_Train(FAULTDETECTOR_controlStr* contr) PRIVILEGED_FUNCTION;
+void FAULTDET_Test(FAULTDETECTOR_controlStr* contr) PRIVILEGED_FUNCTION;
+void FAULTDET_getLastFault(FAULTDETECTOR_OutcomeStr* dest) PRIVILEGED_FUNCTION;
+void FAULTDET_initFaultDetection() PRIVILEGED_FUNCTION;
+void FAULTDET_endFaultDetection() PRIVILEGED_FUNCTION;
+void FAULTDET_trainPoint(int checkId, int argCount, ...) PRIVILEGED_FUNCTION;
+void FAULTDET_testPoint(int uniId, int checkId, int argCount, ...) PRIVILEGED_FUNCTION;
+char FAULTDET_isFault()  PRIVILEGED_FUNCTION;
+void FAULTDET_resetFault() PRIVILEGED_FUNCTION;
 
 //int prvDmaBlockingTransferFreeByteSize( u32 prvDmaDestAddr, u32 prvDmaSourceAddr, u32 byteSize ) PRIVILEGED_FUNCTION;
 //
