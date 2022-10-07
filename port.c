@@ -844,29 +844,29 @@ void FAULTDET_init(region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECT
 	XRun_Set_inputAOV(&FAULTDETECTOR_InstancePtr, (u32) (&controlForFaultDet));
 	FAULTDETECTOR_initRegions(&FAULTDETECTOR_InstancePtr, trainedRegions, n_regions);
 
-//	XAxiDma_Config *CfgPtr;
-//	int Status;
-//
-//	/* Initialize the XAxiDma device.
-//	 */
-//	CfgPtr = XAxiDma_LookupConfig(DMA_DEV_ID);
-////	if (!CfgPtr) {
-////		xil_printf("No config found for %d\r\n", DMA_DEV_ID);
-////		return XST_FAILURE;
-////	}
-//
-//	Status = XAxiDma_CfgInitialize(&AxiDma, CfgPtr);
-////	if (Status != XST_SUCCESS) {
-////		xil_printf("Initialization failed %d\r\n", Status);
-////		return XST_FAILURE;
-////	}
-//
-//	/* Disable interrupts, we use polling mode
-//	 */
-//	XAxiDma_IntrDisable(&AxiDma, XAXIDMA_IRQ_ALL_MASK,
-//						XAXIDMA_DEVICE_TO_DMA);
-//	XAxiDma_IntrDisable(&AxiDma, XAXIDMA_IRQ_ALL_MASK,
-//						XAXIDMA_DMA_TO_DEVICE);
+	//	XAxiDma_Config *CfgPtr;
+	//	int Status;
+	//
+	//	/* Initialize the XAxiDma device.
+	//	 */
+	//	CfgPtr = XAxiDma_LookupConfig(DMA_DEV_ID);
+	////	if (!CfgPtr) {
+	////		xil_printf("No config found for %d\r\n", DMA_DEV_ID);
+	////		return XST_FAILURE;
+	////	}
+	//
+	//	Status = XAxiDma_CfgInitialize(&AxiDma, CfgPtr);
+	////	if (Status != XST_SUCCESS) {
+	////		xil_printf("Initialization failed %d\r\n", Status);
+	////		return XST_FAILURE;
+	////	}
+	//
+	//	/* Disable interrupts, we use polling mode
+	//	 */
+	//	XAxiDma_IntrDisable(&AxiDma, XAXIDMA_IRQ_ALL_MASK,
+	//						XAXIDMA_DEVICE_TO_DMA);
+	//	XAxiDma_IntrDisable(&AxiDma, XAXIDMA_IRQ_ALL_MASK,
+	//						XAXIDMA_DMA_TO_DEVICE);
 
 
 }
@@ -881,64 +881,55 @@ void FAULTDET_Train(FAULTDETECTOR_controlStr* contr) {
 	while(!XRun_IsReady(&FAULTDETECTOR_InstancePtr)) {}
 	controlForFaultDet=*contr;
 	XRun_Start(&FAULTDETECTOR_InstancePtr);
-//	while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {
-//		xil_printf("notReady");
-//	}
+	//	while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {
+	//		xil_printf("notReady");
+	//	}
 
 
 
-//	int Status = XAxiDma_SimpleTransfer(&AxiDma,(UINTPTR) &contr,
-//			sizeof(FAULTDETECTOR_controlStr), XAXIDMA_DMA_TO_DEVICE);
-//	//xil_printf("status %d", Status);
-//	while (XAxiDma_Busy(&AxiDma,XAXIDMA_DMA_TO_DEVICE)) //||
-//		//(XAxiDma_Busy(&AxiDma,XAXIDMA_DMA_TO_DEVICE)))
-//	{
-//			/* Wait */
-//	}
+	//	int Status = XAxiDma_SimpleTransfer(&AxiDma,(UINTPTR) &contr,
+	//			sizeof(FAULTDETECTOR_controlStr), XAXIDMA_DMA_TO_DEVICE);
+	//	//xil_printf("status %d", Status);
+	//	while (XAxiDma_Busy(&AxiDma,XAXIDMA_DMA_TO_DEVICE)) //||
+	//		//(XAxiDma_Busy(&AxiDma,XAXIDMA_DMA_TO_DEVICE)))
+	//	{
+	//			/* Wait */
+	//	}
 
 }
 void FAULTDET_Test(FAULTDETECTOR_controlStr* contr) {
 	contr->command=COMMAND_TEST;
 
-//	if (XRun_IsIdle(&FAULTDETECTOR_InstancePtr))
+	//	if (XRun_IsIdle(&FAULTDETECTOR_InstancePtr))
 	while(!XRun_IsReady(&FAULTDETECTOR_InstancePtr)) {}
 	controlForFaultDet=*contr;
 	XRun_Start(&FAULTDETECTOR_InstancePtr);//	else if (XRun_IsDone(&FAULTDETECTOR_InstancePtr))
-//		XRun_Continue(&FAULTDETECTOR_InstancePtr);
-//	else
-//		xil_printf("err");
+	//		XRun_Continue(&FAULTDETECTOR_InstancePtr);
+	//	else
+	//		xil_printf("err");
 
-//	while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {}
-//	controlForFaultDet=*contr;
-//	FAULTDETECTOR_processNextControl(&FAULTDETECTOR_InstancePtr);
+	//	while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {}
+	//	controlForFaultDet=*contr;
+	//	FAULTDETECTOR_processNextControl(&FAULTDETECTOR_InstancePtr);
 
 
 
-//	while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {
-//		xil_printf("notReady");
-//	}
-//	int Status;
-//	Status = XAxiDma_SimpleTransfer(&AxiDma,(UINTPTR) &contr,
-//				sizeof(FAULTDETECTOR_controlStr), XAXIDMA_DMA_TO_DEVICE);
-////	xil_printf("%d", Status);
-//	while (XAxiDma_Busy(&AxiDma,XAXIDMA_DMA_TO_DEVICE)) //||
-//		//(XAxiDma_Busy(&AxiDma,XAXIDMA_DMA_TO_DEVICE)))
-//	{
-//			/* Wait */
-//	}
+	//	while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {
+	//		xil_printf("notReady");
+	//	}
+	//	int Status;
+	//	Status = XAxiDma_SimpleTransfer(&AxiDma,(UINTPTR) &contr,
+	//				sizeof(FAULTDETECTOR_controlStr), XAXIDMA_DMA_TO_DEVICE);
+	////	xil_printf("%d", Status);
+	//	while (XAxiDma_Busy(&AxiDma,XAXIDMA_DMA_TO_DEVICE)) //||
+	//		//(XAxiDma_Busy(&AxiDma,XAXIDMA_DMA_TO_DEVICE)))
+	//	{
+	//			/* Wait */
+	//	}
 
 }
 
-void FAULTDET_initFaultDetection() {
-	//int taskId=(*pxCurrentTCB_ptr)->uxTaskNumber;
-	if ((*pxCurrentTCB_ptr)->executionMode==EXECUTIONMODE_REEXECUTION_FAULT)
-		FAULTDETECTOR_getLastFault(&FAULTDETECTOR_InstancePtr, (*pxCurrentTCB_ptr)->uxTaskNumber-1, &((*pxCurrentTCB_ptr)->lastError));
-	//Errors[taskId]=copyFromFaultDetector
-}
-void FAULTDET_endFaultDetection() {
-	//int taskId=(*pxCurrentTCB_ptr)->uxTaskNumber;
-	(*pxCurrentTCB_ptr)->executionMode=EXECUTIONMODE_NORMAL;
-}
+
 char FAULTDET_isFault() {
 	while(!(XRun_IsDone(&FAULTDETECTOR_InstancePtr) || XRun_IsIdle(&FAULTDETECTOR_InstancePtr))) {}
 	return FAULTDETECTOR_isFault(&FAULTDETECTOR_InstancePtr, ((*pxCurrentTCB_ptr)->uxTaskNumber)-1);
@@ -947,7 +938,16 @@ void FAULTDET_resetFault() {
 	while(!XRun_IsReady(&FAULTDETECTOR_InstancePtr)) {}
 	FAULTDETECTOR_resetFault(&FAULTDETECTOR_InstancePtr, ((*pxCurrentTCB_ptr)->uxTaskNumber)-1);
 }
-
+void FAULTDET_initFaultDetection() {
+	FAULTDET_resetFault(); //in case a fault happened but the scheduler has decided to not re execute the task, next execution would appear as normal (no reexec), but fault still need to be cleared on fault detector
+	if ((*pxCurrentTCB_ptr)->executionMode==EXECUTIONMODE_REEXECUTION_FAULT)
+		FAULTDETECTOR_getLastFault(&FAULTDETECTOR_InstancePtr, (*pxCurrentTCB_ptr)->uxTaskNumber-1, &((*pxCurrentTCB_ptr)->lastError));
+	//Errors[taskId]=copyFromFaultDetector
+}
+void FAULTDET_endFaultDetection() {
+	//int taskId=(*pxCurrentTCB_ptr)->uxTaskNumber;
+	(*pxCurrentTCB_ptr)->executionMode=EXECUTIONMODE_NORMAL;
+}
 void FAULTDET_testPoint(int uniId, int checkId, int argCount, ...) {
 	va_list ap;
 	va_start(ap, argCount);
@@ -971,16 +971,16 @@ void FAULTDET_testPoint(int uniId, int checkId, int argCount, ...) {
 
 	controlForFaultDet=contr;
 
-//	if (tcbPtr->executionMode==EXECUTIONMODE_REEXECUTION_FAULT && tcbPtr->lastError.uniId==uniId && tcbPtr->lastError.checkId==checkId) {
-//		tcbPtr->lastError.uniId=-1;
-//		tcbPtr->lastError.checkId=-1;
-//		if (memcmp(tcbPtr->lastError.AOV, contr.AOV, sizeof(contr.AOV))==0)
-//			FAULTDETECTOR_Train(&controlForFaultDet);
-//		else
-//			FAULTDETECTOR_Test(&controlForFaultDet);
-//	} else {
+	if (tcbPtr->executionMode==EXECUTIONMODE_REEXECUTION_FAULT && tcbPtr->lastError.uniId==uniId && tcbPtr->lastError.checkId==checkId) {
+		tcbPtr->lastError.uniId=0xFFFF;
+		tcbPtr->lastError.checkId=0xFF;
+		if (memcmp(tcbPtr->lastError.AOV, contr.AOV, sizeof(contr.AOV))==0)
+			FAULTDET_Test(&controlForFaultDet);
+		else
+			FAULTDET_Test(&controlForFaultDet);
+	} else {
 		FAULTDET_Test(&controlForFaultDet);
-//	}
+	}
 	va_end(ap);
 }
 
@@ -1017,7 +1017,7 @@ void xPortScheduleNewTask(void)
 	newTaskDescrStr* newtaskdesc=(newTaskDescrStr*) NEWTASKDESCRPTR;
 	//*pxCurrentTCB_ptr = *((TCB_t**) NEWTASKDESCRPTR);
 	*pxCurrentTCB_ptr = newtaskdesc->pxNextTcb;
-//	xil_printf("| NEW, %X ", *pxCurrentTCB_ptr);
+	//	xil_printf("| NEW, %X ", *pxCurrentTCB_ptr);
 	(*(pxCurrentTCB_ptr))->jobEnded=0;
 
 	if (newtaskdesc->executionMode!=EXECUTIONMODE_NORMAL) {
@@ -1062,7 +1062,7 @@ BaseType_t xPortInitScheduler( u32 numberOfTasks,
 		u32* pxCurrentTCBPtr )
 {
 	pxCurrentTCB_ptr=(TCB_t **)pxCurrentTCBPtr;
-//	int status;
+	//	int status;
 
 	Xil_DisableMMU();
 
@@ -1141,7 +1141,7 @@ BaseType_t xPortInitScheduler( u32 numberOfTasks,
 
 	Xil_ExceptionEnable();
 
-//	while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {}
+	//	while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {}
 
 	return pdPASS;
 }
