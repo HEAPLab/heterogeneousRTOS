@@ -940,9 +940,11 @@ void FAULTDET_endFaultDetection() {
 	(*pxCurrentTCB_ptr)->executionMode=EXECUTIONMODE_NORMAL;
 }
 char FAULTDET_isFault() {
+	while(!(XRun_IsDone(&FAULTDETECTOR_InstancePtr) || XRun_IsIdle(&FAULTDETECTOR_InstancePtr))) {}
 	return FAULTDETECTOR_isFault(&FAULTDETECTOR_InstancePtr, ((*pxCurrentTCB_ptr)->uxTaskNumber)-1);
 }
 void FAULTDET_resetFault() {
+	while(!XRun_IsReady(&FAULTDETECTOR_InstancePtr)) {}
 	FAULTDETECTOR_resetFault(&FAULTDETECTOR_InstancePtr, ((*pxCurrentTCB_ptr)->uxTaskNumber)-1);
 }
 
