@@ -993,7 +993,6 @@ void FAULTDET_trainPoint(int checkId, int argCount, ...) {
 	FAULTDETECTOR_controlStr contr;
 	TCB_t* tcbPtr=*pxCurrentTCB_ptr;
 
-	contr.uniId=uniId;
 	contr.checkId=checkId;
 	//contr.taskId=taskId;
 	contr.taskId=tcbPtr->uxTaskNumber-1;
