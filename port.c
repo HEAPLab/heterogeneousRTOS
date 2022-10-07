@@ -962,14 +962,11 @@ void FAULTDET_testPoint(int uniId, int checkId, int argCount, ...) {
 	//contr.taskId=taskId;
 	contr.taskId=tcbPtr->uxTaskNumber-1;
 
-//	for (int i=0; i<argCount; i++) {
-//		contr.AOV[i]=*va_arg(ap, float*);
-//	}
-//	for (int i=argCount; i<FAULTDETECTOR_MAX_AOV_DIM; i++) {
-//		contr.AOV[i]=0.0;
-//	}
-	for (int i=0; i<FAULTDETECTOR_MAX_AOV_DIM; i++) {
-		contr.AOV[i]=5000.0;
+	for (int i=0; i<argCount; i++) {
+		contr.AOV[i]=*va_arg(ap, float*);
+	}
+	for (int i=argCount; i<FAULTDETECTOR_MAX_AOV_DIM; i++) {
+		contr.AOV[i]=0.0;
 	}
 
 	controlForFaultDet=contr;
@@ -996,30 +993,21 @@ void FAULTDET_trainPoint(int checkId, int argCount, ...) {
 	FAULTDETECTOR_controlStr contr;
 	TCB_t* tcbPtr=*pxCurrentTCB_ptr;
 
-	contr.uniId=-1;
+	contr.uniId=uniId;
 	contr.checkId=checkId;
 	//contr.taskId=taskId;
 	contr.taskId=tcbPtr->uxTaskNumber-1;
 
 	for (int i=0; i<argCount; i++) {
-		contr.AOV[i]=*(va_arg(ap, float*));
+		contr.AOV[i]=*va_arg(ap, float*);
 	}
 	for (int i=argCount; i<FAULTDETECTOR_MAX_AOV_DIM; i++) {
 		contr.AOV[i]=0.0;
 	}
 
-	FAULTDET_Train(&contr);
+	controlForFaultDet=contr;
 
-	/*if (tcbPtr->executionMode==EXECUTIONMODE_REEXECUTION_FAULT && tcbPtr->lastError.uniId==uniId && tcbPtr->lastError.checkId==checkId) {
-		tcbPtr->lastError.uniId=-1;
-		tcbPtr->lastError.checkId=-1;
-		if (memcmp(tcbPtr->lastError.AOV, contr.AOV, sizeof(contr.AOV))==0)
-			FAULTDETECTOR_Train(contr);
-		else
-			FAULTDETECTOR_Test(contr);
-	} else {
-		FAULTDETECTOR_Test(contr);
-	}*/
+	FAULTDET_Train(&controlForFaultDet);
 	va_end(ap);
 }
 
