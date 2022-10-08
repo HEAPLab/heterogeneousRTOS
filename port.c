@@ -932,7 +932,15 @@ void FAULTDET_Test(FAULTDETECTOR_controlStr* contr) {
 
 char FAULTDET_isFault() {
 	while(!(XRun_IsDone(&FAULTDETECTOR_InstancePtr) || XRun_IsIdle(&FAULTDETECTOR_InstancePtr))) {}
-	return FAULTDETECTOR_isFault(&FAULTDETECTOR_InstancePtr, ((*pxCurrentTCB_ptr)->uxTaskNumber)-1);
+
+	char isFaul=FAULTDETECTOR_isFault(&FAULTDETECTOR_InstancePtr, ((*pxCurrentTCB_ptr)->uxTaskNumber)-1);
+
+	if (isFaul) {
+		FAULTDET_getLastFault(&((*pxCurrentTCB_ptr)->lastError));
+		(*pxCurrentTCB_ptr)->executionMode=EXECUTIONMODE_REEXECUTION_FAULT;
+	}
+//	return FAULTDETECTOR_isFault(&FAULTDETECTOR_InstancePtr, ((*pxCurrentTCB_ptr)->uxTaskNumber)-1);
+	return isFaul;
 }
 void FAULTDET_resetFault() {
 	while(!XRun_IsReady(&FAULTDETECTOR_InstancePtr)) {}
@@ -946,7 +954,13 @@ void FAULTDET_initFaultDetection() {
 }
 void FAULTDET_endFaultDetection() {
 	//int taskId=(*pxCurrentTCB_ptr)->uxTaskNumber;
-	(*pxCurrentTCB_ptr)->executionMode=EXECUTIONMODE_NORMAL;
+
+	//to remove
+	if (!FAULTDET_isFault()) {
+		(*pxCurrentTCB_ptr)->executionMode=EXECUTIONMODE_NORMAL;
+	}
+	//TO UNCOMMENT
+	//(*pxCurrentTCB_ptr)->executionMode=EXECUTIONMODE_NORMAL;
 }
 void FAULTDET_testPoint(int uniId, int checkId, int argCount, ...) {
 	va_list ap;
@@ -975,7 +989,7 @@ void FAULTDET_testPoint(int uniId, int checkId, int argCount, ...) {
 		tcbPtr->lastError.uniId=0xFFFF;
 		tcbPtr->lastError.checkId=0xFF;
 		if (memcmp(tcbPtr->lastError.AOV, contr.AOV, sizeof(contr.AOV))==0)
-			FAULTDET_Test(&controlForFaultDet);
+			FAULTDET_Train(&controlForFaultDet);
 		else
 			FAULTDET_Test(&controlForFaultDet);
 	} else {
@@ -1023,7 +1037,9 @@ void xPortScheduleNewTask(void)
 	if (newtaskdesc->executionMode!=EXECUTIONMODE_NORMAL) {
 		//ExecutionMode[(*(pxCurrentTCB_ptr))->uxTCBNumber-1]=newtaskdesc->executionMode;
 		//reset to begin
-		(*pxCurrentTCB_ptr)->executionMode=newtaskdesc->executionMode;
+
+		//NEED TO BE UNCOMMENTED
+		//(*pxCurrentTCB_ptr)->executionMode=newtaskdesc->executionMode;
 	}
 
 	if (newtaskdesc->executionMode==EXECUTIONMODE_REEXECUTION_FAULT) {
