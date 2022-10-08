@@ -1062,6 +1062,10 @@
 			}
 #endif
 
+			//fedit add
+			pxNewTCB->pxInitTopOfStack=pxNewTCB->pxTopOfStack;
+
+
 			/* Initialize the TCB stack to look as if the task was already running,
 			 * but had been interrupted by the scheduler.  The return address is set
 			 * to the start of the task function. Once the stack has been initialised
@@ -1115,11 +1119,17 @@
 			}
 #endif /* portUSING_MPU_WRAPPERS */
 
+			//fedit add
+			pxNewTCB->pxInitTaskCode=pxTaskCode;
+			pxNewTCB->pxInitParameters=(StackType_t)pvParameters;
+
+			pxNewTCB->lastError.checkId=0xFF;
+			pxNewTCB->lastError.uniId=0xFFFF;
+			//end of fedit add
+
 			if (pxCreatedTask != NULL) {
 				/* Pass the handle out in an anonymous way.  The handle can be used to
 				 * change the created task's priority, delete the created task, etc.*/
-				pxNewTCB->lastError.checkId=0xFF;
-				pxNewTCB->lastError.uniId=0xFFFF;
 				*pxCreatedTask = (TaskHandle_t) pxNewTCB;
 			} else {
 				mtCOVERAGE_TEST_MARKER();

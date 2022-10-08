@@ -1038,77 +1038,75 @@ void xPortScheduleNewTask(void)
 
 	if (newtaskdesc->executionMode!=EXECUTIONMODE_NORMAL) {
 		//ExecutionMode[(*(pxCurrentTCB_ptr))->uxTCBNumber-1]=newtaskdesc->executionMode;
-		//reset to begin
 
-		//NEED TO BE UNCOMMENTED
+		//RESET TO BEGIN
+
+//#if ( configUSE_MUTEXES == 1 )
+//			{
+//				pxNewTCB->uxBasePriority = pxNewTCB->uxPriority;
+//				pxNewTCB->uxMutexesHeld = 0;
+//			}
+//#endif /* configUSE_MUTEXES */
+//
+//			// vListInitialiseItem(&(pxNewTCB->xStateListItem));
+//			// vListInitialiseItem(&(pxNewTCB->xEventListItem));
+//
+//			// /* Set the pxNewTCB as a link back from the ListItem_t.  This is so we can get
+//			 // * back to  the containing TCB from a generic item in a list. */
+//			// listSET_LIST_ITEM_OWNER(&(pxNewTCB->xStateListItem), pxNewTCB);
+//
+//			// /* Event lists are always in priority order. */
+//			// listSET_LIST_ITEM_VALUE(&(pxNewTCB->xEventListItem),
+//					// ( TickType_t ) configMAX_PRIORITIES - ( TickType_t ) uxPriority); /*lint !e961 MISRA exception as the casts are only redundant for some ports. */
+//			// listSET_LIST_ITEM_OWNER(&(pxNewTCB->xEventListItem), pxNewTCB);
+//
+//#if ( portCRITICAL_NESTING_IN_TCB == 1 )
+//			{
+//				pxNewTCB->uxCriticalNesting = ( UBaseType_t ) 0U;
+//			}
+//#endif /* portCRITICAL_NESTING_IN_TCB */
+//
+//#if ( configGENERATE_RUN_TIME_STATS == 1 )
+//			{
+//				pxNewTCB->ulRunTimeCounter = 0UL;
+//			}
+//#endif /* configGENERATE_RUN_TIME_STATS */
+//
+////thread not implemented yet
+//// #if ( configNUM_THREAD_LOCAL_STORAGE_POINTERS != 0 )
+//			// {
+//				// memset( ( void * ) &( pxNewTCB->pvThreadLocalStoragePointers[ 0 ] ), 0x00, sizeof( pxNewTCB->pvThreadLocalStoragePointers ) );
+//			// }
+//// #endif
+//
+///* #if ( configUSE_TASK_NOTIFICATIONS == 1 )
+//			{
+//				memset((void *) &(pxNewTCB->ulNotifiedValue[0]), 0x00,
+//						sizeof(pxNewTCB->ulNotifiedValue));
+//				memset((void *) &(pxNewTCB->ucNotifyState[0]), 0x00,
+//						sizeof(pxNewTCB->ucNotifyState));
+//			}
+//#endif */
+//
+//#if ( INCLUDE_xTaskAbortDelay == 1 )
+//			{
+//				pxNewTCB->ucDelayAborted = pdFALSE;
+//			}
+//#endif
+//
+//			/* Initialize the TCB stack to look as if the task was already running,
+//			 * but had been interrupted by the scheduler.  The return address is set
+//			 * to the start of the task function. Once the stack has been initialised
+//			 * the top of stack variable is updated. */
+
+		//pxNewTCB->pxTopOfStack=pxNewTCB->pxInitialTopOfStack;
+//		pxNewTCB->pxTopOfStack = pxPortInitialiseStack(pxNewTCB->pxInitTopOfStack,
+//											pxNewTCB->pxInitTaskCode, (void*) pxNewTCB->pxInitParameters);
+
+		//update execution mode
 		//(*pxCurrentTCB_ptr)->executionMode=newtaskdesc->executionMode;
 	}
-	
-	
-#if ( configUSE_MUTEXES == 1 )
-			{
-				pxNewTCB->uxBasePriority = pxNewTCB->uxPriority;
-				pxNewTCB->uxMutexesHeld = 0;
-			}
-#endif /* configUSE_MUTEXES */
 
-			// vListInitialiseItem(&(pxNewTCB->xStateListItem));
-			// vListInitialiseItem(&(pxNewTCB->xEventListItem));
-
-			// /* Set the pxNewTCB as a link back from the ListItem_t.  This is so we can get
-			 // * back to  the containing TCB from a generic item in a list. */
-			// listSET_LIST_ITEM_OWNER(&(pxNewTCB->xStateListItem), pxNewTCB);
-
-			// /* Event lists are always in priority order. */
-			// listSET_LIST_ITEM_VALUE(&(pxNewTCB->xEventListItem),
-					// ( TickType_t ) configMAX_PRIORITIES - ( TickType_t ) uxPriority); /*lint !e961 MISRA exception as the casts are only redundant for some ports. */
-			// listSET_LIST_ITEM_OWNER(&(pxNewTCB->xEventListItem), pxNewTCB);
-
-#if ( portCRITICAL_NESTING_IN_TCB == 1 )
-			{
-				pxNewTCB->uxCriticalNesting = ( UBaseType_t ) 0U;
-			}
-#endif /* portCRITICAL_NESTING_IN_TCB */
-
-#if ( configGENERATE_RUN_TIME_STATS == 1 )
-			{
-				pxNewTCB->ulRunTimeCounter = 0UL;
-			}
-#endif /* configGENERATE_RUN_TIME_STATS */
-
-//thread not implemented yet
-// #if ( configNUM_THREAD_LOCAL_STORAGE_POINTERS != 0 )
-			// {
-				// memset( ( void * ) &( pxNewTCB->pvThreadLocalStoragePointers[ 0 ] ), 0x00, sizeof( pxNewTCB->pvThreadLocalStoragePointers ) );
-			// }
-// #endif
-
-/* #if ( configUSE_TASK_NOTIFICATIONS == 1 )
-			{
-				memset((void *) &(pxNewTCB->ulNotifiedValue[0]), 0x00,
-						sizeof(pxNewTCB->ulNotifiedValue));
-				memset((void *) &(pxNewTCB->ucNotifyState[0]), 0x00,
-						sizeof(pxNewTCB->ucNotifyState));
-			}
-#endif */
-
-#if ( INCLUDE_xTaskAbortDelay == 1 )
-			{
-				pxNewTCB->ucDelayAborted = pdFALSE;
-			}
-#endif
-
-			/* Initialize the TCB stack to look as if the task was already running,
-			 * but had been interrupted by the scheduler.  The return address is set
-			 * to the start of the task function. Once the stack has been initialised
-			 * the top of stack variable is updated. */
-	
-	
-	pxNewTCB->pxTopOfStack=pxNewTCB->pxInitialTopOfStack;
-
-	if (newtaskdesc->executionMode==EXECUTIONMODE_REEXECUTION_FAULT) {
-		//reset to begin
-	}
 
 	SCHEDULER_ACKInterrupt((void *) SCHEDULER_BASEADDR);
 	/*	xil_printf(" initial SP: %X ", ((*pxCurrentTCB_ptr)->pxStack));
