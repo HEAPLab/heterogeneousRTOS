@@ -1275,6 +1275,7 @@
 			//pxTCB = prvGetTCBFromHandle(xTaskToEndJob);
 			//pxTCB=pxCurrentTCB;
 
+			pxCurrentTCB->executionMode=EXECMODE_NORMAL;
 			pxCurrentTCB->jobEnded=1;
 
 			xPortSchedulerSignalJobEnded(pxCurrentTCB->uxTaskNumber);

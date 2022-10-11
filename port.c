@@ -802,10 +802,6 @@ typedef struct __attribute__((__packed__)) {
 TCB_t** pxCurrentTCB_ptr;
 
 #define CPU_BASEADDR		XPAR_SCUGIC_CPU_BASEADDR
-#define EXECMODE_NORMAL 0
-#define EXECMODE_WCETEXCEEDED 1
-#define EXECMODE_FAULT 2
-#define EXECMODE_DEADLINEMISS 3
 
 //typedef struct {
 //	u8 checkId;
@@ -957,9 +953,11 @@ void FAULTDET_endFaultDetection() {
 	//int taskId=(*pxCurrentTCB_ptr)->uxTaskNumber;
 
 	//to remove
-	if (!FAULTDET_isFault()) {
+	/*if (!FAULTDET_isFault()) {
 		(*pxCurrentTCB_ptr)->executionMode=EXECMODE_NORMAL;
-	}
+	}*/
+
+
 	//TO UNCOMMENT
 	//(*pxCurrentTCB_ptr)->executionMode=EXECUTIONMODE_NORMAL;
 }
@@ -1035,10 +1033,12 @@ void xPortScheduleNewTask(void)
 	
 	TCB_t* pxNewTCB=*(pxCurrentTCB_ptr);
 	//xil_printf("| NEW, %X ", *pxCurrentTCB_ptr);
-	pxNewTCB->jobEnded=0;
+	if (newtaskdesc->executionMode==EXECMODE_NORMAL_NEWJOB) {
+		pxNewTCB->jobEnded=0;
+	}
 
 	xil_printf("exec mode %x", newtaskdesc->executionMode);
-	if (newtaskdesc->executionMode!=EXECMODE_NORMAL) {
+	if (newtaskdesc->executionMode!=EXECMODE_NORMAL && newtaskdesc->executionMode!=EXECMODE_NORMAL_NEWJOB) {
 		//RESET TO BEGIN
 
 #if ( configUSE_MUTEXES == 1 )
