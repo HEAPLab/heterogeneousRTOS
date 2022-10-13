@@ -794,6 +794,8 @@ void vPortDisableInterrupt( uint8_t ucInterruptID )
 typedef struct __attribute__((__packed__)) {
 	TCB_t * pxNextTcb;
 	char executionMode; //normal, reexecution due to fault, reexecution due to timing fail
+	char padding;
+	u16 executionId;
 } newTaskDescrStr;
 //#define PXNEXTTCB 0x10000000
 #define NEWTASKDESCRPTR 0x10000000
@@ -1037,7 +1039,8 @@ void xPortScheduleNewTask(void)
 		pxNewTCB->jobEnded=0;
 	}
 
-	xil_printf("exec mode %x", newtaskdesc->executionMode);
+	pxNewTCB->executionId=newtaskdesc->executionId;
+	xil_printf("exec mode SCH %x, exec id %x", newtaskdesc->executionMode, pxNewTCB->executionId);
 	if (newtaskdesc->executionMode!=EXECMODE_NORMAL && newtaskdesc->executionMode!=EXECMODE_NORMAL_NEWJOB) {
 		//RESET TO BEGIN
 
@@ -1108,6 +1111,7 @@ void xPortScheduleNewTask(void)
 	}
 
 
+	xil_printf("exec mode TASK %x", pxNewTCB->executionMode);
 	SCHEDULER_ACKInterrupt((void *) SCHEDULER_BASEADDR);
 	/*	xil_printf(" initial SP: %X ", ((*pxCurrentTCB_ptr)->pxStack));
 	xil_printf(" SP: %X ", ((*pxCurrentTCB_ptr)->pxTopOfStack));
