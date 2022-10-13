@@ -1279,7 +1279,7 @@
 			pxCurrentTCB->executionMode=EXECMODE_NORMAL;
 			pxCurrentTCB->jobEnded=1;
 
-			xPortSchedulerSignalJobEnded(pxCurrentTCB->uxTaskNumber);
+			xPortSchedulerSignalJobEnded(pxCurrentTCB->uxTaskNumber, pxCurrentTCB->executionId);
 			//xil_printf(" JOBEND SENT ");
 
 			//if (pxTCB == pxCurrentTCB) {

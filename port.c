@@ -1121,20 +1121,20 @@ void xPortScheduleNewTask(void)
 }
 
 void xPortSchedulerResumeTask(u16 uxTaskNumber) {
-	SCHEDULER_resumeTask((void*) SCHEDULER_BASEADDR, uxTaskNumber);
+	//SCHEDULER_resumeTask((void*) SCHEDULER_BASEADDR, uxTaskNumber);
 }
 
 void xPortSchedulerSignalTaskSuspended(u16 uxTaskNumber) {
-	SCHEDULER_signalTaskSuspended((void*) SCHEDULER_BASEADDR, uxTaskNumber);
+	//SCHEDULER_signalTaskSuspended((void*) SCHEDULER_BASEADDR, uxTaskNumber);
 }
 
-void xPortSchedulerSignalJobEnded(u16 uxTaskNumber) {
-	SCHEDULER_signalJobEnded((void*) SCHEDULER_BASEADDR, uxTaskNumber);
+void xPortSchedulerSignalJobEnded(u8 uxTaskNumber, u8 executionId) {
+	//SCHEDULER_signalJobEnded((void*) SCHEDULER_BASEADDR, uxTaskNumber, executionId);
 }
 
 void xPortSchedulerSignalTaskEnded(u16 uxTaskNumber)
 {
-	SCHEDULER_signalTaskEnded((void*) SCHEDULER_BASEADDR, uxTaskNumber);
+	//SCHEDULER_signalTaskEnded((void*) SCHEDULER_BASEADDR, uxTaskNumber);
 }
 BaseType_t xPortInitScheduler( u32 numberOfTasks,
 		void* tasksTCBPtrs,

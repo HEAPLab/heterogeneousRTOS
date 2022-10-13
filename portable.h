@@ -188,7 +188,7 @@ void xPortSchedulerResumeTask(u16 uxTaskNumber) PRIVILEGED_FUNCTION;
 
 void xPortSchedulerSignalTaskSuspended(u16 uxTaskNumber) PRIVILEGED_FUNCTION;
 
-void xPortSchedulerSignalJobEnded(u16 uxTaskNumber) PRIVILEGED_FUNCTION;
+void xPortSchedulerSignalJobEnded(u8 uxTaskNumber, u8 executionId) PRIVILEGED_FUNCTION;
 
 void xPortSchedulerSignalTaskEnded(u16 uxTaskNumber) PRIVILEGED_FUNCTION;
 
