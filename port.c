@@ -794,8 +794,8 @@ void vPortDisableInterrupt( uint8_t ucInterruptID )
 typedef struct __attribute__((__packed__)) {
 	TCB_t * pxNextTcb;
 	char executionMode; //normal, reexecution due to fault, reexecution due to timing fail
-	char padding;
-	u16 executionId;
+	char padding[2];
+	u8 executionId;
 } newTaskDescrStr;
 //#define PXNEXTTCB 0x10000000
 #define NEWTASKDESCRPTR 0x10000000

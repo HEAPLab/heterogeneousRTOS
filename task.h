@@ -172,7 +172,7 @@ typedef struct tskTaskControlBlock       /* The old naming convention is used to
 
    volatile uint8_t jobEnded;
    volatile char executionMode;
-   volatile uint16_t executionId;
+   volatile uint8_t executionId;
    FAULTDETECTOR_OutcomeStr lastError;
    volatile StackType_t * pxInitTopOfStack; /*< Points to the location of the last item placed on the tasks stack.  THIS MUST BE THE FIRST MEMBER OF THE TCB STRUCT. */
    volatile StackType_t pxInitParameters;
