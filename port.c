@@ -841,7 +841,10 @@ void FAULTDET_init(region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECT
 	XRun_Config* configPtr=XRun_LookupConfig(FAULTDETECTOR_DEVICEID);
 	XRun_CfgInitialize(&FAULTDETECTOR_InstancePtr, configPtr);
 	XRun_Set_inputAOV(&FAULTDETECTOR_InstancePtr, (u32) (&controlForFaultDet));
-	FAULTDETECTOR_initRegions(&FAULTDETECTOR_InstancePtr, trainedRegions, n_regions);
+
+	prvRestoreTrainedData();
+	//FAULTDETECTOR_initRegions(&FAULTDETECTOR_InstancePtr, trainedRegions, n_regions);
+
 
 	//	XAxiDma_Config *CfgPtr;
 	//	int Status;
@@ -870,9 +873,9 @@ void FAULTDET_init(region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECT
 
 }
 
-void FAULTDET_dumpRegions(region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS], u8 n_regions[FAULTDETECTOR_MAX_CHECKS]) {
-	FAULTDETECTOR_dumpRegions(&FAULTDETECTOR_InstancePtr, trainedRegions, n_regions);
-}
+//void FAULTDET_dumpRegions(region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS], u8 n_regions[FAULTDETECTOR_MAX_CHECKS]) {
+//	FAULTDETECTOR_dumpRegions(&FAULTDETECTOR_InstancePtr, trainedRegions, n_regions);
+//}
 
 void FAULTDET_Train(FAULTDETECTOR_controlStr* contr) {
 	contr->command=COMMAND_TRAIN;
@@ -1025,6 +1028,90 @@ void FAULTDET_trainPoint(int checkId, int argCount, ...) {
 	FAULTDET_Train(&controlForFaultDet);
 	va_end(ap);
 }
+
+//___trainedData save and load mechanism___
+#include "xsdps.h"
+#define TRAINEDDATA_REALSIZE (sizeof(region_t)*FAULTDETECTOR_MAX_CHECKS*FAULTDETECTOR_MAX_REGIONS+sizeof(u8)*FAULTDETECTOR_MAX_CHECKS)
+#define SD_BLOCKSIZE 512
+#define TRAINEDDATA_BLOCKS_SIZE ((TRAINEDDATA_REALSIZE / SD_BLOCKSIZE) + ((TRAINEDDATA_REALSIZE % SD_BLOCKSIZE) != 0))
+#define SD_SECTOR_OFFSET 204800
+static XSdPs SdInstance;
+u32 Sd_Sector = SD_SECTOR_OFFSET;
+
+
+typedef struct __attribute__((__packed__)) {
+	region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS];
+	u8 n_regions[FAULTDETECTOR_MAX_CHECKS];
+	char padding [ TRAINEDDATA_BLOCKS_SIZE*512 - TRAINEDDATA_REALSIZE ];
+} trainedData ;
+
+
+int prvInitSd(XSdPs* SD_InstancePtr)
+{
+
+	int Status;
+	XSdPs_Config *SdConfig;
+
+	/*
+	 * Since block size is 512 bytes. File Size is 512*BlockCount.
+	 */
+//	u32 FileSize = (512*TRAINEDDATA_BLOCKS_SIZE); /* File Size is only up to 2MB */
+	/*
+	 * Initialize the host controller
+	 */
+	SdConfig = XSdPs_LookupConfig(XPAR_XSDPS_0_DEVICE_ID);
+	if (NULL == SdConfig) {
+		return XST_FAILURE;
+	}
+
+	Status = XSdPs_CfgInitialize(SD_InstancePtr, SdConfig,
+					SdConfig->BaseAddress);
+	if (Status != XST_SUCCESS) {
+		return XST_FAILURE;
+	}
+
+	Status = XSdPs_CardInitialize(SD_InstancePtr);
+	if (Status != XST_SUCCESS) {
+		return XST_FAILURE;
+	}
+
+	if (!(SdInstance.HCS)) Sd_Sector *= XSDPS_BLK_SIZE_512_MASK;
+	return XST_SUCCESS;
+}
+
+int prvRestoreTrainedData(XRun* FaultDet_InstancePtr, XSdPs* SD_InstancePtr) {
+	trainedData dumpedData;
+
+	/*
+	 * Read data from SD/eMMC.
+	 */
+int Status;
+	Status  = XSdPs_ReadPolled(SD_InstancePtr, Sd_Sector, TRAINEDDATA_BLOCKS_SIZE,
+			(u8*)(&dumpedData));
+	if (Status!=XST_SUCCESS) {
+		return XST_FAILURE;
+	}
+
+	FAULTDETECTOR_initRegions(FaultDet_InstancePtr, dumpedData.trainedRegions, dumpedData.n_regions);
+
+	return XST_SUCCESS;
+}
+
+int prvDumpTrainedData(XRun* FaultDet_InstancePtr, XSdPs* SD_InstancePtr) {
+	trainedData dumpedData;
+	FAULTDETECTOR_dumpRegions(FaultDet_InstancePtr, dumpedData.trainedRegions, dumpedData.n_regions);
+	/*
+	 * Write data to SD/eMMC.
+	 */
+	int Status;
+	Status = XSdPs_WritePolled(SD_InstancePtr, Sd_Sector, TRAINEDDATA_BLOCKS_SIZE,
+			(u8*)(&dumpedData));
+	if (Status != XST_SUCCESS) {
+		return XST_FAILURE;
+	}
+	return XST_SUCCESS;
+}
+//_______________________________________________
 
 
 void xPortScheduleNewTask(void)
