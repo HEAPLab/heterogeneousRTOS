@@ -1130,7 +1130,7 @@ void xPortSchedulerSignalTaskSuspended(u16 uxTaskNumber) {
 }
 
 void xPortSchedulerSignalJobEnded(u8 uxTaskNumber, u8 executionId) {
-	//SCHEDULER_signalJobEnded((void*) SCHEDULER_BASEADDR, uxTaskNumber, executionId);
+	SCHEDULER_signalJobEnded((void*) SCHEDULER_BASEADDR, uxTaskNumber, executionId);
 }
 
 void xPortSchedulerSignalTaskEnded(u16 uxTaskNumber)
