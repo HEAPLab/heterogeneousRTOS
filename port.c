@@ -946,7 +946,7 @@ void FAULTDET_resetFault() {
 	FAULTDETECTOR_resetFault(&FAULTDETECTOR_InstancePtr, ((*pxCurrentTCB_ptr)->uxTaskNumber)-1);
 }
 void FAULTDET_initFaultDetection() {
-	FAULTDET_resetFault(); //in case a fault happened but the scheduler has decided to not re execute the task, next execution would appear as normal (no reexec), but fault still need to be cleared on fault detector
+	//FAULTDET_resetFault(); //in case a fault happened but the scheduler has decided to not re execute the task, next execution would appear as normal (no reexec), but fault still need to be cleared on fault detector
 	if ((*pxCurrentTCB_ptr)->executionMode==EXECMODE_FAULT)
 		FAULTDETECTOR_getLastFault(&FAULTDETECTOR_InstancePtr, (*pxCurrentTCB_ptr)->uxTaskNumber-1, &((*pxCurrentTCB_ptr)->lastError));
 	//Errors[taskId]=copyFromFaultDetector
@@ -976,6 +976,7 @@ void FAULTDET_testPoint(int uniId, int checkId, int argCount, ...) {
 	contr.checkId=checkId;
 	//contr.taskId=taskId;
 	contr.taskId=tcbPtr->uxTaskNumber-1;
+	contr.executionId=tcbPtr->executionId;
 
 	for (int i=0; i<argCount; i++) {
 		contr.AOV[i]=*va_arg(ap, float*);
@@ -1040,7 +1041,7 @@ void xPortScheduleNewTask(void)
 	}
 
 	pxNewTCB->executionId=newtaskdesc->executionId;
-	xil_printf("exec mode SCH %x, exec id %x", newtaskdesc->executionMode, pxNewTCB->executionId);
+	xil_printf("exec mode SCH %x, exec id %d", newtaskdesc->executionMode, pxNewTCB->executionId);
 	if (newtaskdesc->executionMode!=EXECMODE_NORMAL && newtaskdesc->executionMode!=EXECMODE_NORMAL_NEWJOB) {
 		//RESET TO BEGIN
 
@@ -1111,7 +1112,7 @@ void xPortScheduleNewTask(void)
 	}
 
 
-	xil_printf("exec mode TASK %x", pxNewTCB->executionMode);
+//	xil_printf("exec mode TASK %x", pxNewTCB->executionMode);
 	SCHEDULER_ACKInterrupt((void *) SCHEDULER_BASEADDR);
 	/*	xil_printf(" initial SP: %X ", ((*pxCurrentTCB_ptr)->pxStack));
 	xil_printf(" SP: %X ", ((*pxCurrentTCB_ptr)->pxTopOfStack));
