@@ -825,6 +825,7 @@ int prvInitSd(XSdPs* SD_InstancePtr)
 
 	Status = XSdPs_CardInitialize(SD_InstancePtr);
 	if (Status != XST_SUCCESS) {
+		xil_printf("\nSD CARD INIT FAILED. CHECK AN SD CARD IS IN THE SLOT. TRAINED DATA DUMP DISABLED UNTIL RESET\n");
 		return XST_FAILURE;
 	}
 
@@ -1047,7 +1048,7 @@ TCB_t** pxCurrentTCB_ptr;
 
 
 XRun FAULTDETECTOR_InstancePtr;
-FAULTDETECTOR_controlStr controlForFaultDet;
+FAULTDETECTOR_controlStr controlForFaultDet __attribute__((aligned(4096)));
 
 //#include "xaxidma.h"
 //XAxiDma AxiDma;
@@ -1058,12 +1059,14 @@ void BtnPressHandler(void *CallbackRef)
 {
 	//REMEMBER TO DISABLE FIQ HERE
 	XGpio *GpioPtr = (XGpio *)CallbackRef;
+	if (XGpio_DiscreteRead(&Gpio0, GPIO_CHANNEL1)!=0) {
 
-	xil_printf("\nBEGIN TRAINED DATA DUMP\n");
-	if (prvDumpTrainedData(&FAULTDETECTOR_InstancePtr, &SdInstance)==XST_SUCCESS) {
-		xil_printf("SUCCESS\n");
-	} else {
-		xil_printf("FAILED\n");
+		xil_printf("\nBEGIN TRAINED DATA DUMP\n");
+		if (prvDumpTrainedData(&FAULTDETECTOR_InstancePtr, &SdInstance)==XST_SUCCESS) {
+			xil_printf("SUCCESS\n");
+		} else {
+			xil_printf("FAILED\n");
+		}
 	}
 
 	/* Clear the Interrupt */
@@ -1076,32 +1079,26 @@ void FAULTDET_getLastFault(FAULTDETECTOR_OutcomeStr* dest) {
 
 void FAULTDET_init(region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS], u8 n_regions[FAULTDETECTOR_MAX_CHECKS]) {
 	//setup GPIO interrupt to enable dump trained data to SD when the user presses a button
-	//int Status =
 
-//	XGpio_Initialize(&Gpio0, GPIO_DEVICE_ID);
+	int sdStatus=prvInitSd(&SdInstance);
 
-	//	if (Status != XST_SUCCESS) {
-	//		return XST_FAILURE;
-	//	}
-
-	//Status=
-
-//	GpioSetupIntrSystem(&Intc, &Gpio0,
-//			INTC_GPIO_INTERRUPT_ID,
-//			GPIO_CHANNEL1);
-
-	//	if (Status != XST_SUCCESS) {
-	//		return XST_FAILURE;
-	//	}
+	if (sdStatus==XST_SUCCESS) {
+		XGpio_Initialize(&Gpio0, GPIO_DEVICE_ID);
+		GpioSetupIntrSystem(&Intc, &Gpio0,
+				INTC_GPIO_INTERRUPT_ID,
+				GPIO_CHANNEL1);
+	}
 
 	//setup FAULT DETECTOR
 	XRun_Config* configPtr=XRun_LookupConfig(FAULTDETECTOR_DEVICEID);
 	XRun_CfgInitialize(&FAULTDETECTOR_InstancePtr, configPtr);
 	XRun_Set_inputAOV(&FAULTDETECTOR_InstancePtr, (u32) (&controlForFaultDet));
 
-	//prvRestoreTrainedData(&FAULTDETECTOR_InstancePtr, &SdInstance);
-	FAULTDETECTOR_initRegions(&FAULTDETECTOR_InstancePtr, trainedRegions, n_regions);
-
+	if (sdStatus==XST_SUCCESS) {
+		prvRestoreTrainedData(&FAULTDETECTOR_InstancePtr, &SdInstance);
+	} else {
+		FAULTDETECTOR_initRegions(&FAULTDETECTOR_InstancePtr, trainedRegions, n_regions);
+	}
 
 	//	XAxiDma_Config *CfgPtr;
 	//	int Status;
@@ -1160,16 +1157,12 @@ void FAULTDET_Test(FAULTDETECTOR_controlStr* contr) {
 	contr->command=COMMAND_TEST;
 
 	//	if (XRun_IsIdle(&FAULTDETECTOR_InstancePtr))
-	xil_printf("pt1");
 	while(!XRun_IsReady(&FAULTDETECTOR_InstancePtr)) {}
-	xil_printf("pt2");
 
 	controlForFaultDet=*contr;
-	xil_printf("pt3");
 
 	XRun_Start(&FAULTDETECTOR_InstancePtr);
-	xil_printf("pt4");
-//	else if (XRun_IsDone(&FAULTDETECTOR_InstancePtr))
+	//	else if (XRun_IsDone(&FAULTDETECTOR_InstancePtr))
 	//		XRun_Continue(&FAULTDETECTOR_InstancePtr);
 	//	else
 	//		xil_printf("err");
