@@ -808,7 +808,7 @@ int prvInitSd(XSdPs* SD_InstancePtr)
 	/*
 	 * Since block size is 512 bytes. File Size is 512*BlockCount.
 	 */
-//	u32 FileSize = (512*TRAINEDDATA_BLOCKS_SIZE); /* File Size is only up to 2MB */
+	//	u32 FileSize = (512*TRAINEDDATA_BLOCKS_SIZE); /* File Size is only up to 2MB */
 	/*
 	 * Initialize the host controller
 	 */
@@ -818,7 +818,7 @@ int prvInitSd(XSdPs* SD_InstancePtr)
 	}
 
 	Status = XSdPs_CfgInitialize(SD_InstancePtr, SdConfig,
-					SdConfig->BaseAddress);
+			SdConfig->BaseAddress);
 	if (Status != XST_SUCCESS) {
 		return XST_FAILURE;
 	}
@@ -838,7 +838,7 @@ int prvRestoreTrainedData(XRun* FaultDet_InstancePtr, XSdPs* SD_InstancePtr) {
 	/*
 	 * Read data from SD/eMMC.
 	 */
-int Status;
+	int Status;
 	Status  = XSdPs_ReadPolled(SD_InstancePtr, Sd_Sector, TRAINEDDATA_BLOCKS_SIZE,
 			(u8*)(&dumpedData));
 	if (Status!=XST_SUCCESS) {
@@ -870,40 +870,44 @@ int prvDumpTrainedData(XRun* FaultDet_InstancePtr, XSdPs* SD_InstancePtr) {
 #include "xgpio.h"
 //#include "xintc.h"
 #ifdef XPAR_INTC_0_DEVICE_ID
- #include "xintc.h"
- #include <stdio.h>
+#include "xintc.h"
+#include <stdio.h>
 #else
- #include "xscugic.h"
- #include "xil_printf.h"
+#include "xscugic.h"
+#include "xil_printf.h"
 #endif
+
+
+#ifdef XPAR_INTC_0_DEVICE_ID
+#define INTC_GPIO_INTERRUPT_ID	XPAR_INTC_0_GPIO_0_VEC_ID
+#define INTC_DEVICE_ID	XPAR_INTC_0_DEVICE_ID
+#define INTC		XIntc
+#define INTC_HANDLER	XIntc_InterruptHandler
+#else
+#define INTC_GPIO_INTERRUPT_ID	XPAR_FABRIC_AXI_GPIO_0_IP2INTC_IRPT_INTR
+#define INTC_DEVICE_ID	XPAR_SCUGIC_SINGLE_DEVICE_ID
+#define INTC		XScuGic
+#define INTC_HANDLER	XScuGic_InterruptHandler
+#endif /* XPAR_INTC_0_DEVICE_ID */
+
 
 #define GPIO_DEVICE_ID		XPAR_GPIO_0_DEVICE_ID
 #define GPIO_CHANNEL1		1
 
-#ifdef XPAR_INTC_0_DEVICE_ID
- #define INTC_GPIO_INTERRUPT_ID	XPAR_INTC_0_GPIO_0_VEC_ID
- #define INTC_DEVICE_ID	XPAR_INTC_0_DEVICE_ID
-#else
- #define INTC_GPIO_INTERRUPT_ID	XPAR_FABRIC_AXI_GPIO_0_IP2INTC_IRPT_INTR
- #define INTC_DEVICE_ID	XPAR_SCUGIC_SINGLE_DEVICE_ID
-#endif /* XPAR_INTC_0_DEVICE_ID */
-
-
-
 XGpio Gpio0; /* The Instance of the GPIO Driver */
 INTC Intc; /* The Instance of the Interrupt Controller Driver */
 static u16 GPIOGlobalIntrMask; /* GPIO channel mask that is needed by
-			    * the Interrupt Handler */
+ * the Interrupt Handler */
 static volatile u32 GPIOIntrFlag; /* Interrupt Handler Flag */
 
 void BtnPressHandler(void *CallbackRef);
 
 int GpioSetupIntrSystem(INTC *IntcInstancePtr, XGpio *InstancePtr,
-			u16 DeviceId, u16 IntrId, u16 IntrMask)
+		u16 IntrId, u16 IntrMask)
 {
 	int Result;
 
-	GlobalIntrMask = IntrMask;
+	GPIOGlobalIntrMask = IntrMask;
 
 #ifdef XPAR_INTC_0_DEVICE_ID
 
@@ -920,7 +924,7 @@ int GpioSetupIntrSystem(INTC *IntcInstancePtr, XGpio *InstancePtr,
 
 	/* Hook up interrupt service routine */
 	XIntc_Connect(IntcInstancePtr, IntrId,
-		      (Xil_ExceptionHandler)BtnPressHandler, InstancePtr);
+			(Xil_ExceptionHandler)BtnPressHandler, InstancePtr);
 
 	/* Enable the interrupt vector at the interrupt controller */
 	XIntc_Enable(IntcInstancePtr, IntrId);
@@ -951,21 +955,21 @@ int GpioSetupIntrSystem(INTC *IntcInstancePtr, XGpio *InstancePtr,
 	}
 
 	Result = XScuGic_CfgInitialize(IntcInstancePtr, IntcConfig,
-					IntcConfig->CpuBaseAddress);
+			IntcConfig->CpuBaseAddress);
 	if (Result != XST_SUCCESS) {
 		return XST_FAILURE;
 	}
 #endif /* TESTAPP_GEN */
 
 	XScuGic_SetPriorityTriggerType(IntcInstancePtr, IntrId,
-					0xA0, 0x3);
+			0xA0, 0x3);
 
 	/*
 	 * Connect the interrupt handler that will be called when an
 	 * interrupt occurs for the device.
 	 */
 	Result = XScuGic_Connect(IntcInstancePtr, IntrId,
-				 (Xil_ExceptionHandler)BtnPressHandler, InstancePtr);
+			(Xil_ExceptionHandler)BtnPressHandler, InstancePtr);
 	if (Result != XST_SUCCESS) {
 		return Result;
 	}
@@ -988,7 +992,7 @@ int GpioSetupIntrSystem(INTC *IntcInstancePtr, XGpio *InstancePtr,
 	Xil_ExceptionInit();
 
 	Xil_ExceptionRegisterHandler(XIL_EXCEPTION_ID_INT,
-			 (Xil_ExceptionHandler)INTC_HANDLER, IntcInstancePtr);
+			(Xil_ExceptionHandler)INTC_HANDLER, IntcInstancePtr);
 
 	/* Enable non-critical exceptions */
 
@@ -1055,7 +1059,12 @@ void BtnPressHandler(void *CallbackRef)
 	//REMEMBER TO DISABLE FIQ HERE
 	XGpio *GpioPtr = (XGpio *)CallbackRef;
 
-	prvDumpTrainedData(&FAULTDETECTOR_InstancePtr, &SdInstance);
+	xil_printf("\nBEGIN TRAINED DATA DUMP\n");
+	if (prvDumpTrainedData(&FAULTDETECTOR_InstancePtr, &SdInstance)==XST_SUCCESS) {
+		xil_printf("SUCCESS\n");
+	} else {
+		xil_printf("FAILED\n");
+	}
 
 	/* Clear the Interrupt */
 	XGpio_InterruptClear(GpioPtr, GPIOGlobalIntrMask);
@@ -1067,18 +1076,31 @@ void FAULTDET_getLastFault(FAULTDETECTOR_OutcomeStr* dest) {
 
 void FAULTDET_init(region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS], u8 n_regions[FAULTDETECTOR_MAX_CHECKS]) {
 	//setup GPIO interrupt to enable dump trained data to SD when the user presses a button
-	GpioSetupIntrSystem(&Intc, &Gpio0,
-					   GPIO_DEVICE_ID,
-					   INTC_GPIO_INTERRUPT_ID,
-					   GPIO_CHANNEL1);
+	//int Status =
+
+//	XGpio_Initialize(&Gpio0, GPIO_DEVICE_ID);
+
+	//	if (Status != XST_SUCCESS) {
+	//		return XST_FAILURE;
+	//	}
+
+	//Status=
+
+//	GpioSetupIntrSystem(&Intc, &Gpio0,
+//			INTC_GPIO_INTERRUPT_ID,
+//			GPIO_CHANNEL1);
+
+	//	if (Status != XST_SUCCESS) {
+	//		return XST_FAILURE;
+	//	}
 
 	//setup FAULT DETECTOR
 	XRun_Config* configPtr=XRun_LookupConfig(FAULTDETECTOR_DEVICEID);
 	XRun_CfgInitialize(&FAULTDETECTOR_InstancePtr, configPtr);
 	XRun_Set_inputAOV(&FAULTDETECTOR_InstancePtr, (u32) (&controlForFaultDet));
 
-	prvRestoreTrainedData(&FAULTDETECTOR_InstancePtr, &SdInstance);
-	//FAULTDETECTOR_initRegions(&FAULTDETECTOR_InstancePtr, trainedRegions, n_regions);
+	//prvRestoreTrainedData(&FAULTDETECTOR_InstancePtr, &SdInstance);
+	FAULTDETECTOR_initRegions(&FAULTDETECTOR_InstancePtr, trainedRegions, n_regions);
 
 
 	//	XAxiDma_Config *CfgPtr;
@@ -1138,9 +1160,16 @@ void FAULTDET_Test(FAULTDETECTOR_controlStr* contr) {
 	contr->command=COMMAND_TEST;
 
 	//	if (XRun_IsIdle(&FAULTDETECTOR_InstancePtr))
+	xil_printf("pt1");
 	while(!XRun_IsReady(&FAULTDETECTOR_InstancePtr)) {}
+	xil_printf("pt2");
+
 	controlForFaultDet=*contr;
-	XRun_Start(&FAULTDETECTOR_InstancePtr);//	else if (XRun_IsDone(&FAULTDETECTOR_InstancePtr))
+	xil_printf("pt3");
+
+	XRun_Start(&FAULTDETECTOR_InstancePtr);
+	xil_printf("pt4");
+//	else if (XRun_IsDone(&FAULTDETECTOR_InstancePtr))
 	//		XRun_Continue(&FAULTDETECTOR_InstancePtr);
 	//	else
 	//		xil_printf("err");
@@ -1176,7 +1205,7 @@ char FAULTDET_isFault() {
 		FAULTDET_getLastFault(&((*pxCurrentTCB_ptr)->lastError));
 		(*pxCurrentTCB_ptr)->executionMode=EXECMODE_FAULT;
 	}
-//	return FAULTDETECTOR_isFault(&FAULTDETECTOR_InstancePtr, ((*pxCurrentTCB_ptr)->uxTaskNumber)-1);
+	//	return FAULTDETECTOR_isFault(&FAULTDETECTOR_InstancePtr, ((*pxCurrentTCB_ptr)->uxTaskNumber)-1);
 	return isFault;
 }
 void FAULTDET_resetFault() {
@@ -1271,7 +1300,7 @@ void xPortScheduleNewTask(void)
 	newTaskDescrStr* newtaskdesc=(newTaskDescrStr*) NEWTASKDESCRPTR;
 	//*pxCurrentTCB_ptr = *((TCB_t**) NEWTASKDESCRPTR);
 	*pxCurrentTCB_ptr = newtaskdesc->pxNextTcb;
-	
+
 	TCB_t* pxNewTCB=*(pxCurrentTCB_ptr);
 	//xil_printf("| NEW, %X ", *pxCurrentTCB_ptr);
 	if (newtaskdesc->executionMode==EXECMODE_NORMAL_NEWJOB) {
@@ -1284,44 +1313,44 @@ void xPortScheduleNewTask(void)
 		//RESET TO BEGIN
 
 #if ( configUSE_MUTEXES == 1 )
-			{
-				pxNewTCB->uxBasePriority = pxNewTCB->uxPriority;
-				pxNewTCB->uxMutexesHeld = 0;
-			}
+		{
+			pxNewTCB->uxBasePriority = pxNewTCB->uxPriority;
+			pxNewTCB->uxMutexesHeld = 0;
+		}
 #endif /* configUSE_MUTEXES */
 
-			// vListInitialiseItem(&(pxNewTCB->xStateListItem));
-			// vListInitialiseItem(&(pxNewTCB->xEventListItem));
+		// vListInitialiseItem(&(pxNewTCB->xStateListItem));
+		// vListInitialiseItem(&(pxNewTCB->xEventListItem));
 
-			// /* Set the pxNewTCB as a link back from the ListItem_t.  This is so we can get
-			 // * back to  the containing TCB from a generic item in a list. */
-			// listSET_LIST_ITEM_OWNER(&(pxNewTCB->xStateListItem), pxNewTCB);
+		// /* Set the pxNewTCB as a link back from the ListItem_t.  This is so we can get
+		// * back to  the containing TCB from a generic item in a list. */
+		// listSET_LIST_ITEM_OWNER(&(pxNewTCB->xStateListItem), pxNewTCB);
 
-			// /* Event lists are always in priority order. */
-			// listSET_LIST_ITEM_VALUE(&(pxNewTCB->xEventListItem),
-					// ( TickType_t ) configMAX_PRIORITIES - ( TickType_t ) uxPriority); /*lint !e961 MISRA exception as the casts are only redundant for some ports. */
-			// listSET_LIST_ITEM_OWNER(&(pxNewTCB->xEventListItem), pxNewTCB);
+		// /* Event lists are always in priority order. */
+		// listSET_LIST_ITEM_VALUE(&(pxNewTCB->xEventListItem),
+		// ( TickType_t ) configMAX_PRIORITIES - ( TickType_t ) uxPriority); /*lint !e961 MISRA exception as the casts are only redundant for some ports. */
+		// listSET_LIST_ITEM_OWNER(&(pxNewTCB->xEventListItem), pxNewTCB);
 
 #if ( portCRITICAL_NESTING_IN_TCB == 1 )
-			{
-				pxNewTCB->uxCriticalNesting = ( UBaseType_t ) 0U;
-			}
+		{
+			pxNewTCB->uxCriticalNesting = ( UBaseType_t ) 0U;
+		}
 #endif /* portCRITICAL_NESTING_IN_TCB */
 
 #if ( configGENERATE_RUN_TIME_STATS == 1 )
-			{
-				pxNewTCB->ulRunTimeCounter = 0UL;
-			}
+		{
+			pxNewTCB->ulRunTimeCounter = 0UL;
+		}
 #endif /* configGENERATE_RUN_TIME_STATS */
 
-//thread not implemented yet
-// #if ( configNUM_THREAD_LOCAL_STORAGE_POINTERS != 0 )
-			// {
-				// memset( ( void * ) &( pxNewTCB->pvThreadLocalStoragePointers[ 0 ] ), 0x00, sizeof( pxNewTCB->pvThreadLocalStoragePointers ) );
-			// }
-// #endif
+		//thread not implemented yet
+		// #if ( configNUM_THREAD_LOCAL_STORAGE_POINTERS != 0 )
+		// {
+		// memset( ( void * ) &( pxNewTCB->pvThreadLocalStoragePointers[ 0 ] ), 0x00, sizeof( pxNewTCB->pvThreadLocalStoragePointers ) );
+		// }
+		// #endif
 
-/* #if ( configUSE_TASK_NOTIFICATIONS == 1 )
+		/* #if ( configUSE_TASK_NOTIFICATIONS == 1 )
 			{
 				memset((void *) &(pxNewTCB->ulNotifiedValue[0]), 0x00,
 						sizeof(pxNewTCB->ulNotifiedValue));
@@ -1331,26 +1360,26 @@ void xPortScheduleNewTask(void)
 #endif */
 
 #if ( INCLUDE_xTaskAbortDelay == 1 )
-			{
-				pxNewTCB->ucDelayAborted = pdFALSE;
-			}
+		{
+			pxNewTCB->ucDelayAborted = pdFALSE;
+		}
 #endif
 
-			/* Initialize the TCB stack to look as if the task was already running,
-			 * but had been interrupted by the scheduler.  The return address is set
-			 * to the start of the task function. Once the stack has been initialised
-			 * the top of stack variable is updated. */
+		/* Initialize the TCB stack to look as if the task was already running,
+		 * but had been interrupted by the scheduler.  The return address is set
+		 * to the start of the task function. Once the stack has been initialised
+		 * the top of stack variable is updated. */
 
 		pxNewTCB->pxTopOfStack=pxNewTCB->pxInitTopOfStack;
 		pxNewTCB->pxTopOfStack = pxPortInitialiseStack(pxNewTCB->pxInitTopOfStack,
-											pxNewTCB->pxInitTaskCode, (void*) pxNewTCB->pxInitParameters);
+				pxNewTCB->pxInitTaskCode, (void*) pxNewTCB->pxInitParameters);
 
 		//update execution mode
 		(*pxCurrentTCB_ptr)->executionMode=newtaskdesc->executionMode;
 	}
 
 
-//	xil_printf("exec mode TASK %x", pxNewTCB->executionMode);
+	//	xil_printf("exec mode TASK %x", pxNewTCB->executionMode);
 	SCHEDULER_ACKInterrupt((void *) SCHEDULER_BASEADDR);
 	/*	xil_printf(" initial SP: %X ", ((*pxCurrentTCB_ptr)->pxStack));
 	xil_printf(" SP: %X ", ((*pxCurrentTCB_ptr)->pxTopOfStack));
