@@ -866,19 +866,28 @@ int prvDumpTrainedData(XRun* FaultDet_InstancePtr, XSdPs* SD_InstancePtr) {
 }
 //_______________________________________________
 //INTERRUPT SYSTEM FOR DUMPING TRAINING DATA
-#ifdef XPAR_INTC_0_DEVICE_ID
- #define INTC_DEVICE_ID	XPAR_INTC_0_DEVICE_ID
- #define INTC		XIntc
- #define INTC_HANDLER	XIntc_InterruptHandler
-#else
- #define INTC_DEVICE_ID	XPAR_SCUGIC_SINGLE_DEVICE_ID
- #define INTC		XScuGic
- #define INTC_HANDLER	XScuGic_InterruptHandler
-#endif /* XPAR_INTC_0_DEVICE_ID */
 
 #include "xgpio.h"
-#include "xintc.h"
-#include "xscugic.h"
+//#include "xintc.h"
+#ifdef XPAR_INTC_0_DEVICE_ID
+ #include "xintc.h"
+ #include <stdio.h>
+#else
+ #include "xscugic.h"
+ #include "xil_printf.h"
+#endif
+
+#define GPIO_DEVICE_ID		XPAR_GPIO_0_DEVICE_ID
+#define GPIO_CHANNEL1		1
+
+#ifdef XPAR_INTC_0_DEVICE_ID
+ #define INTC_GPIO_INTERRUPT_ID	XPAR_INTC_0_GPIO_0_VEC_ID
+ #define INTC_DEVICE_ID	XPAR_INTC_0_DEVICE_ID
+#else
+ #define INTC_GPIO_INTERRUPT_ID	XPAR_FABRIC_AXI_GPIO_0_IP2INTC_IRPT_INTR
+ #define INTC_DEVICE_ID	XPAR_SCUGIC_SINGLE_DEVICE_ID
+#endif /* XPAR_INTC_0_DEVICE_ID */
+
 
 
 XGpio Gpio0; /* The Instance of the GPIO Driver */
@@ -1049,7 +1058,7 @@ void BtnPressHandler(void *CallbackRef)
 	prvDumpTrainedData(&FAULTDETECTOR_InstancePtr, &SdInstance);
 
 	/* Clear the Interrupt */
-	XGpio_InterruptClear(GpioPtr, GlobalIntrMask);
+	XGpio_InterruptClear(GpioPtr, GPIOGlobalIntrMask);
 }
 
 void FAULTDET_getLastFault(FAULTDETECTOR_OutcomeStr* dest) {
@@ -1068,7 +1077,7 @@ void FAULTDET_init(region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECT
 	XRun_CfgInitialize(&FAULTDETECTOR_InstancePtr, configPtr);
 	XRun_Set_inputAOV(&FAULTDETECTOR_InstancePtr, (u32) (&controlForFaultDet));
 
-	prvRestoreTrainedData();
+	prvRestoreTrainedData(&FAULTDETECTOR_InstancePtr, &SdInstance);
 	//FAULTDETECTOR_initRegions(&FAULTDETECTOR_InstancePtr, trainedRegions, n_regions);
 
 
