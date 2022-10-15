@@ -782,6 +782,214 @@ void vPortDisableInterrupt( uint8_t ucInterruptID )
 /*-----------------------------------------------------------*/
 
 
+//___trainedData save and load mechanism___
+#include "xsdps.h"
+#define TRAINEDDATA_REALSIZE (sizeof(region_t)*FAULTDETECTOR_MAX_CHECKS*FAULTDETECTOR_MAX_REGIONS+sizeof(u8)*FAULTDETECTOR_MAX_CHECKS)
+#define SD_BLOCKSIZE 512
+#define TRAINEDDATA_BLOCKS_SIZE ((TRAINEDDATA_REALSIZE / SD_BLOCKSIZE) + ((TRAINEDDATA_REALSIZE % SD_BLOCKSIZE) != 0))
+#define SD_SECTOR_OFFSET 204800
+static XSdPs SdInstance;
+u32 Sd_Sector = SD_SECTOR_OFFSET;
+
+
+typedef struct __attribute__((__packed__)) {
+	region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS];
+	u8 n_regions[FAULTDETECTOR_MAX_CHECKS];
+	char padding [ TRAINEDDATA_BLOCKS_SIZE*512 - TRAINEDDATA_REALSIZE ];
+} trainedData ;
+
+
+int prvInitSd(XSdPs* SD_InstancePtr)
+{
+
+	int Status;
+	XSdPs_Config *SdConfig;
+
+	/*
+	 * Since block size is 512 bytes. File Size is 512*BlockCount.
+	 */
+//	u32 FileSize = (512*TRAINEDDATA_BLOCKS_SIZE); /* File Size is only up to 2MB */
+	/*
+	 * Initialize the host controller
+	 */
+	SdConfig = XSdPs_LookupConfig(XPAR_XSDPS_0_DEVICE_ID);
+	if (NULL == SdConfig) {
+		return XST_FAILURE;
+	}
+
+	Status = XSdPs_CfgInitialize(SD_InstancePtr, SdConfig,
+					SdConfig->BaseAddress);
+	if (Status != XST_SUCCESS) {
+		return XST_FAILURE;
+	}
+
+	Status = XSdPs_CardInitialize(SD_InstancePtr);
+	if (Status != XST_SUCCESS) {
+		return XST_FAILURE;
+	}
+
+	if (!(SdInstance.HCS)) Sd_Sector *= XSDPS_BLK_SIZE_512_MASK;
+	return XST_SUCCESS;
+}
+
+int prvRestoreTrainedData(XRun* FaultDet_InstancePtr, XSdPs* SD_InstancePtr) {
+	trainedData dumpedData;
+
+	/*
+	 * Read data from SD/eMMC.
+	 */
+int Status;
+	Status  = XSdPs_ReadPolled(SD_InstancePtr, Sd_Sector, TRAINEDDATA_BLOCKS_SIZE,
+			(u8*)(&dumpedData));
+	if (Status!=XST_SUCCESS) {
+		return XST_FAILURE;
+	}
+
+	FAULTDETECTOR_initRegions(FaultDet_InstancePtr, dumpedData.trainedRegions, dumpedData.n_regions);
+
+	return XST_SUCCESS;
+}
+
+int prvDumpTrainedData(XRun* FaultDet_InstancePtr, XSdPs* SD_InstancePtr) {
+	trainedData dumpedData;
+	FAULTDETECTOR_dumpRegions(FaultDet_InstancePtr, dumpedData.trainedRegions, dumpedData.n_regions);
+	/*
+	 * Write data to SD/eMMC.
+	 */
+	int Status;
+	Status = XSdPs_WritePolled(SD_InstancePtr, Sd_Sector, TRAINEDDATA_BLOCKS_SIZE,
+			(u8*)(&dumpedData));
+	if (Status != XST_SUCCESS) {
+		return XST_FAILURE;
+	}
+	return XST_SUCCESS;
+}
+//_______________________________________________
+//INTERRUPT SYSTEM FOR DUMPING TRAINING DATA
+#ifdef XPAR_INTC_0_DEVICE_ID
+ #define INTC_DEVICE_ID	XPAR_INTC_0_DEVICE_ID
+ #define INTC		XIntc
+ #define INTC_HANDLER	XIntc_InterruptHandler
+#else
+ #define INTC_DEVICE_ID	XPAR_SCUGIC_SINGLE_DEVICE_ID
+ #define INTC		XScuGic
+ #define INTC_HANDLER	XScuGic_InterruptHandler
+#endif /* XPAR_INTC_0_DEVICE_ID */
+
+#include "xgpio.h"
+#include "xintc.h"
+#include "xscugic.h"
+
+
+XGpio Gpio0; /* The Instance of the GPIO Driver */
+INTC Intc; /* The Instance of the Interrupt Controller Driver */
+static u16 GPIOGlobalIntrMask; /* GPIO channel mask that is needed by
+			    * the Interrupt Handler */
+static volatile u32 GPIOIntrFlag; /* Interrupt Handler Flag */
+
+void BtnPressHandler(void *CallbackRef);
+
+int GpioSetupIntrSystem(INTC *IntcInstancePtr, XGpio *InstancePtr,
+			u16 DeviceId, u16 IntrId, u16 IntrMask)
+{
+	int Result;
+
+	GlobalIntrMask = IntrMask;
+
+#ifdef XPAR_INTC_0_DEVICE_ID
+
+#ifndef TESTAPP_GEN
+	/*
+	 * Initialize the interrupt controller driver so that it's ready to use.
+	 * specify the device ID that was generated in xparameters.h
+	 */
+	Result = XIntc_Initialize(IntcInstancePtr, INTC_DEVICE_ID);
+	if (Result != XST_SUCCESS) {
+		return Result;
+	}
+#endif /* TESTAPP_GEN */
+
+	/* Hook up interrupt service routine */
+	XIntc_Connect(IntcInstancePtr, IntrId,
+		      (Xil_ExceptionHandler)BtnPressHandler, InstancePtr);
+
+	/* Enable the interrupt vector at the interrupt controller */
+	XIntc_Enable(IntcInstancePtr, IntrId);
+
+#ifndef TESTAPP_GEN
+	/*
+	 * Start the interrupt controller such that interrupts are recognized
+	 * and handled by the processor
+	 */
+	Result = XIntc_Start(IntcInstancePtr, XIN_REAL_MODE);
+	if (Result != XST_SUCCESS) {
+		return Result;
+	}
+#endif /* TESTAPP_GEN */
+
+#else /* !XPAR_INTC_0_DEVICE_ID */
+
+#ifndef TESTAPP_GEN
+	XScuGic_Config *IntcConfig;
+
+	/*
+	 * Initialize the interrupt controller driver so that it is ready to
+	 * use.
+	 */
+	IntcConfig = XScuGic_LookupConfig(INTC_DEVICE_ID);
+	if (NULL == IntcConfig) {
+		return XST_FAILURE;
+	}
+
+	Result = XScuGic_CfgInitialize(IntcInstancePtr, IntcConfig,
+					IntcConfig->CpuBaseAddress);
+	if (Result != XST_SUCCESS) {
+		return XST_FAILURE;
+	}
+#endif /* TESTAPP_GEN */
+
+	XScuGic_SetPriorityTriggerType(IntcInstancePtr, IntrId,
+					0xA0, 0x3);
+
+	/*
+	 * Connect the interrupt handler that will be called when an
+	 * interrupt occurs for the device.
+	 */
+	Result = XScuGic_Connect(IntcInstancePtr, IntrId,
+				 (Xil_ExceptionHandler)BtnPressHandler, InstancePtr);
+	if (Result != XST_SUCCESS) {
+		return Result;
+	}
+
+	/* Enable the interrupt for the GPIO device.*/
+	XScuGic_Enable(IntcInstancePtr, IntrId);
+#endif /* XPAR_INTC_0_DEVICE_ID */
+
+	/*
+	 * Enable the GPIO channel interrupts so that push button can be
+	 * detected and enable interrupts for the GPIO device
+	 */
+	XGpio_InterruptEnable(InstancePtr, IntrMask);
+	XGpio_InterruptGlobalEnable(InstancePtr);
+
+	/*
+	 * Initialize the exception table and register the interrupt
+	 * controller handler with the exception table
+	 */
+	Xil_ExceptionInit();
+
+	Xil_ExceptionRegisterHandler(XIL_EXCEPTION_ID_INT,
+			 (Xil_ExceptionHandler)INTC_HANDLER, IntcInstancePtr);
+
+	/* Enable non-critical exceptions */
+
+	//Xil_ExceptionEnable();
+
+	return XST_SUCCESS;
+}
+//________________________________
+
+
 //fedit add
 /* Initializes the scheduler. */
 
@@ -833,11 +1041,29 @@ FAULTDETECTOR_controlStr controlForFaultDet;
 #define FAULTDETECTOR_DEVICEID XPAR_RUN_0_DEVICE_ID
 //#define DMA_DEV_ID		XPAR_AXIDMA_0_DEVICE_ID
 
+void BtnPressHandler(void *CallbackRef)
+{
+	//REMEMBER TO DISABLE FIQ HERE
+	XGpio *GpioPtr = (XGpio *)CallbackRef;
+
+	prvDumpTrainedData(&FAULTDETECTOR_InstancePtr, &SdInstance);
+
+	/* Clear the Interrupt */
+	XGpio_InterruptClear(GpioPtr, GlobalIntrMask);
+}
+
 void FAULTDET_getLastFault(FAULTDETECTOR_OutcomeStr* dest) {
 	FAULTDETECTOR_getLastFault(&FAULTDETECTOR_InstancePtr, ((*pxCurrentTCB_ptr)->uxTaskNumber)-1, dest);
 }
 
 void FAULTDET_init(region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS], u8 n_regions[FAULTDETECTOR_MAX_CHECKS]) {
+	//setup GPIO interrupt to enable dump trained data to SD when the user presses a button
+	GpioSetupIntrSystem(&Intc, &Gpio0,
+					   GPIO_DEVICE_ID,
+					   INTC_GPIO_INTERRUPT_ID,
+					   GPIO_CHANNEL1);
+
+	//setup FAULT DETECTOR
 	XRun_Config* configPtr=XRun_LookupConfig(FAULTDETECTOR_DEVICEID);
 	XRun_CfgInitialize(&FAULTDETECTOR_InstancePtr, configPtr);
 	XRun_Set_inputAOV(&FAULTDETECTOR_InstancePtr, (u32) (&controlForFaultDet));
@@ -1028,90 +1254,6 @@ void FAULTDET_trainPoint(int checkId, int argCount, ...) {
 	FAULTDET_Train(&controlForFaultDet);
 	va_end(ap);
 }
-
-//___trainedData save and load mechanism___
-#include "xsdps.h"
-#define TRAINEDDATA_REALSIZE (sizeof(region_t)*FAULTDETECTOR_MAX_CHECKS*FAULTDETECTOR_MAX_REGIONS+sizeof(u8)*FAULTDETECTOR_MAX_CHECKS)
-#define SD_BLOCKSIZE 512
-#define TRAINEDDATA_BLOCKS_SIZE ((TRAINEDDATA_REALSIZE / SD_BLOCKSIZE) + ((TRAINEDDATA_REALSIZE % SD_BLOCKSIZE) != 0))
-#define SD_SECTOR_OFFSET 204800
-static XSdPs SdInstance;
-u32 Sd_Sector = SD_SECTOR_OFFSET;
-
-
-typedef struct __attribute__((__packed__)) {
-	region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS];
-	u8 n_regions[FAULTDETECTOR_MAX_CHECKS];
-	char padding [ TRAINEDDATA_BLOCKS_SIZE*512 - TRAINEDDATA_REALSIZE ];
-} trainedData ;
-
-
-int prvInitSd(XSdPs* SD_InstancePtr)
-{
-
-	int Status;
-	XSdPs_Config *SdConfig;
-
-	/*
-	 * Since block size is 512 bytes. File Size is 512*BlockCount.
-	 */
-//	u32 FileSize = (512*TRAINEDDATA_BLOCKS_SIZE); /* File Size is only up to 2MB */
-	/*
-	 * Initialize the host controller
-	 */
-	SdConfig = XSdPs_LookupConfig(XPAR_XSDPS_0_DEVICE_ID);
-	if (NULL == SdConfig) {
-		return XST_FAILURE;
-	}
-
-	Status = XSdPs_CfgInitialize(SD_InstancePtr, SdConfig,
-					SdConfig->BaseAddress);
-	if (Status != XST_SUCCESS) {
-		return XST_FAILURE;
-	}
-
-	Status = XSdPs_CardInitialize(SD_InstancePtr);
-	if (Status != XST_SUCCESS) {
-		return XST_FAILURE;
-	}
-
-	if (!(SdInstance.HCS)) Sd_Sector *= XSDPS_BLK_SIZE_512_MASK;
-	return XST_SUCCESS;
-}
-
-int prvRestoreTrainedData(XRun* FaultDet_InstancePtr, XSdPs* SD_InstancePtr) {
-	trainedData dumpedData;
-
-	/*
-	 * Read data from SD/eMMC.
-	 */
-int Status;
-	Status  = XSdPs_ReadPolled(SD_InstancePtr, Sd_Sector, TRAINEDDATA_BLOCKS_SIZE,
-			(u8*)(&dumpedData));
-	if (Status!=XST_SUCCESS) {
-		return XST_FAILURE;
-	}
-
-	FAULTDETECTOR_initRegions(FaultDet_InstancePtr, dumpedData.trainedRegions, dumpedData.n_regions);
-
-	return XST_SUCCESS;
-}
-
-int prvDumpTrainedData(XRun* FaultDet_InstancePtr, XSdPs* SD_InstancePtr) {
-	trainedData dumpedData;
-	FAULTDETECTOR_dumpRegions(FaultDet_InstancePtr, dumpedData.trainedRegions, dumpedData.n_regions);
-	/*
-	 * Write data to SD/eMMC.
-	 */
-	int Status;
-	Status = XSdPs_WritePolled(SD_InstancePtr, Sd_Sector, TRAINEDDATA_BLOCKS_SIZE,
-			(u8*)(&dumpedData));
-	if (Status != XST_SUCCESS) {
-		return XST_FAILURE;
-	}
-	return XST_SUCCESS;
-}
-//_______________________________________________
 
 
 void xPortScheduleNewTask(void)
