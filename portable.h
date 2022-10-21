@@ -229,7 +229,7 @@ void FAULTDET_resetFault() PRIVILEGED_FUNCTION;
  * sets up a tick interrupt and sets timers for the correct tick frequency.
  */
 BaseType_t xPortStartScheduler( void ) PRIVILEGED_FUNCTION;
-
+void xPortSchedulerDisableIntr() PRIVILEGED_FUNCTION;
 /*
  * Undo any hardware/ISR setup that was performed by xPortStartScheduler() so
  * the hardware is left in its original condition after the scheduler stops

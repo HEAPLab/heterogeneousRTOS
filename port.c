@@ -1575,6 +1575,10 @@ BaseType_t xPortStartScheduler( void )
 	( void ) prvTaskExitError;
 	return 0;
 }
+void xPortSchedulerDisableIntr() {
+	SCHEDULER_DisableInterrupt((void*) SCHEDULER_BASEADDR);
+}
+
 /*-----------------------------------------------------------*/
 
 void vPortEndScheduler( void )
