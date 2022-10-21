@@ -1092,13 +1092,15 @@ void FAULTDET_init(region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECT
 	//setup FAULT DETECTOR
 	XRun_Config* configPtr=XRun_LookupConfig(FAULTDETECTOR_DEVICEID);
 	XRun_CfgInitialize(&FAULTDETECTOR_InstancePtr, configPtr);
-	XRun_Set_inputAOV(&FAULTDETECTOR_InstancePtr, (u32) (&controlForFaultDet));
+	XRun_Set_inputData(&FAULTDETECTOR_InstancePtr, (u32) (&controlForFaultDet));
 
 	if (sdStatus==XST_SUCCESS) {
 		prvRestoreTrainedData(&FAULTDETECTOR_InstancePtr, &SdInstance);
 	} else {
 		FAULTDETECTOR_initRegions(&FAULTDETECTOR_InstancePtr, trainedRegions, n_regions);
 	}
+
+	XRun_Start(&FAULTDETECTOR_InstancePtr);
 
 	//	XAxiDma_Config *CfgPtr;
 	//	int Status;
@@ -1134,9 +1136,10 @@ void FAULTDET_init(region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECT
 void FAULTDET_Train(FAULTDETECTOR_controlStr* contr) {
 	contr->command=COMMAND_TRAIN;
 
-	while(!XRun_IsReady(&FAULTDETECTOR_InstancePtr)) {}
+	while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {}
+
 	controlForFaultDet=*contr;
-	XRun_Start(&FAULTDETECTOR_InstancePtr);
+	FAULTDETECTOR_startCopy(&FAULTDETECTOR_InstancePtr);
 	//	while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {
 	//		xil_printf("notReady");
 	//	}
@@ -1157,11 +1160,11 @@ void FAULTDET_Test(FAULTDETECTOR_controlStr* contr) {
 	contr->command=COMMAND_TEST;
 
 	//	if (XRun_IsIdle(&FAULTDETECTOR_InstancePtr))
-	while(!XRun_IsReady(&FAULTDETECTOR_InstancePtr)) {}
+
+	//while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {}
 
 	controlForFaultDet=*contr;
-
-	XRun_Start(&FAULTDETECTOR_InstancePtr);
+	FAULTDETECTOR_startCopy(&FAULTDETECTOR_InstancePtr);
 	//	else if (XRun_IsDone(&FAULTDETECTOR_InstancePtr))
 	//		XRun_Continue(&FAULTDETECTOR_InstancePtr);
 	//	else
@@ -1251,7 +1254,9 @@ void FAULTDET_testPoint(int uniId, int checkId, int argCount, ...) {
 		tcbPtr->lastError.uniId=0xFFFF;
 		tcbPtr->lastError.checkId=0xFF;
 		if (memcmp(tcbPtr->lastError.AOV, contr.AOV, sizeof(contr.AOV))==0)
-			FAULTDET_Train(&controlForFaultDet);
+			//FAULTDET_Train(&controlForFaultDet);
+			FAULTDET_Test(&controlForFaultDet);
+
 		else
 			FAULTDET_Test(&controlForFaultDet);
 	} else {
@@ -1286,10 +1291,8 @@ void FAULTDET_trainPoint(int checkId, int argCount, ...) {
 	va_end(ap);
 }
 
-
 void xPortScheduleNewTask(void)
 {
-
 	newTaskDescrStr* newtaskdesc=(newTaskDescrStr*) NEWTASKDESCRPTR;
 	//*pxCurrentTCB_ptr = *((TCB_t**) NEWTASKDESCRPTR);
 	*pxCurrentTCB_ptr = newtaskdesc->pxNextTcb;
@@ -1374,11 +1377,11 @@ void xPortScheduleNewTask(void)
 
 	//	xil_printf("exec mode TASK %x", pxNewTCB->executionMode);
 	SCHEDULER_ACKInterrupt((void *) SCHEDULER_BASEADDR);
+
 	/*	xil_printf(" initial SP: %X ", ((*pxCurrentTCB_ptr)->pxStack));
 	xil_printf(" SP: %X ", ((*pxCurrentTCB_ptr)->pxTopOfStack));
 	xil_printf(" PC address: %X ", ((*pxCurrentTCB_ptr)->pxTopOfStack + 13));
 	xil_printf(" PC instr: %X |", *((*pxCurrentTCB_ptr)->pxTopOfStack + 13));*/
-
 }
 
 void xPortSchedulerResumeTask(u16 uxTaskNumber) {
