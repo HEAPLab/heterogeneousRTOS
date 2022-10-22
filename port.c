@@ -1161,7 +1161,7 @@ void FAULTDET_Test(FAULTDETECTOR_controlStr* contr) {
 
 	//	if (XRun_IsIdle(&FAULTDETECTOR_InstancePtr))
 
-	//while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {}
+	while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {}
 
 	controlForFaultDet=*contr;
 	FAULTDETECTOR_startCopy(&FAULTDETECTOR_InstancePtr);
@@ -1254,8 +1254,8 @@ void FAULTDET_testPoint(int uniId, int checkId, int argCount, ...) {
 		tcbPtr->lastError.uniId=0xFFFF;
 		tcbPtr->lastError.checkId=0xFF;
 		if (memcmp(tcbPtr->lastError.AOV, contr.AOV, sizeof(contr.AOV))==0)
-			//FAULTDET_Train(&controlForFaultDet);
-			FAULTDET_Test(&controlForFaultDet);
+			FAULTDET_Train(&controlForFaultDet);
+//			FAULTDET_Test(&controlForFaultDet);
 
 		else
 			FAULTDET_Test(&controlForFaultDet);
