@@ -1123,6 +1123,8 @@
 			pxNewTCB->pxInitTaskCode=pxTaskCode;
 			pxNewTCB->pxInitParameters=(StackType_t)pvParameters;
 
+			pxNewTCB->reExecutions=0;
+			pxNewTCB->executionMode=0;
 			pxNewTCB->lastError.checkId=0xFF;
 			pxNewTCB->lastError.uniId=0xFFFF;
 			//end of fedit add
