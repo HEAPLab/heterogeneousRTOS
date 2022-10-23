@@ -1158,8 +1158,8 @@ void FAULTDET_Train(FAULTDETECTOR_controlStr* contr) {
 
 }
 void FAULTDET_Test(FAULTDETECTOR_controlStr* contr) {
+	if ((*pxCurrentTCB_ptr)->reExecutions<configMAX_REEXECUTIONS_SET_IN_HW_SCHEDULER) {
 	contr->command=COMMAND_TEST;
-
 	//	if (XRun_IsIdle(&FAULTDETECTOR_InstancePtr))
 
 	while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {}
@@ -1189,11 +1189,14 @@ void FAULTDET_Test(FAULTDETECTOR_controlStr* contr) {
 	//	{
 	//			/* Wait */
 	//	}
-
+	}
 }
 
 
 char FAULTDET_isFault() {
+	if ((*pxCurrentTCB_ptr)->reExecutions==configMAX_REEXECUTIONS_SET_IN_HW_SCHEDULER) {
+		return false;
+	}
 	while(!(XRun_IsDone(&FAULTDETECTOR_InstancePtr) || XRun_IsIdle(&FAULTDETECTOR_InstancePtr))) {}
 
 	char isFault=FAULTDETECTOR_isFault(&FAULTDETECTOR_InstancePtr, ((*pxCurrentTCB_ptr)->uxTaskNumber)-1);
@@ -1228,6 +1231,7 @@ void FAULTDET_endFaultDetection() {
 	//(*pxCurrentTCB_ptr)->executionMode=EXECUTIONMODE_NORMAL;
 }
 void FAULTDET_testPoint(int uniId, int checkId, int argCount, ...) {
+	
 	va_list ap;
 	va_start(ap, argCount);
 	if (argCount>FAULTDETECTOR_MAX_AOV_DIM) //MAX_AOV_DIM
@@ -1305,9 +1309,9 @@ void xPortScheduleNewTask(void)
 	}
 
 	pxNewTCB->executionId=newtaskdesc->executionId;
+	pxNewTCB->reExecutions=newtaskdesc->reExecutions;
 	xil_printf("exec mode SCH %x, exec id %d", newtaskdesc->executionMode, pxNewTCB->executionId);
 	if (newtaskdesc->executionMode!=EXECMODE_NORMAL && newtaskdesc->executionMode!=EXECMODE_NORMAL_NEWJOB) {
-		pxNewTCB->reExecutions=newtaskdesc->reExecutions;
 		//RESET TO BEGIN
 
 #if ( configUSE_MUTEXES == 1 )
