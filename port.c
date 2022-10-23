@@ -1015,9 +1015,10 @@ int GpioSetupIntrSystem(INTC *IntcInstancePtr, XGpio *InstancePtr,
 
 typedef struct __attribute__((__packed__)) {
 	TCB_t * pxNextTcb;
-	char executionMode; //normal, reexecution due to fault, reexecution due to timing fail
-	char padding[2];
+	u8 executionMode; //normal, reexecution due to fault, reexecution due to timing fail
+	u8 reExecutions;
 	u8 executionId;
+	char padding;
 } newTaskDescrStr;
 //#define PXNEXTTCB 0x10000000
 #define NEWTASKDESCRPTR 0x10000000
@@ -1306,6 +1307,7 @@ void xPortScheduleNewTask(void)
 	pxNewTCB->executionId=newtaskdesc->executionId;
 	xil_printf("exec mode SCH %x, exec id %d", newtaskdesc->executionMode, pxNewTCB->executionId);
 	if (newtaskdesc->executionMode!=EXECMODE_NORMAL && newtaskdesc->executionMode!=EXECMODE_NORMAL_NEWJOB) {
+		pxNewTCB->reExecutions=newtaskdesc->reExecutions;
 		//RESET TO BEGIN
 
 #if ( configUSE_MUTEXES == 1 )
