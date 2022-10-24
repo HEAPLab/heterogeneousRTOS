@@ -1195,7 +1195,7 @@ void FAULTDET_Test(FAULTDETECTOR_controlStr* contr) {
 
 char FAULTDET_isFault() {
 	if ((*pxCurrentTCB_ptr)->reExecutions==configMAX_REEXECUTIONS_SET_IN_HW_SCHEDULER) {
-		return false;
+		return 0x0;
 	}
 	while(!(XRun_IsDone(&FAULTDETECTOR_InstancePtr) || XRun_IsIdle(&FAULTDETECTOR_InstancePtr))) {}
 
