@@ -223,7 +223,7 @@ void FAULTDET_initFaultDetection(FAULTDET_ExecutionDescriptor* instance) PRIVILE
 //void FAULTDET_endFaultDetection() PRIVILEGED_FUNCTION;
 void FAULTDET_trainPoint(int checkId, int argCount, ...) PRIVILEGED_FUNCTION;
 void FAULTDET_testPoint(FAULTDET_ExecutionDescriptor* instance, int uniId, int checkId, char blocking, int argCount, ...) PRIVILEGED_FUNCTION;
-char FAULTDET_isFault()  PRIVILEGED_FUNCTION;
+//char FAULTDET_hasFault()  PRIVILEGED_FUNCTION;
 void FAULTDET_resetFault() PRIVILEGED_FUNCTION;
 
 //int prvDmaBlockingTransferFreeByteSize( u32 prvDmaDestAddr, u32 prvDmaSourceAddr, u32 byteSize ) PRIVILEGED_FUNCTION;

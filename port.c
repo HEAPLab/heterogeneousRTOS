@@ -1190,12 +1190,12 @@ void FAULTDET_getLastTestedAOV(FAULTDETECTOR_OutcomeStr* dest) {
 	FAULTDETECTOR_getLastTestedAOV(&FAULTDETECTOR_InstancePtr, ((*pxCurrentTCB_ptr)->uxTaskNumber)-1, dest);
 }
 
-char FAULTDET_isFault() {
-	if ((*pxCurrentTCB_ptr)->reExecutions==configMAX_REEXECUTIONS_SET_IN_HW_SCHEDULER) {
-		return 0x0;
-	}
-	return FAULTDETECTOR_isFault(&FAULTDETECTOR_InstancePtr, ((*pxCurrentTCB_ptr)->uxTaskNumber)-1);
-}
+//char FAULTDET_hasFault() {
+//	if ((*pxCurrentTCB_ptr)->reExecutions==configMAX_REEXECUTIONS_SET_IN_HW_SCHEDULER) {
+//		return 0x0;
+//	}
+//	return FAULTDETECTOR_hasFault(&FAULTDETECTOR_InstancePtr, ((*pxCurrentTCB_ptr)->uxTaskNumber)-1);
+//}
 
 void FAULTDET_resetFault() {
 	//while(!XRun_IsReady(&FAULTDETECTOR_InstancePtr)) {}
@@ -1222,7 +1222,6 @@ void FAULTDET_initFaultDetection(FAULTDET_ExecutionDescriptor* instance) {
 //
 //}
 
-
 void FAULTDET_blockIfFaultDetectedInTask (FAULTDET_ExecutionDescriptor* instance) {
 	if ((*pxCurrentTCB_ptr)->reExecutions<configMAX_REEXECUTIONS_SET_IN_HW_SCHEDULER) {
 		if (instance->testedOnce) {
@@ -1234,7 +1233,7 @@ void FAULTDET_blockIfFaultDetectedInTask (FAULTDET_ExecutionDescriptor* instance
 			}
 			while(memcmp(&(instance->lastTest), &out, sizeof(FAULTDETECTOR_OutcomeDescriptor))!=0);
 
-			while(FAULTDETECTOR_isFault(&FAULTDETECTOR_InstancePtr, taskId)) {}
+			while(FAULTDETECTOR_hasFault(&FAULTDETECTOR_InstancePtr, taskId)) {}
 		}
 	}
 }
