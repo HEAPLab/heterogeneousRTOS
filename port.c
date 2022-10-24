@@ -852,6 +852,10 @@ int prvRestoreTrainedData(XRun* FaultDet_InstancePtr, XSdPs* SD_InstancePtr) {
 }
 
 int prvDumpTrainedData(XRun* FaultDet_InstancePtr, XSdPs* SD_InstancePtr) {
+	xPortSchedulerDisableIntr();
+	for (int i=0; i<50000; i++) {} //wait for AOV in buffer finish processing to avoid getting corrupted data in case faultdetector is performing training
+
+
 	trainedData dumpedData;
 	FAULTDETECTOR_dumpRegions(FaultDet_InstancePtr, dumpedData.trainedRegions, dumpedData.n_regions);
 	/*
@@ -1279,6 +1283,14 @@ void FAULTDET_testPoint(FAULTDET_ExecutionDescriptor* instance, int uniId, int c
 		if (tcbPtr->executionMode==EXECMODE_FAULT && lastErrorUniId==uniId && lastErrorCheckId==checkId && memcmp(tcbPtr->lastError.AOV, contr.AOV, sizeof(contr.AOV))==0) {
 			FAULTDET_Train(&controlForFaultDet);
 //						FAULTDET_Test(&controlForFaultDet);
+//						instance->testedOnce=0xFF;
+//						instance->lastTest.checkId=checkId;
+//						instance->lastTest.executionId=tcbPtr->executionId;
+//						instance->lastTest.uniId=uniId;
+//
+//						if (blocking) {
+//							FAULTDET_blockIfFaultDetectedInTask(instance);
+//						}
 		} else if (tcbPtr->reExecutions<configMAX_REEXECUTIONS_SET_IN_HW_SCHEDULER) {
 			FAULTDET_Test(&controlForFaultDet);
 			instance->testedOnce=0xFF;
