@@ -1277,6 +1277,8 @@
 			//pxTCB = prvGetTCBFromHandle(xTaskToEndJob);
 			//pxTCB=pxCurrentTCB;
 
+			//blockIfFaultDetectedInTask();
+
 			xil_printf(" end ");
 			pxCurrentTCB->executionMode=EXECMODE_NORMAL;
 			pxCurrentTCB->jobEnded=1;

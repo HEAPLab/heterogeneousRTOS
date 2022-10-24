@@ -208,15 +208,21 @@ BaseType_t xPortInitScheduler( u32 numberOfTasks,
 void newTaskHandler(void *HandlerRef) PRIVILEGED_FUNCTION;
 #include "xrun.h"
 
+typedef struct {
+	FAULTDETECTOR_OutcomeStr lastTest;
+	char testedOnce;
+} FAULTDET_ExecutionDescriptor;
+
 void FAULTDET_init(region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS], u8 n_regions[FAULTDETECTOR_MAX_CHECKS]) PRIVILEGED_FUNCTION;
 //void FAULTDET_dumpRegions(region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS], u8 n_regions[FAULTDETECTOR_MAX_CHECKS]) PRIVILEGED_FUNCTION;
 void FAULTDET_Train(FAULTDETECTOR_controlStr* contr) PRIVILEGED_FUNCTION;
 void FAULTDET_Test(FAULTDETECTOR_controlStr* contr) PRIVILEGED_FUNCTION;
-void FAULTDET_getLastFault(FAULTDETECTOR_OutcomeStr* dest) PRIVILEGED_FUNCTION;
-void FAULTDET_initFaultDetection() PRIVILEGED_FUNCTION;
-void FAULTDET_endFaultDetection() PRIVILEGED_FUNCTION;
+void FAULTDET_blockIfFaultDetectedInTask (FAULTDET_ExecutionDescriptor* instance) PRIVILEGED_FUNCTION;
+void FAULTDET_getLastTestedAOV(FAULTDETECTOR_OutcomeStr* dest) PRIVILEGED_FUNCTION;
+void FAULTDET_initFaultDetection(FAULTDET_ExecutionDescriptor* instance) PRIVILEGED_FUNCTION;
+//void FAULTDET_endFaultDetection() PRIVILEGED_FUNCTION;
 void FAULTDET_trainPoint(int checkId, int argCount, ...) PRIVILEGED_FUNCTION;
-void FAULTDET_testPoint(int uniId, int checkId, int argCount, ...) PRIVILEGED_FUNCTION;
+void FAULTDET_testPoint(FAULTDET_ExecutionDescriptor* instance, int uniId, int checkId, char blocking, int argCount, ...) PRIVILEGED_FUNCTION;
 char FAULTDET_isFault()  PRIVILEGED_FUNCTION;
 void FAULTDET_resetFault() PRIVILEGED_FUNCTION;
 
