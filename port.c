@@ -1233,13 +1233,15 @@ void FAULTDET_blockIfFaultDetectedInTask (FAULTDET_ExecutionDescriptor* instance
 			}
 			while(memcmp(&(instance->lastTest), &out, sizeof(FAULTDETECTOR_OutcomeDescriptor))!=0);
 
-			while(FAULTDETECTOR_hasFault(&FAULTDETECTOR_InstancePtr, taskId)) {}
+			if(FAULTDETECTOR_hasFault(&FAULTDETECTOR_InstancePtr, taskId)) {
+				while(1) {}
+			}
 		}
 	}
 }
 
+//warning: uniId and checkId must start from 1!
 void FAULTDET_testPoint(FAULTDET_ExecutionDescriptor* instance, int uniId, int checkId, char blocking, int argCount, ...) {
-	TCB_t* tcbPtr=*pxCurrentTCB_ptr;
 
 //	if ((*pxCurrentTCB_ptr)->reExecutions<configMAX_REEXECUTIONS_SET_IN_HW_SCHEDULER) {
 		va_list ap;
@@ -1248,6 +1250,8 @@ void FAULTDET_testPoint(FAULTDET_ExecutionDescriptor* instance, int uniId, int c
 			return; //error
 
 		FAULTDETECTOR_controlStr contr;
+		TCB_t* tcbPtr=*pxCurrentTCB_ptr;
+
 
 		contr.uniId=uniId;
 		contr.checkId=checkId;
@@ -1274,7 +1278,7 @@ void FAULTDET_testPoint(FAULTDET_ExecutionDescriptor* instance, int uniId, int c
 
 		if (tcbPtr->executionMode==EXECMODE_FAULT && lastErrorUniId==uniId && lastErrorCheckId==checkId && memcmp(tcbPtr->lastError.AOV, contr.AOV, sizeof(contr.AOV))==0) {
 			FAULTDET_Train(&controlForFaultDet);
-			//			FAULTDET_Test(&controlForFaultDet);
+//						FAULTDET_Test(&controlForFaultDet);
 		} else if (tcbPtr->reExecutions<configMAX_REEXECUTIONS_SET_IN_HW_SCHEDULER) {
 			FAULTDET_Test(&controlForFaultDet);
 			instance->testedOnce=0xFF;
