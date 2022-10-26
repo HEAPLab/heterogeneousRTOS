@@ -853,8 +853,10 @@ int prvRestoreTrainedData(XRun* FaultDet_InstancePtr, XSdPs* SD_InstancePtr) {
 
 int prvDumpTrainedData(XRun* FaultDet_InstancePtr, XSdPs* SD_InstancePtr) {
 	xPortSchedulerDisableIntr(); //disable scheduler interrupts in order to avoid interruptions from higher priority interrupts and also consequently new AOV (also train ones) being submitted to fault detector
-	for (int i=0; i<100000; i++) {} //wait for AOV in buffer finish processing to avoid getting corrupted data in case faultdetector is performing training
-	XRun_Reset(FaultDet_InstancePtr); //reset the fault detector
+	//for (int i=0; i<100000; i++) {} //wait for AOV in buffer finish processing to avoid getting corrupted data in case faultdetector is performing training
+	//XRun_Reset(FaultDet_InstancePtr); //reset the fault detector
+
+
 
 	trainedData dumpedData;
 	FAULTDETECTOR_dumpRegions(FaultDet_InstancePtr, dumpedData.trainedRegions, dumpedData.n_regions);
@@ -1157,6 +1159,14 @@ void FAULTDET_Train(FAULTDETECTOR_controlStr* contr) {
 	//	}
 
 }
+void FAULTDET_StopRunMode() {
+	FAULTDETECTOR_controlStr contr;
+	contr.command=1;
+	controlForFaultDet=contr;
+	FAULTDETECTOR_startCopy(&FAULTDETECTOR_InstancePtr);
+	while (!XRun_IsIdle(&FAULTDETECTOR_InstancePtr)) {};
+}
+
 void FAULTDET_Test(FAULTDETECTOR_controlStr* contr) {
 	contr->command=COMMAND_TEST;
 	//	if (XRun_IsIdle(&FAULTDETECTOR_InstancePtr))
