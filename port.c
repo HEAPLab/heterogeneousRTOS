@@ -860,7 +860,13 @@ int prvDumpTrainedData(XRun* FaultDet_InstancePtr, XSdPs* SD_InstancePtr) {
 	trainedData dumpedData;
 	region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS];
 	u8 n_regions[FAULTDETECTOR_MAX_CHECKS];
-	FAULTDETECTOR_dumpRegions(FaultDet_InstancePtr, &trainedRegions/*dumpedData.trainedRegions*/, &n_regions/*dumpedData.n_regions*/);
+	FAULTDETECTOR_dumpRegions(FaultDet_InstancePtr, trainedRegions/*dumpedData.trainedRegions*/, n_regions/*dumpedData.n_regions*/);
+
+	memcpy(&(dumpedData.trainedRegions), &trainedRegions, sizeof(trainedRegions));
+	memcpy(&(dumpedData.n_regions), &n_regions, sizeof(n_regions));
+
+	//		FAULTDETECTOR_dumpRegions(FaultDet_InstancePtr, dumpedData.trainedRegions, dumpedData.n_regions);
+
 	/*
 	 * Write data to SD/eMMC.
 	 */
@@ -1088,12 +1094,12 @@ void FAULTDET_init(region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECT
 
 	int sdStatus=prvInitSd(&SdInstance);
 
-	if (sdStatus==XST_SUCCESS) {
+//	if (sdStatus==XST_SUCCESS) {
 		XGpio_Initialize(&Gpio0, GPIO_DEVICE_ID);
 		GpioSetupIntrSystem(&Intc, &Gpio0,
 				INTC_GPIO_INTERRUPT_ID,
 				GPIO_CHANNEL1);
-	}
+//	}
 
 	//setup FAULT DETECTOR
 	XRun_Config* configPtr=XRun_LookupConfig(FAULTDETECTOR_DEVICEID);
