@@ -853,16 +853,19 @@ int prvRestoreTrainedData(XRun* FaultDet_InstancePtr, XSdPs* SD_InstancePtr) {
 
 int prvDumpTrainedData(XRun* FaultDet_InstancePtr, XSdPs* SD_InstancePtr) {
 	xPortSchedulerDisableIntr(); //disable scheduler interrupts in order to avoid interruptions from higher priority interrupts and also consequently new AOV (also train ones) being submitted to fault detector
-	//for (int i=0; i<100000; i++) {} //wait for AOV in buffer finish processing to avoid getting corrupted data in case faultdetector is performing training
-	//XRun_Reset(FaultDet_InstancePtr); //reset the fault detector
+	FAULTDET_StopRunMode();
 
-
+	xil_printf("\nFAULT DETECTOR EXITED RUN MODE. STARTING TO DUMP DATA\n");
 
 	trainedData dumpedData;
-	FAULTDETECTOR_dumpRegions(FaultDet_InstancePtr, dumpedData.trainedRegions, dumpedData.n_regions);
+	region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS];
+	u8 n_regions[FAULTDETECTOR_MAX_CHECKS];
+	FAULTDETECTOR_dumpRegions(FaultDet_InstancePtr, &trainedRegions/*dumpedData.trainedRegions*/, &n_regions/*dumpedData.n_regions*/);
 	/*
 	 * Write data to SD/eMMC.
 	 */
+
+	xil_printf("\nDUMPED DATA FROM FAULT DETECTOR SUCCESFULLY. WRITING TO SD\n");
 	int Status;
 	Status = XSdPs_WritePolled(SD_InstancePtr, Sd_Sector, TRAINEDDATA_BLOCKS_SIZE,
 			(u8*)(&dumpedData));
@@ -1102,7 +1105,7 @@ void FAULTDET_init(region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECT
 	} else {
 		FAULTDETECTOR_initRegions(&FAULTDETECTOR_InstancePtr, trainedRegions, n_regions);
 	}
-
+	FAULTDETECTOR_setModeRun(&FAULTDETECTOR_InstancePtr);
 	XRun_Start(&FAULTDETECTOR_InstancePtr);
 
 	//	XAxiDma_Config *CfgPtr;
@@ -1257,67 +1260,67 @@ void FAULTDET_blockIfFaultDetectedInTask (FAULTDET_ExecutionDescriptor* instance
 //warning: uniId and checkId must start from 1!
 void FAULTDET_testPoint(FAULTDET_ExecutionDescriptor* instance, int uniId, int checkId, char blocking, int argCount, ...) {
 
-//	if ((*pxCurrentTCB_ptr)->reExecutions<configMAX_REEXECUTIONS_SET_IN_HW_SCHEDULER) {
-		va_list ap;
-		va_start(ap, argCount);
-		if (argCount>FAULTDETECTOR_MAX_AOV_DIM) //MAX_AOV_DIM
-			return; //error
+	//	if ((*pxCurrentTCB_ptr)->reExecutions<configMAX_REEXECUTIONS_SET_IN_HW_SCHEDULER) {
+	va_list ap;
+	va_start(ap, argCount);
+	if (argCount>FAULTDETECTOR_MAX_AOV_DIM) //MAX_AOV_DIM
+		return; //error
 
-		FAULTDETECTOR_controlStr contr;
-		TCB_t* tcbPtr=*pxCurrentTCB_ptr;
+	FAULTDETECTOR_controlStr contr;
+	TCB_t* tcbPtr=*pxCurrentTCB_ptr;
 
 
-		contr.uniId=uniId;
-		contr.checkId=checkId;
-		//contr.taskId=taskId;
-		contr.taskId=tcbPtr->uxTaskNumber-1;
-		contr.executionId=tcbPtr->executionId;
+	contr.uniId=uniId;
+	contr.checkId=checkId;
+	//contr.taskId=taskId;
+	contr.taskId=tcbPtr->uxTaskNumber-1;
+	contr.executionId=tcbPtr->executionId;
 
-		for (int i=0; i<argCount; i++) {
-			contr.AOV[i]=*va_arg(ap, float*);
+	for (int i=0; i<argCount; i++) {
+		contr.AOV[i]=*va_arg(ap, float*);
+	}
+	for (int i=argCount; i<FAULTDETECTOR_MAX_AOV_DIM; i++) {
+		contr.AOV[i]=0.0;
+	}
+
+	controlForFaultDet=contr;
+
+	u16 lastErrorUniId=tcbPtr->lastError.uniId;
+	u8 lastErrorCheckId=tcbPtr->lastError.checkId;
+
+	if (tcbPtr->executionMode==EXECMODE_FAULT && tcbPtr->lastError.uniId==uniId && tcbPtr->lastError.checkId==checkId) {
+		tcbPtr->lastError.uniId=0xFFFF;
+		tcbPtr->lastError.checkId=0xFF;
+	}
+
+	if (tcbPtr->executionMode==EXECMODE_FAULT && lastErrorUniId==uniId && lastErrorCheckId==checkId && memcmp(tcbPtr->lastError.AOV, contr.AOV, sizeof(contr.AOV))==0) {
+		FAULTDET_Train(&controlForFaultDet);
+		//						FAULTDET_Test(&controlForFaultDet);
+		//						instance->testedOnce=0xFF;
+		//						instance->lastTest.checkId=checkId;
+		//						instance->lastTest.executionId=tcbPtr->executionId;
+		//						instance->lastTest.uniId=uniId;
+		//
+		//						if (blocking) {
+		//							FAULTDET_blockIfFaultDetectedInTask(instance);
+		//						}
+	} else if (tcbPtr->reExecutions<configMAX_REEXECUTIONS_SET_IN_HW_SCHEDULER) {
+		FAULTDET_Test(&controlForFaultDet);
+		instance->testedOnce=0xFF;
+		instance->lastTest.checkId=checkId;
+		instance->lastTest.executionId=tcbPtr->executionId;
+		instance->lastTest.uniId=uniId;
+
+		if (blocking) {
+			FAULTDET_blockIfFaultDetectedInTask(instance);
 		}
-		for (int i=argCount; i<FAULTDETECTOR_MAX_AOV_DIM; i++) {
-			contr.AOV[i]=0.0;
-		}
+	}
 
-		controlForFaultDet=contr;
-
-		u16 lastErrorUniId=tcbPtr->lastError.uniId;
-		u8 lastErrorCheckId=tcbPtr->lastError.checkId;
-
-		if (tcbPtr->executionMode==EXECMODE_FAULT && tcbPtr->lastError.uniId==uniId && tcbPtr->lastError.checkId==checkId) {
-			tcbPtr->lastError.uniId=0xFFFF;
-			tcbPtr->lastError.checkId=0xFF;
-		}
-
-		if (tcbPtr->executionMode==EXECMODE_FAULT && lastErrorUniId==uniId && lastErrorCheckId==checkId && memcmp(tcbPtr->lastError.AOV, contr.AOV, sizeof(contr.AOV))==0) {
-			FAULTDET_Train(&controlForFaultDet);
-//						FAULTDET_Test(&controlForFaultDet);
-//						instance->testedOnce=0xFF;
-//						instance->lastTest.checkId=checkId;
-//						instance->lastTest.executionId=tcbPtr->executionId;
-//						instance->lastTest.uniId=uniId;
-//
-//						if (blocking) {
-//							FAULTDET_blockIfFaultDetectedInTask(instance);
-//						}
-		} else if (tcbPtr->reExecutions<configMAX_REEXECUTIONS_SET_IN_HW_SCHEDULER) {
-			FAULTDET_Test(&controlForFaultDet);
-			instance->testedOnce=0xFF;
-			instance->lastTest.checkId=checkId;
-			instance->lastTest.executionId=tcbPtr->executionId;
-			instance->lastTest.uniId=uniId;
-
-			if (blocking) {
-				FAULTDET_blockIfFaultDetectedInTask(instance);
-			}
-		}
-
-		va_end(ap);
-//	} else {
-//		tcbPtr->lastError.uniId=0xFFFF;
-//		tcbPtr->lastError.checkId=0xFF;
-//	}
+	va_end(ap);
+	//	} else {
+	//		tcbPtr->lastError.uniId=0xFFFF;
+	//		tcbPtr->lastError.checkId=0xFF;
+	//	}
 }
 
 void FAULTDET_trainPoint(int checkId, int argCount, ...) {
