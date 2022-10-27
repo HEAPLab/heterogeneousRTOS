@@ -2220,7 +2220,7 @@
 			//	}
 		}
 
-		void vTaskStartScheduler(region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS], u8 n_regions[FAULTDETECTOR_MAX_CHECKS]) {
+		void vTaskStartScheduler(u8 restoreTrainDataFromSd, region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS], u8 n_regions[FAULTDETECTOR_MAX_CHECKS]) {
 			BaseType_t xReturn;
 
 			u32 tasksTCBPtrs[ configMAX_RT_TASKS ];
@@ -2238,7 +2238,7 @@
 
 			//	xil_printf("Size of task struct: %d /n", sizeof(RTTask_t));
 
-			FAULTDET_init(trainedRegions, n_regions);
+			FAULTDET_init(restoreTrainDataFromSd, trainedRegions, n_regions);
 
 			if (xPortInitScheduler( (u32) uxTaskNumber,
 					(void *) tasksTCBPtrs,

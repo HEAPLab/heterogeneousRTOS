@@ -1421,7 +1421,7 @@ void prvSplitRTTasksList(RTTask_t prvRTTasksList[], u8 numberOfTasks,
 		u32 tasksDeadlines[],
 		u32 tasksPeriods[]) PRIVILEGED_FUNCTION;
 
-void vTaskStartScheduler(region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS], u8 n_regions[FAULTDETECTOR_MAX_CHECKS]) PRIVILEGED_FUNCTION;
+void vTaskStartScheduler(u8 restoreTrainDataFromSd, region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS], u8 n_regions[FAULTDETECTOR_MAX_CHECKS]) PRIVILEGED_FUNCTION;
 
 /**
  * task. h

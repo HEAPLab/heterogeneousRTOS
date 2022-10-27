@@ -787,15 +787,14 @@ void vPortDisableInterrupt( uint8_t ucInterruptID )
 #define TRAINEDDATA_REALSIZE (sizeof(region_t)*FAULTDETECTOR_MAX_CHECKS*FAULTDETECTOR_MAX_REGIONS+sizeof(u8)*FAULTDETECTOR_MAX_CHECKS)
 #define SD_BLOCKSIZE 512
 #define TRAINEDDATA_BLOCKS_SIZE ((TRAINEDDATA_REALSIZE / SD_BLOCKSIZE) + ((TRAINEDDATA_REALSIZE % SD_BLOCKSIZE) != 0))
-#define SD_SECTOR_OFFSET 204800
+#define SD_SECTOR_OFFSET 1024//204800
 static XSdPs SdInstance;
 u32 Sd_Sector = SD_SECTOR_OFFSET;
-
 
 typedef struct __attribute__((__packed__)) {
 	region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS];
 	u8 n_regions[FAULTDETECTOR_MAX_CHECKS];
-	char padding [ TRAINEDDATA_BLOCKS_SIZE*512 - TRAINEDDATA_REALSIZE ];
+	volatile char padding [ TRAINEDDATA_BLOCKS_SIZE*512 - TRAINEDDATA_REALSIZE ];
 } trainedData ;
 
 
@@ -832,40 +831,35 @@ int prvInitSd(XSdPs* SD_InstancePtr)
 	if (!(SdInstance.HCS)) Sd_Sector *= XSDPS_BLK_SIZE_512_MASK;
 	return XST_SUCCESS;
 }
+#ifdef __ICCARM__
+#pragma data_alignment = 32
+trainedData dumpedDataSdBuf;
+#else
+trainedData dumpedDataSdBuf __attribute__ ((aligned(32)));
+#endif
 
-int prvRestoreTrainedData(XRun* FaultDet_InstancePtr, XSdPs* SD_InstancePtr) {
-	trainedData dumpedData;
-
+volatile int prvRestoreTrainedData(XRun* FaultDet_InstancePtr, XSdPs* SD_InstancePtr) {
 	/*
 	 * Read data from SD/eMMC.
 	 */
 	int Status;
-	Status  = XSdPs_ReadPolled(SD_InstancePtr, Sd_Sector, TRAINEDDATA_BLOCKS_SIZE,
-			(u8*)(&dumpedData));
+	Status = XSdPs_ReadPolled(SD_InstancePtr, Sd_Sector, TRAINEDDATA_BLOCKS_SIZE,
+			(u8*) (&dumpedDataSdBuf));
 	if (Status!=XST_SUCCESS) {
 		return XST_FAILURE;
 	}
 
-	FAULTDETECTOR_initRegions(FaultDet_InstancePtr, dumpedData.trainedRegions, dumpedData.n_regions);
+	FAULTDETECTOR_initRegions(FaultDet_InstancePtr, dumpedDataSdBuf.trainedRegions, dumpedDataSdBuf.n_regions);
 
 	return XST_SUCCESS;
 }
 
-int prvDumpTrainedData(XRun* FaultDet_InstancePtr, XSdPs* SD_InstancePtr) {
-	xPortSchedulerDisableIntr(); //disable scheduler interrupts in order to avoid interruptions from higher priority interrupts and also consequently new AOV (also train ones) being submitted to fault detector
+volatile int prvDumpTrainedData(XRun* FaultDet_InstancePtr, XSdPs* SD_InstancePtr) {
 	FAULTDET_StopRunMode();
 
 	xil_printf("\nFAULT DETECTOR EXITED RUN MODE. STARTING TO DUMP DATA\n");
 
-	trainedData dumpedData;
-	region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS];
-	u8 n_regions[FAULTDETECTOR_MAX_CHECKS];
-	FAULTDETECTOR_dumpRegions(FaultDet_InstancePtr, trainedRegions/*dumpedData.trainedRegions*/, n_regions/*dumpedData.n_regions*/);
-
-	memcpy(&(dumpedData.trainedRegions), &trainedRegions, sizeof(trainedRegions));
-	memcpy(&(dumpedData.n_regions), &n_regions, sizeof(n_regions));
-
-	//		FAULTDETECTOR_dumpRegions(FaultDet_InstancePtr, dumpedData.trainedRegions, dumpedData.n_regions);
+	FAULTDETECTOR_dumpRegions(FaultDet_InstancePtr, dumpedDataSdBuf.trainedRegions, dumpedDataSdBuf.n_regions);
 
 	/*
 	 * Write data to SD/eMMC.
@@ -873,8 +867,8 @@ int prvDumpTrainedData(XRun* FaultDet_InstancePtr, XSdPs* SD_InstancePtr) {
 
 	xil_printf("\nDUMPED DATA FROM FAULT DETECTOR SUCCESFULLY. WRITING TO SD\n");
 	int Status;
-	Status = XSdPs_WritePolled(SD_InstancePtr, Sd_Sector, TRAINEDDATA_BLOCKS_SIZE,
-			(u8*)(&dumpedData));
+	Status = XSdPs_WritePolled(SD_InstancePtr, Sd_Sector, 20,
+			(u8*) (&dumpedDataSdBuf));
 	if (Status != XST_SUCCESS) {
 		return XST_FAILURE;
 	}
@@ -1073,7 +1067,8 @@ FAULTDETECTOR_controlStr controlForFaultDet __attribute__((aligned(4096)));
 
 void BtnPressHandler(void *CallbackRef)
 {
-	//REMEMBER TO DISABLE FIQ HERE
+	xPortSchedulerDisableIntr(); //disable scheduler interrupts in order to avoid interruptions from higher priority interrupts and also consequently new AOV (also train ones) being submitted to fault detector
+
 	XGpio *GpioPtr = (XGpio *)CallbackRef;
 	if (XGpio_DiscreteRead(&Gpio0, GPIO_CHANNEL1)!=0) {
 
@@ -1089,24 +1084,24 @@ void BtnPressHandler(void *CallbackRef)
 	XGpio_InterruptClear(GpioPtr, GPIOGlobalIntrMask);
 }
 
-void FAULTDET_init(region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS], u8 n_regions[FAULTDETECTOR_MAX_CHECKS]) {
+void FAULTDET_init(u8 restoreTrainDataFromSd, region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS], u8 n_regions[FAULTDETECTOR_MAX_CHECKS]) {
 	//setup GPIO interrupt to enable dump trained data to SD when the user presses a button
 
 	int sdStatus=prvInitSd(&SdInstance);
 
-//	if (sdStatus==XST_SUCCESS) {
+	if (sdStatus==XST_SUCCESS) {
 		XGpio_Initialize(&Gpio0, GPIO_DEVICE_ID);
 		GpioSetupIntrSystem(&Intc, &Gpio0,
 				INTC_GPIO_INTERRUPT_ID,
 				GPIO_CHANNEL1);
-//	}
+	}
 
 	//setup FAULT DETECTOR
 	XRun_Config* configPtr=XRun_LookupConfig(FAULTDETECTOR_DEVICEID);
 	XRun_CfgInitialize(&FAULTDETECTOR_InstancePtr, configPtr);
 	XRun_Set_inputData(&FAULTDETECTOR_InstancePtr, (u32) (&controlForFaultDet));
 
-	if (sdStatus==XST_SUCCESS) {
+	if (sdStatus==XST_SUCCESS && restoreTrainDataFromSd) {
 		prvRestoreTrainedData(&FAULTDETECTOR_InstancePtr, &SdInstance);
 	} else {
 		FAULTDETECTOR_initRegions(&FAULTDETECTOR_InstancePtr, trainedRegions, n_regions);
