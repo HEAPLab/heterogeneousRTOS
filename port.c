@@ -867,7 +867,7 @@ volatile int prvDumpTrainedData(XRun* FaultDet_InstancePtr, XSdPs* SD_InstancePt
 
 	xil_printf("\nDUMPED DATA FROM FAULT DETECTOR SUCCESFULLY. WRITING TO SD\n");
 	int Status;
-	Status = XSdPs_WritePolled(SD_InstancePtr, Sd_Sector, 20,
+	Status = XSdPs_WritePolled(SD_InstancePtr, Sd_Sector, TRAINEDDATA_BLOCKS_SIZE,
 			(u8*) (&dumpedDataSdBuf));
 	if (Status != XST_SUCCESS) {
 		return XST_FAILURE;
