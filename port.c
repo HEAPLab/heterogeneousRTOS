@@ -784,7 +784,7 @@ void vPortDisableInterrupt( uint8_t ucInterruptID )
 
 //___trainedData save and load mechanism___
 #include "xsdps.h"
-#define TRAINEDDATA_REALSIZE (sizeof(region_t)*FAULTDETECTOR_MAX_CHECKS*FAULTDETECTOR_MAX_REGIONS+sizeof(u8)*FAULTDETECTOR_MAX_CHECKS)
+#define TRAINEDDATA_REALSIZE (sizeof(FAULTDETECTOR_region_t)*FAULTDETECTOR_MAX_CHECKS*FAULTDETECTOR_MAX_REGIONS+sizeof(u8)*FAULTDETECTOR_MAX_CHECKS)
 #define SD_BLOCKSIZE 512
 #define TRAINEDDATA_BLOCKS_SIZE ((TRAINEDDATA_REALSIZE / SD_BLOCKSIZE) + ((TRAINEDDATA_REALSIZE % SD_BLOCKSIZE) != 0))
 #define SD_SECTOR_OFFSET 1024//204800
@@ -792,7 +792,7 @@ static XSdPs SdInstance;
 u32 Sd_Sector = SD_SECTOR_OFFSET;
 
 typedef struct __attribute__((__packed__)) {
-	region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS];
+	FAULTDETECTOR_region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS];
 	u8 n_regions[FAULTDETECTOR_MAX_CHECKS];
 	volatile char padding [ TRAINEDDATA_BLOCKS_SIZE*512 - TRAINEDDATA_REALSIZE ];
 } trainedData ;
@@ -838,7 +838,7 @@ trainedData dumpedDataSdBuf;
 trainedData dumpedDataSdBuf __attribute__ ((aligned(32)));
 #endif
 
-volatile int prvRestoreTrainedData(XRun* FaultDet_InstancePtr, XSdPs* SD_InstancePtr) {
+int prvRestoreTrainedData(XFaultdetector* FaultDet_InstancePtr, XSdPs* SD_InstancePtr) {
 	/*
 	 * Read data from SD/eMMC.
 	 */
@@ -854,7 +854,9 @@ volatile int prvRestoreTrainedData(XRun* FaultDet_InstancePtr, XSdPs* SD_Instanc
 	return XST_SUCCESS;
 }
 
-volatile int prvDumpTrainedData(XRun* FaultDet_InstancePtr, XSdPs* SD_InstancePtr) {
+void FAULTDET_StopRunMode();
+
+int prvDumpTrainedData(XFaultdetector* FaultDet_InstancePtr, XSdPs* SD_InstancePtr) {
 	FAULTDET_StopRunMode();
 
 	xil_printf("\nFAULT DETECTOR EXITED RUN MODE. STARTING TO DUMP DATA\n");
@@ -1057,15 +1059,15 @@ TCB_t** pxCurrentTCB_ptr;
 //#include "xrun.h"
 
 
-XRun FAULTDETECTOR_InstancePtr;
+XFaultdetector FAULTDETECTOR_InstancePtr;
 FAULTDETECTOR_controlStr controlForFaultDet __attribute__((aligned(4096)));
 
 //#include "xaxidma.h"
 //XAxiDma AxiDma;
-#define FAULTDETECTOR_DEVICEID XPAR_RUN_0_DEVICE_ID
+#define FAULTDETECTOR_DEVICEID XPAR_FAULTDETECTOR_0_DEVICE_ID
 //#define DMA_DEV_ID		XPAR_AXIDMA_0_DEVICE_ID
 
-void BtnPressHandler(void *CallbackRef)
+volatile void BtnPressHandler(void *CallbackRef)
 {
 	xPortSchedulerDisableIntr(); //disable scheduler interrupts in order to avoid interruptions from higher priority interrupts and also consequently new AOV (also train ones) being submitted to fault detector
 
@@ -1084,7 +1086,7 @@ void BtnPressHandler(void *CallbackRef)
 	XGpio_InterruptClear(GpioPtr, GPIOGlobalIntrMask);
 }
 
-void FAULTDET_init(u8 restoreTrainDataFromSd, region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS], u8 n_regions[FAULTDETECTOR_MAX_CHECKS]) {
+void FAULTDET_init(u8 restoreTrainDataFromSd, FAULTDETECTOR_region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS], u8 n_regions[FAULTDETECTOR_MAX_CHECKS]) {
 	//setup GPIO interrupt to enable dump trained data to SD when the user presses a button
 
 	int sdStatus=prvInitSd(&SdInstance);
@@ -1097,48 +1099,21 @@ void FAULTDET_init(u8 restoreTrainDataFromSd, region_t trainedRegions[FAULTDETEC
 	}
 
 	//setup FAULT DETECTOR
-	XRun_Config* configPtr=XRun_LookupConfig(FAULTDETECTOR_DEVICEID);
-	XRun_CfgInitialize(&FAULTDETECTOR_InstancePtr, configPtr);
-	XRun_Set_inputData(&FAULTDETECTOR_InstancePtr, (u32) (&controlForFaultDet));
+	XFaultdetector_Config* configPtr=XFaultdetector_LookupConfig(FAULTDETECTOR_DEVICEID);
+	XFaultdetector_CfgInitialize(&FAULTDETECTOR_InstancePtr, configPtr);
+	XFaultdetector_Set_inputData(&FAULTDETECTOR_InstancePtr, (u32) (&controlForFaultDet));
 
 	if (sdStatus==XST_SUCCESS && restoreTrainDataFromSd) {
 		prvRestoreTrainedData(&FAULTDETECTOR_InstancePtr, &SdInstance);
 	} else {
 		FAULTDETECTOR_initRegions(&FAULTDETECTOR_InstancePtr, trainedRegions, n_regions);
 	}
-	FAULTDETECTOR_setModeRun(&FAULTDETECTOR_InstancePtr);
-	XRun_Start(&FAULTDETECTOR_InstancePtr);
-
-	//	XAxiDma_Config *CfgPtr;
-	//	int Status;
-	//
-	//	/* Initialize the XAxiDma device.
-	//	 */
-	//	CfgPtr = XAxiDma_LookupConfig(DMA_DEV_ID);
-	////	if (!CfgPtr) {
-	////		xil_printf("No config found for %d\r\n", DMA_DEV_ID);
-	////		return XST_FAILURE;
-	////	}
-	//
-	//	Status = XAxiDma_CfgInitialize(&AxiDma, CfgPtr);
-	////	if (Status != XST_SUCCESS) {
-	////		xil_printf("Initialization failed %d\r\n", Status);
-	////		return XST_FAILURE;
-	////	}
-	//
-	//	/* Disable interrupts, we use polling mode
-	//	 */
-	//	XAxiDma_IntrDisable(&AxiDma, XAXIDMA_IRQ_ALL_MASK,
-	//						XAXIDMA_DEVICE_TO_DMA);
-	//	XAxiDma_IntrDisable(&AxiDma, XAXIDMA_IRQ_ALL_MASK,
-	//						XAXIDMA_DMA_TO_DEVICE);
-
-
 }
 
-//void FAULTDET_dumpRegions(region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS], u8 n_regions[FAULTDETECTOR_MAX_CHECKS]) {
-//	FAULTDETECTOR_dumpRegions(&FAULTDETECTOR_InstancePtr, trainedRegions, n_regions);
-//}
+void FAULTDET_start () {
+	FAULTDETECTOR_setModeRun(&FAULTDETECTOR_InstancePtr);
+	XFaultdetector_Start(&FAULTDETECTOR_InstancePtr);
+}
 
 void FAULTDET_Train(FAULTDETECTOR_controlStr* contr) {
 	contr->command=COMMAND_TRAIN;
@@ -1147,109 +1122,49 @@ void FAULTDET_Train(FAULTDETECTOR_controlStr* contr) {
 
 	controlForFaultDet=*contr;
 	FAULTDETECTOR_startCopy(&FAULTDETECTOR_InstancePtr);
-	//	while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {
-	//		xil_printf("notReady");
-	//	}
-
-
-
-	//	int Status = XAxiDma_SimpleTransfer(&AxiDma,(UINTPTR) &contr,
-	//			sizeof(FAULTDETECTOR_controlStr), XAXIDMA_DMA_TO_DEVICE);
-	//	//xil_printf("status %d", Status);
-	//	while (XAxiDma_Busy(&AxiDma,XAXIDMA_DMA_TO_DEVICE)) //||
-	//		//(XAxiDma_Busy(&AxiDma,XAXIDMA_DMA_TO_DEVICE)))
-	//	{
-	//			/* Wait */
-	//	}
-
 }
 void FAULTDET_StopRunMode() {
 	FAULTDETECTOR_controlStr contr;
 	contr.command=1;
 	controlForFaultDet=contr;
 	FAULTDETECTOR_startCopy(&FAULTDETECTOR_InstancePtr);
-	while (!XRun_IsIdle(&FAULTDETECTOR_InstancePtr)) {};
+	while (!XFaultdetector_IsIdle(&FAULTDETECTOR_InstancePtr)) {};
 }
 
 void FAULTDET_Test(FAULTDETECTOR_controlStr* contr) {
 	contr->command=COMMAND_TEST;
-	//	if (XRun_IsIdle(&FAULTDETECTOR_InstancePtr))
 
 	while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {}
 
 	controlForFaultDet=*contr;
 	FAULTDETECTOR_startCopy(&FAULTDETECTOR_InstancePtr);
-	//	else if (XRun_IsDone(&FAULTDETECTOR_InstancePtr))
-	//		XRun_Continue(&FAULTDETECTOR_InstancePtr);
-	//	else
-	//		xil_printf("err");
-
-	//	while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {}
-	//	controlForFaultDet=*contr;
-	//	FAULTDETECTOR_processNextControl(&FAULTDETECTOR_InstancePtr);
-
-
-
-	//	while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {
-	//		xil_printf("notReady");
-	//	}
-	//	int Status;
-	//	Status = XAxiDma_SimpleTransfer(&AxiDma,(UINTPTR) &contr,
-	//				sizeof(FAULTDETECTOR_controlStr), XAXIDMA_DMA_TO_DEVICE);
-	////	xil_printf("%d", Status);
-	//	while (XAxiDma_Busy(&AxiDma,XAXIDMA_DMA_TO_DEVICE)) //||
-	//		//(XAxiDma_Busy(&AxiDma,XAXIDMA_DMA_TO_DEVICE)))
-	//	{
-	//			/* Wait */
-	//	}
 }
 
-void FAULTDET_getLastTestedAOV(FAULTDETECTOR_OutcomeStr* dest) {
-	FAULTDETECTOR_getLastTestedAOV(&FAULTDETECTOR_InstancePtr, ((*pxCurrentTCB_ptr)->uxTaskNumber)-1, dest);
+void FAULTDET_getLastTestedPoint(FAULTDETECTOR_testpointDescriptorStr* dest) {
+	FAULTDETECTOR_getLastTestedPoint(&FAULTDETECTOR_InstancePtr, ((*pxCurrentTCB_ptr)->uxTaskNumber)-1, dest);
 }
-
-//char FAULTDET_hasFault() {
-//	if ((*pxCurrentTCB_ptr)->reExecutions==configMAX_REEXECUTIONS_SET_IN_HW_SCHEDULER) {
-//		return 0x0;
-//	}
-//	return FAULTDETECTOR_hasFault(&FAULTDETECTOR_InstancePtr, ((*pxCurrentTCB_ptr)->uxTaskNumber)-1);
-//}
 
 void FAULTDET_resetFault() {
-	//while(!XRun_IsReady(&FAULTDETECTOR_InstancePtr)) {}
 	FAULTDETECTOR_resetFault(&FAULTDETECTOR_InstancePtr, ((*pxCurrentTCB_ptr)->uxTaskNumber)-1);
 }
 void FAULTDET_initFaultDetection(FAULTDET_ExecutionDescriptor* instance) {
-	//FAULTDET_resetFault(); //in case a fault happened but the scheduler has decided to not re execute the task, next execution would appear as normal (no reexec), but fault still need to be cleared on fault detector
+	//FAULTDET_resetFault(); //not needed, automatically done by the faultdetector when a command from the same check but with different UniId is received
 	if ((*pxCurrentTCB_ptr)->executionMode==EXECMODE_FAULT) {
-		FAULTDET_getLastTestedAOV(&((*pxCurrentTCB_ptr)->lastError));
+		FAULTDET_getLastTestedPoint(&((*pxCurrentTCB_ptr)->lastError));
 	}
 	instance->testedOnce=0x0;
-
-	//Errors[taskId]=copyFromFaultDetector
 }
-//void FAULTDET_endFaultDetection() {
-//	//int taskId=(*pxCurrentTCB_ptr)->uxTaskNumber;
-//
-//	//to remove
-//	/*if (!FAULTDET_isFault()) {
-//		(*pxCurrentTCB_ptr)->executionMode=EXECMODE_NORMAL;
-//	}*/
-//
-//	//TO UNCOMMENT
-//
-//}
 
 void FAULTDET_blockIfFaultDetectedInTask (FAULTDET_ExecutionDescriptor* instance) {
 	if ((*pxCurrentTCB_ptr)->reExecutions<configMAX_REEXECUTIONS_SET_IN_HW_SCHEDULER) {
 		if (instance->testedOnce) {
 			u8 taskId=((*pxCurrentTCB_ptr)->uxTaskNumber)-1;
 
-			FAULTDETECTOR_OutcomeDescriptor out;
+			FAULTDETECTOR_testpointShortDescriptorStr out;
 			do {
-				FAULTDETECTOR_getLastTestedAOVDescriptor(&FAULTDETECTOR_InstancePtr, taskId, &out);
+				FAULTDETECTOR_getLastTestedPointShort(&FAULTDETECTOR_InstancePtr, taskId, &out);
 			}
-			while(memcmp(&(instance->lastTest), &out, sizeof(FAULTDETECTOR_OutcomeDescriptor))!=0);
+			while(memcmp(&(instance->lastTest), &out, sizeof(FAULTDETECTOR_testpointShortDescriptorStr))!=0);
 
 			if(FAULTDETECTOR_hasFault(&FAULTDETECTOR_InstancePtr, taskId)) {
 				while(1) {}
@@ -1261,7 +1176,6 @@ void FAULTDET_blockIfFaultDetectedInTask (FAULTDET_ExecutionDescriptor* instance
 //warning: uniId and checkId must start from 1!
 void FAULTDET_testPoint(FAULTDET_ExecutionDescriptor* instance, int uniId, int checkId, char blocking, int argCount, ...) {
 
-	//	if ((*pxCurrentTCB_ptr)->reExecutions<configMAX_REEXECUTIONS_SET_IN_HW_SCHEDULER) {
 	va_list ap;
 	va_start(ap, argCount);
 	if (argCount>FAULTDETECTOR_MAX_AOV_DIM) //MAX_AOV_DIM
@@ -1273,7 +1187,6 @@ void FAULTDET_testPoint(FAULTDET_ExecutionDescriptor* instance, int uniId, int c
 
 	contr.uniId=uniId;
 	contr.checkId=checkId;
-	//contr.taskId=taskId;
 	contr.taskId=tcbPtr->uxTaskNumber-1;
 	contr.executionId=tcbPtr->executionId;
 
@@ -1318,10 +1231,6 @@ void FAULTDET_testPoint(FAULTDET_ExecutionDescriptor* instance, int uniId, int c
 	}
 
 	va_end(ap);
-	//	} else {
-	//		tcbPtr->lastError.uniId=0xFFFF;
-	//		tcbPtr->lastError.checkId=0xFF;
-	//	}
 }
 
 void FAULTDET_trainPoint(int checkId, int argCount, ...) {
@@ -1334,7 +1243,6 @@ void FAULTDET_trainPoint(int checkId, int argCount, ...) {
 	TCB_t* tcbPtr=*pxCurrentTCB_ptr;
 
 	contr.checkId=checkId;
-	//contr.taskId=taskId;
 	contr.taskId=tcbPtr->uxTaskNumber-1;
 
 	for (int i=0; i<argCount; i++) {
@@ -1479,58 +1387,6 @@ BaseType_t xPortInitScheduler( u32 numberOfTasks,
 	SCHEDULER_copyDeadlines((void*) SCHEDULER_BASEADDR, tasksDeadlines);
 	SCHEDULER_copyPeriods((void*) SCHEDULER_BASEADDR, tasksPeriods);
 
-	//	SCHEDULER_copyOrderedDeadlineQIndex((void*) SCHEDULER_BASEADDR, orderedDeadlineQTaskNums);
-	//	SCHEDULER_copyOrderedActivationQIndex((void*) SCHEDULER_BASEADDR, orderedActivationQTaskNums);
-	//	SCHEDULER_copyOrderedDeadlineQ((void*) SCHEDULER_BASEADDR, orderedDeadlineQPayload);
-	//	SCHEDULER_copyOrderedActivationQ((void*) SCHEDULER_BASEADDR, orderedActivationQPayload);
-	//	SCHEDULER_copyOrderedDeadlineQReverseIndex((void*) SCHEDULER_BASEADDR, orderedReverseDeadlineQTaskNums);
-	//	SCHEDULER_copyOrderedActivationQReverseIndex((void*) SCHEDULER_BASEADDR, orderedReverseActivationQTaskNums);
-	//		/*
-	//		 * Initialize the interrupt controller driver so that it is ready to
-	//		 * use.
-	//		 */
-	//		XScuGic_Config* intCConfig = XScuGic_LookupConfig(INTC_DEVICE_ID);
-	//		if (intCConfig == NULL) {
-	//			return XST_FAILURE;
-	//		}
-	//
-	//		status = XScuGic_CfgInitialize(&intControllerInstance, intCConfig,
-	//				intCConfig->CpuBaseAddress);
-	//		if (status != XST_SUCCESS) {
-	//			return XST_FAILURE;
-	//		}
-
-	//		XScuGic_SetPriorityTriggerType(&intControllerInstance, SCHEDULER_INTR, 0xA0, 0x3);
-	//		/*
-	//		 * Connect the device driver handler that will be called when an
-	//		 * interrupt for the device occurs, the handler defined above performs
-	//		 * the specific interrupt processing for the device.
-	//		 */
-	//
-	//		status = XScuGic_Connect(&intControllerInstance, SCHEDULER_INTR,
-	//					(Xil_InterruptHandler)vPortHandleNewTask,
-	//					(void *) &intControllerInstance);
-	//		if (status != XST_SUCCESS) {
-	//			return status;
-	//		}
-	//
-	//		/*
-	//		 * Enable the interrupt for the SCHEDULER device.
-	//		 */
-	//
-	//		XScuGic_Enable(&intControllerInstance, SCHEDULER_INTR);
-	//
-	//		Xil_ExceptionInit();
-	//
-	//		/*
-	//		 * Connect the interrupt controller interrupt handler to the hardware
-	//		 * interrupt handling logic in the processor.
-	//		 */
-	//		Xil_ExceptionRegisterHandler(XIL_EXCEPTION_ID_IRQ_INT,
-	//					(Xil_ExceptionHandler)XScuGic_InterruptHandler,
-	//					&intControllerInstance);
-
-
 	/*
 	 * Enable interrupts in the Processor.
 	 */
@@ -1545,9 +1401,7 @@ BaseType_t xPortInitScheduler( u32 numberOfTasks,
 	 */
 	//Xil_ExceptionEnableMask(XIL_EXCEPTION_ALL);
 
-	Xil_ExceptionEnable();
-
-	//	while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {}
+	//	Xil_ExceptionEnable();
 
 	return pdPASS;
 }

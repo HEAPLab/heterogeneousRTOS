@@ -206,19 +206,20 @@ BaseType_t xPortInitScheduler( u32 numberOfTasks,
 		u32* pxCurrentTCBPtr ) PRIVILEGED_FUNCTION;
 
 void newTaskHandler(void *HandlerRef) PRIVILEGED_FUNCTION;
-#include "xrun.h"
+#include "xfaultdetector.h"
 
 typedef struct {
-	FAULTDETECTOR_OutcomeStr lastTest;
+	FAULTDETECTOR_testpointDescriptorStr lastTest;
 	char testedOnce;
 } FAULTDET_ExecutionDescriptor;
 
-void FAULTDET_init(u8 restoreTrainDataFromSd, region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS], u8 n_regions[FAULTDETECTOR_MAX_CHECKS]) PRIVILEGED_FUNCTION;
+void FAULTDET_init(u8 restoreTrainDataFromSd, FAULTDETECTOR_region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS], u8 n_regions[FAULTDETECTOR_MAX_CHECKS]) PRIVILEGED_FUNCTION;
+void FAULTDET_start() PRIVILEGED_FUNCTION;
 //void FAULTDET_dumpRegions(region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS], u8 n_regions[FAULTDETECTOR_MAX_CHECKS]) PRIVILEGED_FUNCTION;
 void FAULTDET_Train(FAULTDETECTOR_controlStr* contr) PRIVILEGED_FUNCTION;
 void FAULTDET_Test(FAULTDETECTOR_controlStr* contr) PRIVILEGED_FUNCTION;
 void FAULTDET_blockIfFaultDetectedInTask (FAULTDET_ExecutionDescriptor* instance) PRIVILEGED_FUNCTION;
-void FAULTDET_getLastTestedAOV(FAULTDETECTOR_OutcomeStr* dest) PRIVILEGED_FUNCTION;
+void FAULTDET_getLastTestedPoint(FAULTDETECTOR_testpointDescriptorStr* dest) PRIVILEGED_FUNCTION;
 void FAULTDET_initFaultDetection(FAULTDET_ExecutionDescriptor* instance) PRIVILEGED_FUNCTION;
 //void FAULTDET_endFaultDetection() PRIVILEGED_FUNCTION;
 void FAULTDET_trainPoint(int checkId, int argCount, ...) PRIVILEGED_FUNCTION;

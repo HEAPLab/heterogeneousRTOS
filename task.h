@@ -88,7 +88,7 @@ typedef struct tskTaskControlBlock * TaskHandle_t;
 //	u16 uniId;
 //	float AOV[configMAX_AOV_DIM];
 //} FAULTDETECTOR_OutcomeStr;
-#include "xrun.h"
+#include "xfaultdetector.h"
 
 typedef struct tskTaskControlBlock       /* The old naming convention is used to prevent breaking kernel aware debuggers. */
 {
@@ -174,7 +174,7 @@ typedef struct tskTaskControlBlock       /* The old naming convention is used to
    volatile uint8_t executionMode;
 	volatile uint8_t reExecutions;
    volatile uint8_t executionId;
-   FAULTDETECTOR_OutcomeStr lastError;
+   FAULTDETECTOR_testpointDescriptorStr lastError;
    volatile StackType_t * pxInitTopOfStack; /*< Points to the location of the last item placed on the tasks stack.  THIS MUST BE THE FIRST MEMBER OF THE TCB STRUCT. */
    volatile StackType_t pxInitParameters;
    volatile TaskFunction_t pxInitTaskCode;
@@ -1421,7 +1421,9 @@ void prvSplitRTTasksList(RTTask_t prvRTTasksList[], u8 numberOfTasks,
 		u32 tasksDeadlines[],
 		u32 tasksPeriods[]) PRIVILEGED_FUNCTION;
 
-void vTaskStartScheduler(u8 restoreTrainDataFromSd, region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS], u8 n_regions[FAULTDETECTOR_MAX_CHECKS]) PRIVILEGED_FUNCTION;
+void vTaskStartFaultDetector(u8 restoreTrainDataFromSd, FAULTDETECTOR_region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS], u8 n_regions[FAULTDETECTOR_MAX_CHECKS]) PRIVILEGED_FUNCTION;
+
+void vTaskStartScheduler() PRIVILEGED_FUNCTION;
 
 /**
  * task. h
