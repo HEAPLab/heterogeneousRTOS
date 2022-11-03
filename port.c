@@ -1,3 +1,5 @@
+#define testingCampaign
+
 /*
  * FreeRTOS Kernel V10.4.3
  * Copyright (C) 2020 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
@@ -1173,6 +1175,29 @@ void FAULTDET_blockIfFaultDetectedInTask (FAULTDET_ExecutionDescriptor* instance
 	}
 }
 
+
+#ifdef testingCampaign
+void FAULTDET_testing_blockUntilProcessed (FAULTDET_ExecutionDescriptor* instance) {
+	if ((*pxCurrentTCB_ptr)->reExecutions<configMAX_REEXECUTIONS_SET_IN_HW_SCHEDULER) {
+		if (instance->testedOnce) {
+			u8 taskId=((*pxCurrentTCB_ptr)->uxTaskNumber)-1;
+
+			FAULTDETECTOR_testpointShortDescriptorStr out;
+			do {
+				FAULTDETECTOR_getLastTestedPointShort(&FAULTDETECTOR_InstancePtr, taskId, &out);
+			}
+			while(memcmp(&(instance->lastTest), &out, sizeof(FAULTDETECTOR_testpointShortDescriptorStr))!=0);
+		}
+	}
+}
+
+#define GOLDEN_RESULT_SIZE 4096
+int FAULTDET_testing_goldenResults_idx=0;
+FAULTDETECTOR_testpointDescriptorStr FAULTDET_testing_goldenResults[GOLDEN_RESULT_SIZE];
+u8 testing_injectingErrors=0;
+#endif
+
+
 //warning: uniId and checkId must start from 1!
 void FAULTDET_testPoint(FAULTDET_ExecutionDescriptor* instance, int uniId, int checkId, char blocking, int argCount, ...) {
 
@@ -1225,9 +1250,22 @@ void FAULTDET_testPoint(FAULTDET_ExecutionDescriptor* instance, int uniId, int c
 		instance->lastTest.executionId=tcbPtr->executionId;
 		instance->lastTest.uniId=uniId;
 
+#ifdef testingCampaign
+		if (testing_injectingErrors==0) {
+			if (GOLDEN_RESULT_SIZE<FAULTDET_testing_goldenResults_idx) {
+				FAULTDET_testing_blockUntilProcessed(instance);
+				FAULTDETECTOR_getLastTestedPoint(&FAULTDETECTOR_InstancePtr, contr.taskId, &(FAULTDET_testing_goldenResults[FAULTDET_testing_goldenResults_idx]));
+				FAULTDET_testing_goldenResults_idx++;
+			} else {
+				xil_printf("ERROR: reached max number golden result size. Not saved.");
+			}
+		}
+#else
 		if (blocking) {
 			FAULTDET_blockIfFaultDetectedInTask(instance);
 		}
+#endif
+
 	}
 
 	va_end(ap);
