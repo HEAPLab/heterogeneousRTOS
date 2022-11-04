@@ -227,6 +227,18 @@ void FAULTDET_testPoint(FAULTDET_ExecutionDescriptor* instance, int uniId, int c
 //char FAULTDET_hasFault()  PRIVILEGED_FUNCTION;
 void FAULTDET_resetFault() PRIVILEGED_FUNCTION;
 
+#ifdef testingCampaign
+
+#define FAULTDET_testing_injectFault(var, execId, lobound, upbound)\
+		if ( FAULTDET_testing_injectingErrors && execId >= lobound && execId <= upbound ) {\
+			var = ( var & (~(0x1 << ( execId % lobound )))) | ((~ var ) & (0x1 << ( execId % lobound )));\
+		}\
+
+#define FAULTDET_testing_changeMode()\
+		FAULTDET_testing_injectingErrors=!FAULTDET_testing_injectingErrors;
+
+#endif
+
 //int prvDmaBlockingTransferFreeByteSize( u32 prvDmaDestAddr, u32 prvDmaSourceAddr, u32 byteSize ) PRIVILEGED_FUNCTION;
 //
 //int prvDmaInit() PRIVILEGED_FUNCTION;
