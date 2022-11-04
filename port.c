@@ -1177,6 +1177,7 @@ void FAULTDET_blockIfFaultDetectedInTask (FAULTDET_ExecutionDescriptor* instance
 
 
 #ifdef testingCampaign
+
 void FAULTDET_testing_blockUntilProcessed (FAULTDET_ExecutionDescriptor* instance) {
 	if ((*pxCurrentTCB_ptr)->reExecutions<configMAX_REEXECUTIONS_SET_IN_HW_SCHEDULER) {
 		if (instance->testedOnce) {
@@ -1195,6 +1196,38 @@ void FAULTDET_testing_blockUntilProcessed (FAULTDET_ExecutionDescriptor* instanc
 int FAULTDET_testing_goldenResults_idx=0;
 FAULTDETECTOR_testpointDescriptorStr FAULTDET_testing_goldenResults[GOLDEN_RESULT_SIZE];
 u8 testing_injectingErrors=0;
+
+int FAULTDET_testing_total=0;
+int FAULTDET_testing_ok=0;
+int FAULTDET_testing_falsePositives=0;
+int FAULTDET_testing_falseNegatives=0;
+
+FAULTDETECTOR_testpointDescriptorStr* FAULTDET_testing_findGolden (FAULTDETECTOR_testpointDescriptorStr* newRes) {
+	for (int i=0; i<GOLDEN_RESULT_SIZE; i++) {
+		if (newRes->checkId==FAULTDET_testing_goldenResults[i].checkId &&
+				newRes->executionId==FAULTDET_testing_goldenResults[i].executionId &&
+				newRes->uniId==FAULTDET_testing_goldenResults[i].uniId) {
+			return &(FAULTDET_testing_goldenResults[i]);
+		}
+	}
+	xil_printf("ERROR: golden not found");
+	return 0x0;
+}
+
+u8 FAULTDET_testing_isAovEqual(FAULTDETECTOR_testpointDescriptorStr* desc1, FAULTDETECTOR_testpointDescriptorStr* desc2) {
+	if (memcmp(&(desc1->AOV), &(desc2->AOV), sizeof(desc1->AOV))==0)
+		return 0xFF;
+	else
+		return 0x0;
+}
+
+u8 FAULTDET_testing_resetStats() {
+	FAULTDET_testing_total=0;
+	FAULTDET_testing_ok=0;
+	FAULTDET_testing_falsePositives=0;
+	FAULTDET_testing_falseNegatives=0;
+}
+
 #endif
 
 
@@ -1251,13 +1284,34 @@ void FAULTDET_testPoint(FAULTDET_ExecutionDescriptor* instance, int uniId, int c
 		instance->lastTest.uniId=uniId;
 
 #ifdef testingCampaign
+		FAULTDET_testing_total++;
+
 		if (testing_injectingErrors==0) {
 			if (GOLDEN_RESULT_SIZE<FAULTDET_testing_goldenResults_idx) {
 				FAULTDET_testing_blockUntilProcessed(instance);
+				if (FAULTDETECTOR_hasFault(&FAULTDETECTOR_InstancePtr, contr.taskId)) {
+					FAULTDET_testing_falsePositives++;
+				} else {
+					FAULTDET_testing_ok++;
+				}
+
 				FAULTDETECTOR_getLastTestedPoint(&FAULTDETECTOR_InstancePtr, contr.taskId, &(FAULTDET_testing_goldenResults[FAULTDET_testing_goldenResults_idx]));
 				FAULTDET_testing_goldenResults_idx++;
 			} else {
 				xil_printf("ERROR: reached max number golden result size. Not saved.");
+			}
+		} else {
+			FAULTDET_testing_blockUntilProcessed(instance);
+			FAULTDETECTOR_testpointDescriptorStr curr;
+			FAULTDETECTOR_getLastTestedPoint(&FAULTDETECTOR_InstancePtr, contr.taskId, &curr);
+
+			FAULTDETECTOR_testpointDescriptorStr* golden=FAULTDET_testing_findGolden(&curr);
+			if (FAULTDET_testing_isAovEqual(&curr, golden)==0) {
+				if (FAULTDETECTOR_hasFault(&FAULTDETECTOR_InstancePtr, contr.taskId)) {
+					FAULTDET_testing_ok++;
+				} else {
+					FAULTDET_testing_falseNegatives++;
+				}
 			}
 		}
 #else
