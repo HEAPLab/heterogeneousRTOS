@@ -1195,12 +1195,27 @@ void FAULTDET_testing_blockUntilProcessed (FAULTDET_ExecutionDescriptor* instanc
 #define GOLDEN_RESULT_SIZE 4096
 int FAULTDET_testing_goldenResults_idx=0;
 FAULTDETECTOR_testpointDescriptorStr FAULTDET_testing_goldenResults[GOLDEN_RESULT_SIZE];
-u8 FAULTDET_testing_injectingErrors=0;
 
 int FAULTDET_testing_total=0;
 int FAULTDET_testing_ok=0;
 int FAULTDET_testing_falsePositives=0;
 int FAULTDET_testing_falseNegatives=0;
+
+int FAULTDET_testing_getTotal() {
+	return FAULTDET_testing_total;
+}
+
+int FAULTDET_testing_getOk() {
+	return FAULTDET_testing_ok;
+}
+
+int FAULTDET_testing_getFalsePositives() {
+	return FAULTDET_testing_falsePositives;
+}
+
+int FAULTDET_testing_getFalseNegatives() {
+	return FAULTDET_testing_falseNegatives;
+}
 
 FAULTDETECTOR_testpointDescriptorStr* FAULTDET_testing_findGolden (FAULTDETECTOR_testpointDescriptorStr* newRes) {
 	for (int i=0; i<GOLDEN_RESULT_SIZE; i++) {
@@ -1228,19 +1243,15 @@ u8 FAULTDET_testing_resetStats() {
 	FAULTDET_testing_falseNegatives=0;
 }
 
-#define FAULTDET_testing_injectFault(var, execId, lobound, upbound)\
-		if ( FAULTDET_testing_injectingErrors && execId >= lobound && execId <= upbound ) {\
-			var = ( var & (~(0x1 << ( execId % lobound )))) | ((~ var ) & (0x1 << ( execId % lobound )));\
-		}\
-
-#define FAULTDET_testing_changeMode()\
-		FAULTDET_testing_injectingErrors=!FAULTDET_testing_injectingErrors;
-
 #endif
 
 
 //warning: uniId and checkId must start from 1!
-void FAULTDET_testPoint(FAULTDET_ExecutionDescriptor* instance, int uniId, int checkId, char blocking, int argCount, ...) {
+void FAULTDET_testPoint(FAULTDET_ExecutionDescriptor* instance, int uniId, int checkId, char blocking,
+#ifdef testingCampaign
+		u8 injectingErrors,
+#endif
+		int argCount, ...) {
 
 	va_list ap;
 	va_start(ap, argCount);
@@ -1294,8 +1305,8 @@ void FAULTDET_testPoint(FAULTDET_ExecutionDescriptor* instance, int uniId, int c
 #ifdef testingCampaign
 		FAULTDET_testing_total++;
 
-		if (FAULTDET_testing_injectingErrors==0) {
-			if (GOLDEN_RESULT_SIZE<FAULTDET_testing_goldenResults_idx) {
+		if (injectingErrors==0) {
+			if (FAULTDET_testing_goldenResults_idx<GOLDEN_RESULT_SIZE) {
 				FAULTDET_testing_blockUntilProcessed(instance);
 				if (FAULTDETECTOR_hasFault(&FAULTDETECTOR_InstancePtr, contr.taskId)) {
 					FAULTDET_testing_falsePositives++;

@@ -25,8 +25,8 @@
  */
 
 /*-----------------------------------------------------------
-* Portable layer API.  Each function must be defined for each port.
-*----------------------------------------------------------*/
+ * Portable layer API.  Each function must be defined for each port.
+ *----------------------------------------------------------*/
 
 #ifndef PORTABLE_H
 #define PORTABLE_H
@@ -48,52 +48,52 @@
  * included here.  In this case the path to the correct portmacro.h header file
  * must be set in the compiler's include path. */
 #ifndef portENTER_CRITICAL
-    #include "portmacro.h"
+#include "portmacro.h"
 #endif
 
 #if portBYTE_ALIGNMENT == 32
-    #define portBYTE_ALIGNMENT_MASK    ( 0x001f )
+#define portBYTE_ALIGNMENT_MASK    ( 0x001f )
 #endif
 
 #if portBYTE_ALIGNMENT == 16
-    #define portBYTE_ALIGNMENT_MASK    ( 0x000f )
+#define portBYTE_ALIGNMENT_MASK    ( 0x000f )
 #endif
 
 #if portBYTE_ALIGNMENT == 8
-    #define portBYTE_ALIGNMENT_MASK    ( 0x0007 )
+#define portBYTE_ALIGNMENT_MASK    ( 0x0007 )
 #endif
 
 #if portBYTE_ALIGNMENT == 4
-    #define portBYTE_ALIGNMENT_MASK    ( 0x0003 )
+#define portBYTE_ALIGNMENT_MASK    ( 0x0003 )
 #endif
 
 #if portBYTE_ALIGNMENT == 2
-    #define portBYTE_ALIGNMENT_MASK    ( 0x0001 )
+#define portBYTE_ALIGNMENT_MASK    ( 0x0001 )
 #endif
 
 #if portBYTE_ALIGNMENT == 1
-    #define portBYTE_ALIGNMENT_MASK    ( 0x0000 )
+#define portBYTE_ALIGNMENT_MASK    ( 0x0000 )
 #endif
 
 #ifndef portBYTE_ALIGNMENT_MASK
-    #error "Invalid portBYTE_ALIGNMENT definition"
+#error "Invalid portBYTE_ALIGNMENT definition"
 #endif
 
 #ifndef portNUM_CONFIGURABLE_REGIONS
-    #define portNUM_CONFIGURABLE_REGIONS    1
+#define portNUM_CONFIGURABLE_REGIONS    1
 #endif
 
 #ifndef portHAS_STACK_OVERFLOW_CHECKING
-    #define portHAS_STACK_OVERFLOW_CHECKING    0
+#define portHAS_STACK_OVERFLOW_CHECKING    0
 #endif
 
 #ifndef portARCH_NAME
-    #define portARCH_NAME    NULL
+#define portARCH_NAME    NULL
 #endif
 
 /* *INDENT-OFF* */
 #ifdef __cplusplus
-    extern "C" {
+extern "C" {
 #endif
 /* *INDENT-ON* */
 
@@ -106,49 +106,49 @@
  *
  */
 #if ( portUSING_MPU_WRAPPERS == 1 )
-    #if ( portHAS_STACK_OVERFLOW_CHECKING == 1 )
-        StackType_t * pxPortInitialiseStack( StackType_t * pxTopOfStack,
-                                             StackType_t * pxEndOfStack,
-                                             TaskFunction_t pxCode,
-                                             void * pvParameters,
-                                             BaseType_t xRunPrivileged ) PRIVILEGED_FUNCTION;
-    #else
-        StackType_t * pxPortInitialiseStack( StackType_t * pxTopOfStack,
-                                             TaskFunction_t pxCode,
-                                             void * pvParameters,
-                                             BaseType_t xRunPrivileged ) PRIVILEGED_FUNCTION;
-    #endif
+#if ( portHAS_STACK_OVERFLOW_CHECKING == 1 )
+StackType_t * pxPortInitialiseStack( StackType_t * pxTopOfStack,
+		StackType_t * pxEndOfStack,
+		TaskFunction_t pxCode,
+		void * pvParameters,
+		BaseType_t xRunPrivileged ) PRIVILEGED_FUNCTION;
+#else
+StackType_t * pxPortInitialiseStack( StackType_t * pxTopOfStack,
+		TaskFunction_t pxCode,
+		void * pvParameters,
+		BaseType_t xRunPrivileged ) PRIVILEGED_FUNCTION;
+#endif
 #else /* if ( portUSING_MPU_WRAPPERS == 1 ) */
-    #if ( portHAS_STACK_OVERFLOW_CHECKING == 1 )
-        StackType_t * pxPortInitialiseStack( StackType_t * pxTopOfStack,
-                                             StackType_t * pxEndOfStack,
-                                             TaskFunction_t pxCode,
-                                             void * pvParameters ) PRIVILEGED_FUNCTION;
-    #else
-        StackType_t * pxPortInitialiseStack( StackType_t * pxTopOfStack,
-                                             TaskFunction_t pxCode,
-                                             void * pvParameters ) PRIVILEGED_FUNCTION;
-    #endif
+#if ( portHAS_STACK_OVERFLOW_CHECKING == 1 )
+StackType_t * pxPortInitialiseStack( StackType_t * pxTopOfStack,
+		StackType_t * pxEndOfStack,
+		TaskFunction_t pxCode,
+		void * pvParameters ) PRIVILEGED_FUNCTION;
+#else
+StackType_t * pxPortInitialiseStack( StackType_t * pxTopOfStack,
+		TaskFunction_t pxCode,
+		void * pvParameters ) PRIVILEGED_FUNCTION;
+#endif
 #endif /* if ( portUSING_MPU_WRAPPERS == 1 ) */
 
 /* Used by heap_5.c to define the start address and size of each memory region
  * that together comprise the total FreeRTOS heap space. */
 typedef struct HeapRegion
 {
-    uint8_t * pucStartAddress;
-    size_t xSizeInBytes;
+	uint8_t * pucStartAddress;
+	size_t xSizeInBytes;
 } HeapRegion_t;
 
 /* Used to pass information about the heap out of vPortGetHeapStats(). */
 typedef struct xHeapStats
 {
-    size_t xAvailableHeapSpaceInBytes;          /* The total heap size currently available - this is the sum of all the free blocks, not the largest block that can be allocated. */
-    size_t xSizeOfLargestFreeBlockInBytes;      /* The maximum size, in bytes, of all the free blocks within the heap at the time vPortGetHeapStats() is called. */
-    size_t xSizeOfSmallestFreeBlockInBytes;     /* The minimum size, in bytes, of all the free blocks within the heap at the time vPortGetHeapStats() is called. */
-    size_t xNumberOfFreeBlocks;                 /* The number of free memory blocks within the heap at the time vPortGetHeapStats() is called. */
-    size_t xMinimumEverFreeBytesRemaining;      /* The minimum amount of total free memory (sum of all free blocks) there has been in the heap since the system booted. */
-    size_t xNumberOfSuccessfulAllocations;      /* The number of calls to pvPortMalloc() that have returned a valid memory block. */
-    size_t xNumberOfSuccessfulFrees;            /* The number of calls to vPortFree() that has successfully freed a block of memory. */
+	size_t xAvailableHeapSpaceInBytes;          /* The total heap size currently available - this is the sum of all the free blocks, not the largest block that can be allocated. */
+	size_t xSizeOfLargestFreeBlockInBytes;      /* The maximum size, in bytes, of all the free blocks within the heap at the time vPortGetHeapStats() is called. */
+	size_t xSizeOfSmallestFreeBlockInBytes;     /* The minimum size, in bytes, of all the free blocks within the heap at the time vPortGetHeapStats() is called. */
+	size_t xNumberOfFreeBlocks;                 /* The number of free memory blocks within the heap at the time vPortGetHeapStats() is called. */
+	size_t xMinimumEverFreeBytesRemaining;      /* The minimum amount of total free memory (sum of all free blocks) there has been in the heap since the system booted. */
+	size_t xNumberOfSuccessfulAllocations;      /* The number of calls to pvPortMalloc() that have returned a valid memory block. */
+	size_t xNumberOfSuccessfulFrees;            /* The number of calls to vPortFree() that has successfully freed a block of memory. */
 } HeapStats_t;
 
 /*
@@ -223,20 +223,28 @@ void FAULTDET_getLastTestedPoint(FAULTDETECTOR_testpointDescriptorStr* dest) PRI
 void FAULTDET_initFaultDetection(FAULTDET_ExecutionDescriptor* instance) PRIVILEGED_FUNCTION;
 //void FAULTDET_endFaultDetection() PRIVILEGED_FUNCTION;
 void FAULTDET_trainPoint(int checkId, int argCount, ...) PRIVILEGED_FUNCTION;
-void FAULTDET_testPoint(FAULTDET_ExecutionDescriptor* instance, int uniId, int checkId, char blocking, int argCount, ...) PRIVILEGED_FUNCTION;
+void FAULTDET_testPoint(FAULTDET_ExecutionDescriptor* instance, int uniId, int checkId, char blocking,
+#ifdef testingCampaign
+		u8 injectingErrors,
+#endif
+		int argCount, ...) PRIVILEGED_FUNCTION;
 //char FAULTDET_hasFault()  PRIVILEGED_FUNCTION;
 void FAULTDET_resetFault() PRIVILEGED_FUNCTION;
 
 #ifdef testingCampaign
 
-#define FAULTDET_testing_injectFault(var, execId, lobound, upbound)\
-		if ( FAULTDET_testing_injectingErrors && execId >= lobound && execId <= upbound ) {\
-			var = ( var & (~(0x1 << ( execId % lobound )))) | ((~ var ) & (0x1 << ( execId % lobound )));\
-		}\
+int FAULTDET_testing_getTotal() PRIVILEGED_FUNCTION;
+int FAULTDET_testing_getOk() PRIVILEGED_FUNCTION;
+int FAULTDET_testing_getFalsePositives() PRIVILEGED_FUNCTION;
+int FAULTDET_testing_getFalseNegatives() PRIVILEGED_FUNCTION;
 
-#define FAULTDET_testing_changeMode()\
-		FAULTDET_testing_injectingErrors=!FAULTDET_testing_injectingErrors;
+//#define FAULTDET_testing_initTesting()\
+//	FAULTDET_testing_injectingErrors=0
 
+#define FAULTDET_testing_injectFault32(var, execId, lobound, upbound, inject)\
+		if ( inject && execId >= lobound && execId <= upbound ) {\
+			(*((u32*)(&var))) = ( (*((u32*)(&var))) & (~(0x1 << ( lobound == 0 ? execId : ( execId % lobound ) ) ))) | ((~ (*((u32*)(&var))) ) & (0x1 << ( lobound == 0 ? execId : ( execId % lobound ) )));\
+		}
 #endif
 
 //int prvDmaBlockingTransferFreeByteSize( u32 prvDmaDestAddr, u32 prvDmaSourceAddr, u32 byteSize ) PRIVILEGED_FUNCTION;
@@ -264,16 +272,16 @@ void vPortEndScheduler( void ) PRIVILEGED_FUNCTION;
  * contained in xRegions.
  */
 #if ( portUSING_MPU_WRAPPERS == 1 )
-    struct xMEMORY_REGION;
-    void vPortStoreTaskMPUSettings( xMPU_SETTINGS * xMPUSettings,
-                                    const struct xMEMORY_REGION * const xRegions,
-                                    StackType_t * pxBottomOfStack,
-                                    uint32_t ulStackDepth ) PRIVILEGED_FUNCTION;
+struct xMEMORY_REGION;
+void vPortStoreTaskMPUSettings( xMPU_SETTINGS * xMPUSettings,
+		const struct xMEMORY_REGION * const xRegions,
+		StackType_t * pxBottomOfStack,
+		uint32_t ulStackDepth ) PRIVILEGED_FUNCTION;
 #endif
 
 /* *INDENT-OFF* */
 #ifdef __cplusplus
-    }
+}
 #endif
 /* *INDENT-ON* */
 

@@ -443,6 +443,10 @@
 
 #endif
 
+u8 xTaskGetExecutionId() {
+	return pxCurrentTCB->executionId;
+}
+
 	/*
 	 * When a task is created, the stack of the task is filled with a known value.
 	 * This function determines the 'high water mark' of the task stack by
