@@ -1,10 +1,12 @@
-#ifndef FAULTDETECTOR
-#define FAULTDETECTOR
+#ifndef FAULTDETECTOR_SW_HEADER
+#define FAULTDETECTOR_SW_HEADER
 
-#define COMMAND_TEST 2
-#define COMMAND_TRAIN 3
+#include "xil_types.h"
 
+//#define COMMAND_TEST 2
+//#define COMMAND_TRAIN 3
 
+#ifndef XFAULTDETECTOR_H
 #define FAULTDETECTOR_MAX_CHECKS 64
 #define FAULTDETECTOR_MAX_TASKS 16
 
@@ -12,24 +14,26 @@
 
 #define FAULTDETECTOR_MAX_REGIONS 16
 
-#define FAULTDETECTOR_THRESH 1e-10
+#define FAULTDETECTOR_THRESH_CONSTANT (1e-10)
 
-struct FAULTDETECTOR_controlStr {
-	ap_uint<8> checkId;
-	ap_uint<8> taskId;
-	ap_uint<8> executionId;
-	ap_uint<16> uniId;
+typedef struct {
+	u8 checkId;
+	u8 taskId;
+	u8 executionId;
+	u16 uniId;
 	char command;
 	char gap0[2];
 	float AOV[FAULTDETECTOR_MAX_AOV_DIM];
-};
+} FAULTDETECTOR_controlStr;
 
-typedef struct REGION_T{
-			float min[FAULTDETECTOR_MAX_AOV_DIM];
-			float max[FAULTDETECTOR_MAX_AOV_DIM];
-			float center[FAULTDETECTOR_MAX_AOV_DIM];
-		} FAULTDETECTOR_region_t;
+typedef struct {
+	float min[FAULTDETECTOR_MAX_AOV_DIM];
+	float max[FAULTDETECTOR_MAX_AOV_DIM];
+	float center[FAULTDETECTOR_MAX_AOV_DIM];
+} FAULTDETECTOR_region_t;
+#endif
 
-void FAULTDETECTOR_SW_testPoint (FAULTDETECTOR_controlStr& in);
+char FAULTDETECTOR_SW_test(FAULTDETECTOR_controlStr* in);
+void FAULTDETECTOR_SW_train(FAULTDETECTOR_controlStr* in);
 
 #endif

@@ -1,4 +1,5 @@
-#define testingCampaign
+//#define testingCampaign
+#define FAULTDETECTOR_EXECINSW
 
 /*
  * FreeRTOS Kernel V10.4.3
@@ -1245,6 +1246,9 @@ u8 FAULTDET_testing_resetStats() {
 
 #endif
 
+#ifdef FAULTDETECTOR_EXECINSW
+#include "faultdetector_sw.h"
+#endif
 
 //warning: uniId and checkId must start from 1!
 void FAULTDET_testPoint(FAULTDET_ExecutionDescriptor* instance, int uniId, int checkId, char blocking,
@@ -1276,6 +1280,7 @@ void FAULTDET_testPoint(FAULTDET_ExecutionDescriptor* instance, int uniId, int c
 
 	controlForFaultDet=contr;
 
+
 	u16 lastErrorUniId=tcbPtr->lastError.uniId;
 	u8 lastErrorCheckId=tcbPtr->lastError.checkId;
 
@@ -1285,6 +1290,9 @@ void FAULTDET_testPoint(FAULTDET_ExecutionDescriptor* instance, int uniId, int c
 	}
 
 	if (tcbPtr->executionMode==EXECMODE_FAULT && lastErrorUniId==uniId && lastErrorCheckId==checkId && memcmp(tcbPtr->lastError.AOV, contr.AOV, sizeof(contr.AOV))==0) {
+#ifdef FAULTDETECTOR_EXECINSW
+		FAULTDETECTOR_SW_train(&contr);
+#else
 		FAULTDET_Train(&controlForFaultDet);
 		//						FAULTDET_Test(&controlForFaultDet);
 		//						instance->testedOnce=0xFF;
@@ -1295,7 +1303,15 @@ void FAULTDET_testPoint(FAULTDET_ExecutionDescriptor* instance, int uniId, int c
 		//						if (blocking) {
 		//							FAULTDET_blockIfFaultDetectedInTask(instance);
 		//						}
+#endif
 	} else if (tcbPtr->reExecutions<configMAX_REEXECUTIONS_SET_IN_HW_SCHEDULER) {
+#ifdef FAULTDETECTOR_EXECINSW
+		char fault=FAULTDETECTOR_SW_test(&contr);
+		if (fault) {
+			SCHEDULER_restartFaultyJob((void*) SCHEDULER_BASEADDR, (*(pxCurrentTCB_ptr))->uxTaskNumber, (*(pxCurrentTCB_ptr))->executionId);
+			while(1) {}
+		}
+#else
 		FAULTDET_Test(&controlForFaultDet);
 		instance->testedOnce=0xFF;
 		instance->lastTest.checkId=checkId;
@@ -1338,9 +1354,9 @@ void FAULTDET_testPoint(FAULTDET_ExecutionDescriptor* instance, int uniId, int c
 			FAULTDET_blockIfFaultDetectedInTask(instance);
 		}
 #endif
+#endif
 
 	}
-
 	va_end(ap);
 }
 

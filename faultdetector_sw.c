@@ -1,15 +1,16 @@
 #include "faultdetector_sw.h"
+#include <math.h>
 
-const float FAULTDETECTOR_THRESH=FAULTDETECTOR_THRESH;
+const float FAULTDETECTOR_THRESH=FAULTDETECTOR_THRESH_CONSTANT;
+static FAULTDETECTOR_region_t regions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS]; //regions from the distribution
+static u8 n_regions[FAULTDETECTOR_MAX_CHECKS];
 
-char hasRegion(const region_t regions[FAULTDETECTOR_MAX_REGIONS], const ap_uint<8> n_regions, const float d[FAULTDETECTOR_MAX_AOV_DIM]){
+char hasRegion(const FAULTDETECTOR_region_t regions[FAULTDETECTOR_MAX_REGIONS], const u8 n_regions, const float d[FAULTDETECTOR_MAX_AOV_DIM]){
 	for(int i=0; i < n_regions; i++){
 
 		//		if (i>=n_regions)
 		//			break;
-		//#pragma HLS PIPELINE II=4
 		for(int j=0; j < FAULTDETECTOR_MAX_AOV_DIM; j++){
-			//#pragma HLS unroll
 
 			if(regions[i].min[j] <= d[j] && regions[i].max[j] >= d[j]) {
 				if (j==FAULTDETECTOR_MAX_AOV_DIM-1)
@@ -22,28 +23,27 @@ char hasRegion(const region_t regions[FAULTDETECTOR_MAX_REGIONS], const ap_uint<
 
 char is_valid(const float val[FAULTDETECTOR_MAX_AOV_DIM]){
 
-	is_valid_label0:is_valid_label2:for(int i=0; i < FAULTDETECTOR_MAX_AOV_DIM;  i++) {
-		//#pragma HLS PIPELINE II=1
-		//#pragma HLS unroll
+	for(int i=0; i < FAULTDETECTOR_MAX_AOV_DIM;  i++) {
+
 		if(isnan(val[i]) || val[i] == INFINITY || val[i] == -INFINITY)
 			return 0;
 	}
 	return 0xFF;
 }
 
-void insert_point(region_t regions[FAULTDETECTOR_MAX_REGIONS], ap_uint<8> &n_regions, const float d[FAULTDETECTOR_MAX_AOV_DIM]) {//, bool is_accept){
+void insert_point(FAULTDETECTOR_region_t regions[FAULTDETECTOR_MAX_REGIONS], u8 *n_regions, const float d[FAULTDETECTOR_MAX_AOV_DIM]) {//, bool is_accept){
 
 	//int id = find_region(regions, n_regions, d);
 
 	if (is_valid(d)) { //&& id<0) {
 		//create a new node.
-		insert_point_label4:for(int i=0; i < FAULTDETECTOR_MAX_AOV_DIM; i++){
-			regions[n_regions].min[i] = regions[n_regions].max[i] = regions[n_regions].center[i] = d[i];
+		for(int i=0; i < FAULTDETECTOR_MAX_AOV_DIM; i++){
+			regions[(*n_regions)].min[i] = regions[(*n_regions)].max[i] = regions[(*n_regions)].center[i] = d[i];
 		}
-		n_regions++;
+		(*n_regions)++;
 
 		//if we're full of space, make room for another region.
-		if(n_regions == FAULTDETECTOR_MAX_REGIONS){ //if we're full.
+		if((*n_regions) == FAULTDETECTOR_MAX_REGIONS){ //if we're full.
 			//find the region with the most similar dynamics that isn't
 			//completely obstructed by another region.
 			int merge_1=-1;
@@ -57,7 +57,7 @@ void insert_point(region_t regions[FAULTDETECTOR_MAX_REGIONS], ap_uint<8> &n_reg
 			int tmp_other=-1;
 
 			//FAULTDETECTOR_MAX_REGIONS_SUMM
-			for(int i=0; i_real < n_regions-1; i++){
+			for(int i=0; i_real < (*n_regions)-1; i++){
 
 				//int tmp_other = find_closest_region(regions, n_regions, i, &tmp_score);
 
@@ -67,7 +67,6 @@ void insert_point(region_t regions[FAULTDETECTOR_MAX_REGIONS], ap_uint<8> &n_reg
 
 
 				//				for(int k=i+1; k < FAULTDETECTOR_MAX_REGIONS; k++){
-				//			#pragma HLS unroll
 
 				//					if (k_real>=n_regions)
 				//						break;
@@ -114,7 +113,7 @@ void insert_point(region_t regions[FAULTDETECTOR_MAX_REGIONS], ap_uint<8> &n_reg
 				//				}
 
 
-				if (k_real==n_regions-1) {
+				if (k_real==(*n_regions)-1) {
 					i_real++;
 					k_real=i_real+1;
 
@@ -150,36 +149,23 @@ void insert_point(region_t regions[FAULTDETECTOR_MAX_REGIONS], ap_uint<8> &n_reg
 
 			//move everything over
 			//			insert_point_label7:for(int i=merge_2; i < FAULTDETECTOR_MAX_REGIONS-1; i++){
-			////#pragma HLS PIPELINE off
-			//#pragma HLS loop_tripcount min=1 max=15
 			//				//if (i>=merge_2) {
 			//					regions[i] = regions[i+1];
 			//				//}
 			//			}
 			//if (merge_2!=(n_regions-1))
-			regions[merge_2]=regions[n_regions-1];
-			n_regions--;
+			regions[merge_2]=regions[(*n_regions)-1];
+			(*n_regions)--;
 		}
 	}
 }
 
-void FAULTDETECTOR_testPoint (FAULTDETECTOR_controlStr& in) {
-		if (in.command==COMMAND_TEST) {
+char FAULTDETECTOR_SW_test(FAULTDETECTOR_controlStr* in) {
+	return !(is_valid(in->AOV) && hasRegion(regions[in->checkId], n_regions[in->checkId], in->AOV));
+}
 
-			bool vld=is_valid(in.AOV);
-			bool hasReg=hasRegion(regions[in.checkId], n_regions[in.checkId], in.AOV);//find_region(regions, n_regions, data) < 0 )
-			bool fault = !(vld && hasReg);
-
-			//if (error)
-			out.fault=fault;
-			dest.write(out);
-			//		}
-		} else if (in.command==COMMAND_TRAIN) {
-			out.fault=false;
-			dest.write(out);
-
-			insert_point(regions[in.checkId],
-					n_regions[in.checkId],
-					in.AOV);
-		}
+void FAULTDETECTOR_SW_train(FAULTDETECTOR_controlStr* in) {
+	insert_point(regions[in->checkId],
+			&(n_regions[in->checkId]),
+			in->AOV);
 }
