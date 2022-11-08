@@ -1251,7 +1251,11 @@ u8 FAULTDET_testing_resetStats() {
 #endif
 
 //warning: uniId and checkId must start from 1!
-void FAULTDET_testPoint(FAULTDET_ExecutionDescriptor* instance, int uniId, int checkId, char blocking,
+void FAULTDET_testPoint(
+#ifndef FAULTDETECTOR_EXECINSW
+FAULTDET_ExecutionDescriptor* instance,
+#endif
+int uniId, int checkId, char blocking,
 #ifdef testingCampaign
 		u8 injectingErrors,
 #endif
@@ -1291,6 +1295,7 @@ void FAULTDET_testPoint(FAULTDET_ExecutionDescriptor* instance, int uniId, int c
 
 	if (tcbPtr->executionMode==EXECMODE_FAULT && lastErrorUniId==uniId && lastErrorCheckId==checkId && memcmp(tcbPtr->lastError.AOV, contr.AOV, sizeof(contr.AOV))==0) {
 #ifdef FAULTDETECTOR_EXECINSW
+		xil_printf(" SW FAULT DETECTOR: train");
 		FAULTDETECTOR_SW_train(&contr);
 #else
 		FAULTDET_Train(&controlForFaultDet);
@@ -1307,8 +1312,14 @@ void FAULTDET_testPoint(FAULTDET_ExecutionDescriptor* instance, int uniId, int c
 	} else if (tcbPtr->reExecutions<configMAX_REEXECUTIONS_SET_IN_HW_SCHEDULER) {
 #ifdef FAULTDETECTOR_EXECINSW
 		char fault=FAULTDETECTOR_SW_test(&contr);
+		xil_printf(" SW FAULT DETECTOR: fault %x", fault);
 		if (fault) {
-			SCHEDULER_restartFaultyJob((void*) SCHEDULER_BASEADDR, (*(pxCurrentTCB_ptr))->uxTaskNumber, (*(pxCurrentTCB_ptr))->executionId);
+			tcbPtr->lastError.uniId=contr.uniId;
+			tcbPtr->lastError.checkId=contr.checkId;
+			tcbPtr->lastError.executionId=contr.executionId;
+			memcpy(&(tcbPtr->lastError.AOV), &(contr.AOV), sizeof(contr.AOV));
+
+			SCHEDULER_restartFaultyJob((void*) SCHEDULER_BASEADDR, tcbPtr->uxTaskNumber, contr.executionId);
 			while(1) {}
 		}
 #else

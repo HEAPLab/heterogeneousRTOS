@@ -223,7 +223,11 @@ void FAULTDET_getLastTestedPoint(FAULTDETECTOR_testpointDescriptorStr* dest) PRI
 void FAULTDET_initFaultDetection(FAULTDET_ExecutionDescriptor* instance) PRIVILEGED_FUNCTION;
 //void FAULTDET_endFaultDetection() PRIVILEGED_FUNCTION;
 void FAULTDET_trainPoint(int checkId, int argCount, ...) PRIVILEGED_FUNCTION;
-void FAULTDET_testPoint(FAULTDET_ExecutionDescriptor* instance, int uniId, int checkId, char blocking,
+void FAULTDET_testPoint(
+#ifndef FAULTDETECTOR_EXECINSW
+FAULTDET_ExecutionDescriptor* instance,
+#endif
+int uniId, int checkId, char blocking,
 #ifdef testingCampaign
 		u8 injectingErrors,
 #endif
