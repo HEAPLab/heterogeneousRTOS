@@ -222,7 +222,7 @@ void FAULTDET_blockIfFaultDetectedInTask (FAULTDET_ExecutionDescriptor* instance
 void FAULTDET_getLastTestedPoint(FAULTDETECTOR_testpointDescriptorStr* dest) PRIVILEGED_FUNCTION;
 void FAULTDET_initFaultDetection(FAULTDET_ExecutionDescriptor* instance) PRIVILEGED_FUNCTION;
 //void FAULTDET_endFaultDetection() PRIVILEGED_FUNCTION;
-void FAULTDET_trainPoint(int checkId, int argCount, ...) PRIVILEGED_FUNCTION;
+void FAULTDET_trainPoint(int uniId, int checkId, int argCount, ...) PRIVILEGED_FUNCTION;
 void FAULTDET_testPoint(
 #ifndef FAULTDETECTOR_EXECINSW
 FAULTDET_ExecutionDescriptor* instance,

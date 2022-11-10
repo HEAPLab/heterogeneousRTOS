@@ -852,7 +852,11 @@ int prvRestoreTrainedData(XFaultdetector* FaultDet_InstancePtr, XSdPs* SD_Instan
 		return XST_FAILURE;
 	}
 
+#ifdef FAULTDETECTOR_EXECINSW
+	FAULTDETECTOR_SW_initRegions(dumpedDataSdBuf.trainedRegions, dumpedDataSdBuf.n_regions);
+#else
 	FAULTDETECTOR_initRegions(FaultDet_InstancePtr, dumpedDataSdBuf.trainedRegions, dumpedDataSdBuf.n_regions);
+#endif
 
 	return XST_SUCCESS;
 }
@@ -860,12 +864,18 @@ int prvRestoreTrainedData(XFaultdetector* FaultDet_InstancePtr, XSdPs* SD_Instan
 void FAULTDET_StopRunMode();
 
 int prvDumpTrainedData(XFaultdetector* FaultDet_InstancePtr, XSdPs* SD_InstancePtr) {
+#ifdef FAULTDETECTOR_EXECINSW
+	xil_printf("\nSTARTING TO DUMP DATA\n");
+	FAULTDETECTOR_SW_dumpRegions(dumpedDataSdBuf.trainedRegions, dumpedDataSdBuf.n_regions);
+
+#else
 	FAULTDET_StopRunMode();
 
 	xil_printf("\nFAULT DETECTOR EXITED RUN MODE. STARTING TO DUMP DATA\n");
 
 	FAULTDETECTOR_dumpRegions(FaultDet_InstancePtr, dumpedDataSdBuf.trainedRegions, dumpedDataSdBuf.n_regions);
 
+#endif
 	/*
 	 * Write data to SD/eMMC.
 	 */
@@ -1193,7 +1203,7 @@ void FAULTDET_testing_blockUntilProcessed (FAULTDET_ExecutionDescriptor* instanc
 	}
 }
 
-#define GOLDEN_RESULT_SIZE 4096
+#define GOLDEN_RESULT_SIZE 5120
 int FAULTDET_testing_goldenResults_idx=0;
 FAULTDETECTOR_testpointDescriptorStr FAULTDET_testing_goldenResults[GOLDEN_RESULT_SIZE];
 
@@ -1250,7 +1260,7 @@ u8 FAULTDET_testing_resetStats() {
 #include "faultdetector_sw.h"
 #endif
 
-//warning: uniId and checkId must start from 1!
+//warning: uniId must start from 1!
 void FAULTDET_testPoint(
 #ifndef FAULTDETECTOR_EXECINSW
 		FAULTDET_ExecutionDescriptor* instance,
@@ -1295,7 +1305,7 @@ void FAULTDET_testPoint(
 
 	if (tcbPtr->executionMode==EXECMODE_FAULT && lastErrorUniId==uniId && lastErrorCheckId==checkId && memcmp(tcbPtr->lastError.AOV, contr.AOV, sizeof(contr.AOV))==0) {
 #ifdef FAULTDETECTOR_EXECINSW
-		xil_printf(" SW FAULT DETECTOR: train");
+//		xil_printf(" SW FAULT DETECTOR: train");
 		FAULTDETECTOR_SW_train(&contr);
 #else
 		FAULTDET_Train(&controlForFaultDet);
@@ -1312,7 +1322,7 @@ void FAULTDET_testPoint(
 	} else if (tcbPtr->reExecutions<configMAX_REEXECUTIONS_SET_IN_HW_SCHEDULER) {
 #ifdef FAULTDETECTOR_EXECINSW
 		char fault=FAULTDETECTOR_SW_test(&contr);
-		xil_printf(" SW FAULT DETECTOR: fault %x", fault);
+//		xil_printf(" SW FAULT DETECTOR: fault %x", fault);
 		if (fault) {
 			tcbPtr->lastError.uniId=contr.uniId;
 			tcbPtr->lastError.checkId=contr.checkId;
@@ -1411,7 +1421,7 @@ void FAULTDET_testPoint(
 va_end(ap);
 }
 
-void FAULTDET_trainPoint(int checkId, int argCount, ...) {
+void FAULTDET_trainPoint(int uniId, int checkId, int argCount, ...) {
 	va_list ap;
 	va_start(ap, argCount);
 	if (argCount>FAULTDETECTOR_MAX_AOV_DIM) //MAX_AOV_DIM
@@ -1420,8 +1430,11 @@ void FAULTDET_trainPoint(int checkId, int argCount, ...) {
 	FAULTDETECTOR_controlStr contr;
 	TCB_t* tcbPtr=*pxCurrentTCB_ptr;
 
+
+	contr.uniId=uniId;
 	contr.checkId=checkId;
 	contr.taskId=tcbPtr->uxTaskNumber-1;
+	contr.executionId=tcbPtr->executionId;
 
 	for (int i=0; i<argCount; i++) {
 		contr.AOV[i]=*va_arg(ap, float*);
@@ -1432,7 +1445,11 @@ void FAULTDET_trainPoint(int checkId, int argCount, ...) {
 
 	controlForFaultDet=contr;
 
+#ifdef FAULTDETECTOR_EXECINSW
+	FAULTDETECTOR_SW_train(&controlForFaultDet);
+#else
 	FAULTDET_Train(&controlForFaultDet);
+#endif
 	va_end(ap);
 }
 

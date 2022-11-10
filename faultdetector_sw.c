@@ -1,5 +1,6 @@
 #include "faultdetector_sw.h"
 #include <math.h>
+#include <string.h>
 
 const float FAULTDETECTOR_THRESH=FAULTDETECTOR_THRESH_CONSTANT;
 static FAULTDETECTOR_region_t regions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS]; //regions from the distribution
@@ -158,6 +159,15 @@ void insert_point(FAULTDETECTOR_region_t regions[FAULTDETECTOR_MAX_REGIONS], u8 
 			(*n_regions)--;
 		}
 	}
+}
+void FAULTDETECTOR_SW_initRegions(FAULTDETECTOR_region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS], u8 n_regions_in[FAULTDETECTOR_MAX_CHECKS]) {
+	memcpy(&regions, trainedRegions, sizeof(regions));
+	memcpy(&n_regions, n_regions_in, sizeof(n_regions));
+}
+
+void FAULTDETECTOR_SW_dumpRegions(FAULTDETECTOR_region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS], u8 n_regions_out[FAULTDETECTOR_MAX_CHECKS]) {
+	memcpy(trainedRegions, &regions, sizeof(regions));
+	memcpy(n_regions_out, &n_regions, sizeof(n_regions));
 }
 
 char FAULTDETECTOR_SW_test(FAULTDETECTOR_controlStr* in) {
