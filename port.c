@@ -1,4 +1,4 @@
-//#define testingCampaign
+#define testingCampaign
 #define FAULTDETECTOR_EXECINSW
 
 /*
@@ -1253,9 +1253,9 @@ u8 FAULTDET_testing_resetStats() {
 //warning: uniId and checkId must start from 1!
 void FAULTDET_testPoint(
 #ifndef FAULTDETECTOR_EXECINSW
-FAULTDET_ExecutionDescriptor* instance,
+		FAULTDET_ExecutionDescriptor* instance,
 #endif
-int uniId, int checkId, char blocking,
+		int uniId, int checkId, char blocking,
 #ifdef testingCampaign
 		u8 injectingErrors,
 #endif
@@ -1318,42 +1318,38 @@ int uniId, int checkId, char blocking,
 			tcbPtr->lastError.checkId=contr.checkId;
 			tcbPtr->lastError.executionId=contr.executionId;
 			memcpy(&(tcbPtr->lastError.AOV), &(contr.AOV), sizeof(contr.AOV));
-
-			SCHEDULER_restartFaultyJob((void*) SCHEDULER_BASEADDR, tcbPtr->uxTaskNumber, contr.executionId);
-			while(1) {}
-		}
-#else
-		FAULTDET_Test(&controlForFaultDet);
-		instance->testedOnce=0xFF;
-		instance->lastTest.checkId=checkId;
-		instance->lastTest.executionId=tcbPtr->executionId;
-		instance->lastTest.uniId=uniId;
-
 #ifdef testingCampaign
+		}
 		FAULTDET_testing_total++;
 
 		if (injectingErrors==0) {
 			if (FAULTDET_testing_goldenResults_idx<GOLDEN_RESULT_SIZE) {
-				FAULTDET_testing_blockUntilProcessed(instance);
-				if (FAULTDETECTOR_hasFault(&FAULTDETECTOR_InstancePtr, contr.taskId)) {
+				if (fault) {
 					FAULTDET_testing_falsePositives++;
 				} else {
 					FAULTDET_testing_ok++;
 				}
 
-				FAULTDETECTOR_getLastTestedPoint(&FAULTDETECTOR_InstancePtr, contr.taskId, &(FAULTDET_testing_goldenResults[FAULTDET_testing_goldenResults_idx]));
+				FAULTDET_testing_goldenResults[FAULTDET_testing_goldenResults_idx].uniId=contr.uniId;
+				FAULTDET_testing_goldenResults[FAULTDET_testing_goldenResults_idx].executionId=contr.executionId;
+				FAULTDET_testing_goldenResults[FAULTDET_testing_goldenResults_idx].checkId=contr.checkId;
+				memcpy(&(FAULTDET_testing_goldenResults[FAULTDET_testing_goldenResults_idx].AOV), &(contr.AOV), sizeof(contr.AOV));
+
 				FAULTDET_testing_goldenResults_idx++;
 			} else {
 				xil_printf("ERROR: reached max number golden result size. Not saved.");
 			}
 		} else {
-			FAULTDET_testing_blockUntilProcessed(instance);
 			FAULTDETECTOR_testpointDescriptorStr curr;
-			FAULTDETECTOR_getLastTestedPoint(&FAULTDETECTOR_InstancePtr, contr.taskId, &curr);
+
+			curr.uniId=contr.uniId;
+			curr.executionId=contr.executionId;
+			curr.checkId=contr.checkId;
+			memcpy(&(curr.AOV), &(contr.AOV), sizeof(contr.AOV));
 
 			FAULTDETECTOR_testpointDescriptorStr* golden=FAULTDET_testing_findGolden(&curr);
 			if (FAULTDET_testing_isAovEqual(&curr, golden)==0) {
-				if (FAULTDETECTOR_hasFault(&FAULTDETECTOR_InstancePtr, contr.taskId)) {
+				if (fault) {
 					FAULTDET_testing_ok++;
 				} else {
 					FAULTDET_testing_falseNegatives++;
@@ -1361,14 +1357,58 @@ int uniId, int checkId, char blocking,
 			}
 		}
 #else
-		if (blocking) {
-			FAULTDET_blockIfFaultDetectedInTask(instance);
+		SCHEDULER_restartFaultyJob((void*) SCHEDULER_BASEADDR, tcbPtr->uxTaskNumber, contr.executionId);
+		while(1) {}
+	}
+#endif
+
+#else
+	FAULTDET_Test(&controlForFaultDet);
+	instance->testedOnce=0xFF;
+	instance->lastTest.checkId=checkId;
+	instance->lastTest.executionId=tcbPtr->executionId;
+	instance->lastTest.uniId=uniId;
+
+#ifdef testingCampaign
+	FAULTDET_testing_total++;
+
+	if (injectingErrors==0) {
+		if (FAULTDET_testing_goldenResults_idx<GOLDEN_RESULT_SIZE) {
+			FAULTDET_testing_blockUntilProcessed(instance);
+			if (FAULTDETECTOR_hasFault(&FAULTDETECTOR_InstancePtr, contr.taskId)) {
+				FAULTDET_testing_falsePositives++;
+			} else {
+				FAULTDET_testing_ok++;
+			}
+
+			FAULTDETECTOR_getLastTestedPoint(&FAULTDETECTOR_InstancePtr, contr.taskId, &(FAULTDET_testing_goldenResults[FAULTDET_testing_goldenResults_idx]));
+			FAULTDET_testing_goldenResults_idx++;
+		} else {
+			xil_printf("ERROR: reached max number golden result size. Not saved.");
 		}
+	} else {
+		FAULTDET_testing_blockUntilProcessed(instance);
+		FAULTDETECTOR_testpointDescriptorStr curr;
+		FAULTDETECTOR_getLastTestedPoint(&FAULTDETECTOR_InstancePtr, contr.taskId, &curr);
+
+		FAULTDETECTOR_testpointDescriptorStr* golden=FAULTDET_testing_findGolden(&curr);
+		if (FAULTDET_testing_isAovEqual(&curr, golden)==0) {
+			if (FAULTDETECTOR_hasFault(&FAULTDETECTOR_InstancePtr, contr.taskId)) {
+				FAULTDET_testing_ok++;
+			} else {
+				FAULTDET_testing_falseNegatives++;
+			}
+		}
+	}
+#else
+	if (blocking) {
+		FAULTDET_blockIfFaultDetectedInTask(instance);
+	}
 #endif
 #endif
 
-	}
-	va_end(ap);
+}
+va_end(ap);
 }
 
 void FAULTDET_trainPoint(int checkId, int argCount, ...) {
