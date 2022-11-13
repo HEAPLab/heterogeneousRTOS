@@ -1,5 +1,6 @@
 #define testingCampaign
 #define FAULTDETECTOR_EXECINSW
+#define trainMode
 
 /*
  * FreeRTOS Kernel V10.4.3
@@ -1079,7 +1080,13 @@ FAULTDETECTOR_controlStr controlForFaultDet __attribute__((aligned(4096)));
 //XAxiDma AxiDma;
 #define FAULTDETECTOR_DEVICEID XPAR_FAULTDETECTOR_0_DEVICE_ID
 //#define DMA_DEV_ID		XPAR_AXIDMA_0_DEVICE_ID
-
+void DumpRegions() {
+	if (prvDumpTrainedData(&FAULTDETECTOR_InstancePtr, &SdInstance)==XST_SUCCESS) {
+				xil_printf("SUCCESS\n");
+			} else {
+				xil_printf("FAILED\n");
+			}
+}
 volatile void BtnPressHandler(void *CallbackRef)
 {
 	xPortSchedulerDisableIntr(); //disable scheduler interrupts in order to avoid interruptions from higher priority interrupts and also consequently new AOV (also train ones) being submitted to fault detector
@@ -1211,6 +1218,9 @@ int FAULTDET_testing_total=0;
 int FAULTDET_testing_ok=0;
 int FAULTDET_testing_falsePositives=0;
 int FAULTDET_testing_falseNegatives=0;
+#ifdef trainMode
+int FAULTDET_testing_failedTrainedPoints=0;
+#endif
 
 int FAULTDET_testing_getTotal() {
 	return FAULTDET_testing_total;
@@ -1228,6 +1238,11 @@ int FAULTDET_testing_getFalseNegatives() {
 	return FAULTDET_testing_falseNegatives;
 }
 
+#ifdef trainMode
+int FAULTDET_testing_getFailedTrainedPoints() {
+	return FAULTDET_testing_failedTrainedPoints;
+}
+#endif
 FAULTDETECTOR_testpointDescriptorStr* FAULTDET_testing_findGolden (FAULTDETECTOR_testpointDescriptorStr* newRes) {
 	for (int i=0; i<GOLDEN_RESULT_SIZE; i++) {
 		if (newRes->checkId==FAULTDET_testing_goldenResults[i].checkId &&
@@ -1241,10 +1256,7 @@ FAULTDETECTOR_testpointDescriptorStr* FAULTDET_testing_findGolden (FAULTDETECTOR
 }
 
 u8 FAULTDET_testing_isAovEqual(FAULTDETECTOR_testpointDescriptorStr* desc1, FAULTDETECTOR_testpointDescriptorStr* desc2) {
-	if (memcmp(&(desc1->AOV), &(desc2->AOV), sizeof(desc1->AOV))==0)
-		return 0xFF;
-	else
-		return 0x0;
+	return memcmp(&(desc1->AOV), &(desc2->AOV), sizeof(desc1->AOV))==0;
 }
 
 u8 FAULTDET_testing_resetStats() {
@@ -1252,6 +1264,9 @@ u8 FAULTDET_testing_resetStats() {
 	FAULTDET_testing_ok=0;
 	FAULTDET_testing_falsePositives=0;
 	FAULTDET_testing_falseNegatives=0;
+#ifdef trainMode
+			 FAULTDET_testing_failedTrainedPoints=0;
+#endif
 }
 
 #endif
@@ -1305,8 +1320,8 @@ void FAULTDET_testPoint(
 
 	if (tcbPtr->executionMode==EXECMODE_FAULT && lastErrorUniId==uniId && lastErrorCheckId==checkId && memcmp(tcbPtr->lastError.AOV, contr.AOV, sizeof(contr.AOV))==0) {
 #ifdef FAULTDETECTOR_EXECINSW
-//		xil_printf(" SW FAULT DETECTOR: train");
-		FAULTDETECTOR_SW_train(&contr);
+		//		xil_printf(" SW FAULT DETECTOR: train");
+		FAULTDETECTOR_SW_train(&controlForFaultDet);
 #else
 		FAULTDET_Train(&controlForFaultDet);
 		//						FAULTDET_Test(&controlForFaultDet);
@@ -1321,8 +1336,8 @@ void FAULTDET_testPoint(
 #endif
 	} else if (tcbPtr->reExecutions<configMAX_REEXECUTIONS_SET_IN_HW_SCHEDULER) {
 #ifdef FAULTDETECTOR_EXECINSW
-		char fault=FAULTDETECTOR_SW_test(&contr);
-//		xil_printf(" SW FAULT DETECTOR: fault %x", fault);
+		char fault=FAULTDETECTOR_SW_test(&controlForFaultDet);
+		//		xil_printf(" SW FAULT DETECTOR: fault %x", fault);
 		if (fault) {
 			tcbPtr->lastError.uniId=contr.uniId;
 			tcbPtr->lastError.checkId=contr.checkId;
@@ -1337,6 +1352,7 @@ void FAULTDET_testPoint(
 				if (fault) {
 					FAULTDET_testing_falsePositives++;
 				} else {
+//					xil_printf("ok, fault: %x", fault);
 					FAULTDET_testing_ok++;
 				}
 
@@ -1363,6 +1379,12 @@ void FAULTDET_testPoint(
 					FAULTDET_testing_ok++;
 				} else {
 					FAULTDET_testing_falseNegatives++;
+				}
+			} else {
+				if (fault) {
+					FAULTDET_testing_falsePositives++;
+				} else {
+					FAULTDET_testing_ok++;
 				}
 			}
 		}
@@ -1421,6 +1443,7 @@ void FAULTDET_testPoint(
 va_end(ap);
 }
 
+
 void FAULTDET_trainPoint(int uniId, int checkId, int argCount, ...) {
 	va_list ap;
 	va_start(ap, argCount);
@@ -1446,12 +1469,39 @@ void FAULTDET_trainPoint(int uniId, int checkId, int argCount, ...) {
 	controlForFaultDet=contr;
 
 #ifdef FAULTDETECTOR_EXECINSW
-	FAULTDETECTOR_SW_train(&controlForFaultDet);
+
+	char fault=FAULTDETECTOR_SW_test(&controlForFaultDet);
+	if (fault) {
+		FAULTDETECTOR_SW_train(&controlForFaultDet);
+		 fault=FAULTDETECTOR_SW_test(&controlForFaultDet);
+		 if (fault) {
+//			 xil_printf("Train failed, checkId %d, uniId %d", checkId, uniId);
+#ifdef trainMode
+			 FAULTDET_testing_failedTrainedPoints++;
+
+#endif
+		 }
+//		 else
+//			 xil_printf("Train ok, checkId %d, uniId %d", checkId, uniId);
+
+	}
 #else
-	FAULTDET_Train(&controlForFaultDet);
+	FAULTDET_Test(&controlForFaultDet);
+
+	FAULTDET_ExecutionDescriptor instance;
+	instance->testedOnce=0xFF;
+	instance->lastTest.checkId=checkId;
+	instance->lastTest.executionId=tcbPtr->executionId;
+	instance->lastTest.uniId=uniId;
+
+	FAULTDET_testing_blockUntilProcessed(&instance);
+	if (FAULTDETECTOR_hasFault(&FAULTDETECTOR_InstancePtr, contr.taskId)) {
+		FAULTDET_Train(&controlForFaultDet);
+	}
 #endif
 	va_end(ap);
 }
+
 
 void xPortScheduleNewTask(void)
 {

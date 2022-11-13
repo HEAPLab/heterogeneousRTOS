@@ -13,7 +13,7 @@ char hasRegion(const FAULTDETECTOR_region_t regions[FAULTDETECTOR_MAX_REGIONS], 
 		//			break;
 		for(int j=0; j < FAULTDETECTOR_MAX_AOV_DIM; j++){
 
-			if(regions[i].min[j] <= d[j] && regions[i].max[j] >= d[j]) {
+			if(fabs(regions[i].min[j] - d[j]) < FAULTDETECTOR_THRESH && fabs(regions[i].max[j] - d[j]) < FAULTDETECTOR_THRESH) {
 				if (j==FAULTDETECTOR_MAX_AOV_DIM-1)
 					return 0xFF;
 			} else break;
@@ -58,7 +58,7 @@ void insert_point(FAULTDETECTOR_region_t regions[FAULTDETECTOR_MAX_REGIONS], u8 
 			int tmp_other=-1;
 
 			//FAULTDETECTOR_MAX_REGIONS_SUMM
-			for(int i=0; i_real < (*n_regions)-1; i++){
+			while (i_real < (*n_regions)-1) {
 
 				//int tmp_other = find_closest_region(regions, n_regions, i, &tmp_score);
 
@@ -107,7 +107,7 @@ void insert_point(FAULTDETECTOR_region_t regions[FAULTDETECTOR_MAX_REGIONS], u8 
 
 
 				if(tmp_other == -1 || sc > tmp_score){
-					tmp_other = i_real;
+					tmp_other = k_real;
 					tmp_score = sc;
 				}
 				//}
