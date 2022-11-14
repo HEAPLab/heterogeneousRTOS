@@ -1477,6 +1477,7 @@ void FAULTDET_trainPoint(int uniId, int checkId, int argCount, ...) {
 
 	FAULTDET_testing_blockUntilProcessed(&instance);
 	if (FAULTDETECTOR_hasFault(&FAULTDETECTOR_InstancePtr, contr.taskId)) {
+		FAULTDETECTOR_resetFault(&FAULTDETECTOR_InstancePtr, contr.taskId);
 		FAULTDET_Train(&contr);
 	}
 #endif
