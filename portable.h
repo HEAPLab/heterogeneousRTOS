@@ -212,7 +212,7 @@ typedef struct {
 	FAULTDETECTOR_testpointDescriptorStr lastTest;
 	char testedOnce;
 } FAULTDET_ExecutionDescriptor;
-void DumpRegions() PRIVILEGED_FUNCTION;
+void FAULTDET_dumpRegions() PRIVILEGED_FUNCTION;
 void FAULTDET_init(u8 restoreTrainDataFromSd, FAULTDETECTOR_region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS], u8 n_regions[FAULTDETECTOR_MAX_CHECKS]) PRIVILEGED_FUNCTION;
 void FAULTDET_start() PRIVILEGED_FUNCTION;
 //void FAULTDET_dumpRegions(region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS], u8 n_regions[FAULTDETECTOR_MAX_CHECKS]) PRIVILEGED_FUNCTION;

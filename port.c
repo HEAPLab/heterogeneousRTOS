@@ -1079,7 +1079,7 @@ FAULTDETECTOR_controlStr controlForFaultDet __attribute__((aligned(4096)));
 //XAxiDma AxiDma;
 #define FAULTDETECTOR_DEVICEID XPAR_FAULTDETECTOR_0_DEVICE_ID
 //#define DMA_DEV_ID		XPAR_AXIDMA_0_DEVICE_ID
-void DumpRegions() {
+void FAULTDET_dumpRegions() {
 	if (prvDumpTrainedData(&FAULTDETECTOR_InstancePtr, &SdInstance)==XST_SUCCESS) {
 		xil_printf("SUCCESS\n");
 	} else {
