@@ -1,6 +1,5 @@
 #define testingCampaign
-#define FAULTDETECTOR_EXECINSW
-#define trainMode
+//#define FAULTDETECTOR_EXECINSW
 
 /*
  * FreeRTOS Kernel V10.4.3
@@ -1473,18 +1472,18 @@ void FAULTDET_trainPoint(int uniId, int checkId, int argCount, ...) {
 
 	}
 #else
-	FAULTDET_Test(&controlForFaultDet);
-
-	FAULTDET_ExecutionDescriptor instance;
-	instance->testedOnce=0xFF;
-	instance->lastTest.checkId=checkId;
-	instance->lastTest.executionId=tcbPtr->executionId;
-	instance->lastTest.uniId=uniId;
-
-	FAULTDET_testing_blockUntilProcessed(&instance);
-	if (FAULTDETECTOR_hasFault(&FAULTDETECTOR_InstancePtr, contr.taskId)) {
+//	FAULTDET_Test(&controlForFaultDet);
+//
+//	FAULTDET_ExecutionDescriptor instance;
+//	instance.testedOnce=0xFF;
+//	instance.lastTest.checkId=checkId;
+//	instance.lastTest.executionId=tcbPtr->executionId;
+//	instance.lastTest.uniId=uniId;
+//
+//	FAULTDET_testing_blockUntilProcessed(&instance);
+//	if (FAULTDETECTOR_hasFault(&FAULTDETECTOR_InstancePtr, contr.taskId)) {
 		FAULTDET_Train(&controlForFaultDet);
-	}
+//	}
 #endif
 	va_end(ap);
 }
