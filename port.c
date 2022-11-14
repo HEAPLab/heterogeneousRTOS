@@ -1360,17 +1360,17 @@ void FAULTDET_testPoint(
 			memcpy(&(curr.AOV), &(contr.AOV), sizeof(contr.AOV));
 
 			FAULTDETECTOR_testpointDescriptorStr* golden=FAULTDET_testing_findGolden(&curr);
-			if (FAULTDET_testing_isAovEqual(&curr, golden)==0) {
-				if (fault) {
-					FAULTDET_testing_ok++;
-				} else {
-					FAULTDET_testing_falseNegatives++;
-				}
-			} else {
+			if (FAULTDET_testing_isAovEqual(&curr, golden)) {
 				if (fault) {
 					FAULTDET_testing_falsePositives++;
 				} else {
 					FAULTDET_testing_ok++;
+				}
+			} else {
+				if (fault) {
+					FAULTDET_testing_ok++;
+				} else {
+					FAULTDET_testing_falseNegatives++;
 				}
 			}
 		}
@@ -1394,11 +1394,11 @@ void FAULTDET_testPoint(
 		if (FAULTDET_testing_goldenResults_idx<GOLDEN_RESULT_SIZE) {
 			FAULTDET_testing_blockUntilProcessed(instance);
 			if (FAULTDETECTOR_hasFault(&FAULTDETECTOR_InstancePtr, contr.taskId)) {
+				FAULTDETECTOR_resetFault(&FAULTDETECTOR_InstancePtr, contr.taskId);
 				FAULTDET_testing_falsePositives++;
 			} else {
 				FAULTDET_testing_ok++;
 			}
-			FAULTDETECTOR_resetFault(&FAULTDETECTOR_InstancePtr, contr.taskId);
 
 			FAULTDETECTOR_getLastTestedPoint(&FAULTDETECTOR_InstancePtr, contr.taskId, &(FAULTDET_testing_goldenResults[FAULTDET_testing_goldenResults_idx]));
 			FAULTDET_testing_goldenResults_idx++;
@@ -1411,14 +1411,24 @@ void FAULTDET_testPoint(
 		FAULTDETECTOR_getLastTestedPoint(&FAULTDETECTOR_InstancePtr, contr.taskId, &curr);
 
 		FAULTDETECTOR_testpointDescriptorStr* golden=FAULTDET_testing_findGolden(&curr);
-		if (FAULTDET_testing_isAovEqual(&curr, golden)==0) {
-			if (FAULTDETECTOR_hasFault(&FAULTDETECTOR_InstancePtr, contr.taskId)) {
+		char fault=FAULTDETECTOR_hasFault(&FAULTDETECTOR_InstancePtr, contr.taskId);
+		if (FAULTDET_testing_isAovEqual(&curr, golden)) {
+			if (fault) {
+				FAULTDETECTOR_resetFault(&FAULTDETECTOR_InstancePtr, contr.taskId);
+				FAULTDET_testing_falsePositives++;
+			} else {
+				FAULTDET_testing_ok++;
+			}
+		} else {
+			if (fault) {
+				FAULTDETECTOR_resetFault(&FAULTDETECTOR_InstancePtr, contr.taskId);
 				FAULTDET_testing_ok++;
 			} else {
 				FAULTDET_testing_falseNegatives++;
 			}
 		}
 	}
+
 #else
 	if (blocking) {
 		FAULTDET_blockIfFaultDetectedInTask(instance);
@@ -1460,7 +1470,7 @@ void FAULTDET_trainPoint(int uniId, int checkId, int argCount, ...) {
 		FAULTDETECTOR_SW_train(&contr);
 		fault=FAULTDETECTOR_SW_test(&contr);
 		if (fault) {
-				xil_printf("Train failed, checkId %d, uniId %d", checkId, uniId);
+			xil_printf("Train failed, checkId %d, uniId %d", checkId, uniId);
 		}
 		//		 else
 		//			 xil_printf("Train ok, checkId %d, uniId %d", checkId, uniId);
