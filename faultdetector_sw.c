@@ -3,8 +3,8 @@
 #include <string.h>
 
 const float FAULTDETECTOR_THRESH=FAULTDETECTOR_THRESH_CONSTANT;
-static FAULTDETECTOR_region_t regions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS]; //regions from the distribution
-static u8 n_regions[FAULTDETECTOR_MAX_CHECKS];
+static FAULTDETECTOR_region_t regionsGlob[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS]; //regions from the distribution
+static u8 n_regionsGlob[FAULTDETECTOR_MAX_CHECKS];
 
 char hasRegion(const FAULTDETECTOR_region_t regions[FAULTDETECTOR_MAX_REGIONS], const u8 n_regions, const float d[FAULTDETECTOR_MAX_AOV_DIM]){
 	for(int i=0; i < n_regions; i++){
@@ -13,7 +13,7 @@ char hasRegion(const FAULTDETECTOR_region_t regions[FAULTDETECTOR_MAX_REGIONS], 
 		//			break;
 		for(int j=0; j < FAULTDETECTOR_MAX_AOV_DIM; j++){
 
-			if(fabs(regions[i].min[j] - d[j]) < FAULTDETECTOR_THRESH && fabs(regions[i].max[j] - d[j]) < FAULTDETECTOR_THRESH) {
+			if((regions[i].min[j] <= d[j] || fabs(regions[i].min[j] - d[j]) < FAULTDETECTOR_THRESH ) && ( regions[i].max[j] >= d[j] || fabs(regions[i].max[j] - d[j]) < FAULTDETECTOR_THRESH)) {
 				if (j==FAULTDETECTOR_MAX_AOV_DIM-1)
 					return 0xFF;
 			} else break;
@@ -75,9 +75,9 @@ void insert_point(FAULTDETECTOR_region_t regions[FAULTDETECTOR_MAX_REGIONS], u8 
 				//printf("score [%d,%d]:", i, k);
 
 				float distance = 0;
-				float overlap=1;
+				float overlap=1.0;
 
-				insert_point_label5:for(int j=0; j < FAULTDETECTOR_MAX_AOV_DIM; j++){
+				for(int j=0; j < FAULTDETECTOR_MAX_AOV_DIM; j++){
 
 
 					float d = (regions[i_real].center[j] - regions[k_real].center[j]);
@@ -115,22 +115,16 @@ void insert_point(FAULTDETECTOR_region_t regions[FAULTDETECTOR_MAX_REGIONS], u8 
 
 
 				if (k_real==(*n_regions)-1) {
-					i_real++;
-					k_real=i_real+1;
-
-
 					if(merge_1 < 0 || tmp_score > score){
 						score = tmp_score;
 						merge_1 = i_real;
 						merge_2 = tmp_other;
 					}
-
 					tmp_score=0;
 					tmp_other = -1;
 
-					/*if (i_real>=n_regions)
-						break;*/
-
+					i_real++;
+					k_real=i_real+1;
 				} else {
 					k_real++;
 				}
@@ -138,11 +132,11 @@ void insert_point(FAULTDETECTOR_region_t regions[FAULTDETECTOR_MAX_REGIONS], u8 
 
 			//merge_regions(regions, merge_1, merge_2);
 			//merge regions inlining
-			insert_point_label6:for(int i=0; i < FAULTDETECTOR_MAX_AOV_DIM; i++){
-				if(regions[merge_2].min[i] < regions[merge_1].min[i]){
+			for(int i=0; i < FAULTDETECTOR_MAX_AOV_DIM; i++){
+				if(regions[merge_1].min[i] > regions[merge_2].min[i]){
 					regions[merge_1].min[i] = regions[merge_2].min[i];
 				}
-				if(regions[merge_2].max[i] > regions[merge_1].max[i]){
+				if(regions[merge_1].max[i] < regions[merge_2].max[i]){
 					regions[merge_1].max[i] = regions[merge_2].max[i];
 				}
 				regions[merge_1].center[i] = (regions[merge_1].max[i] + regions[merge_1].min[i])/2.0;
@@ -155,27 +149,27 @@ void insert_point(FAULTDETECTOR_region_t regions[FAULTDETECTOR_MAX_REGIONS], u8 
 			//				//}
 			//			}
 			//if (merge_2!=(n_regions-1))
-			regions[merge_2]=regions[(*n_regions)-1];
+			regions[merge_2]=regions[FAULTDETECTOR_MAX_REGIONS-1];
 			(*n_regions)--;
 		}
 	}
 }
 void FAULTDETECTOR_SW_initRegions(FAULTDETECTOR_region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS], u8 n_regions_in[FAULTDETECTOR_MAX_CHECKS]) {
-	memcpy(&regions, trainedRegions, sizeof(regions));
-	memcpy(&n_regions, n_regions_in, sizeof(n_regions));
+	memcpy(&regionsGlob, trainedRegions, sizeof(regionsGlob));
+	memcpy(&n_regionsGlob, n_regions_in, sizeof(n_regionsGlob));
 }
 
 void FAULTDETECTOR_SW_dumpRegions(FAULTDETECTOR_region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS], u8 n_regions_out[FAULTDETECTOR_MAX_CHECKS]) {
-	memcpy(trainedRegions, &regions, sizeof(regions));
-	memcpy(n_regions_out, &n_regions, sizeof(n_regions));
+	memcpy(trainedRegions, &regionsGlob, sizeof(regionsGlob));
+	memcpy(n_regions_out, &n_regionsGlob, sizeof(n_regionsGlob));
 }
 
 char FAULTDETECTOR_SW_test(FAULTDETECTOR_controlStr* in) {
-	return !(is_valid(in->AOV) && hasRegion(regions[in->checkId], n_regions[in->checkId], in->AOV));
+	return !(is_valid(in->AOV) && hasRegion(regionsGlob[in->checkId], n_regionsGlob[in->checkId], in->AOV));
 }
 
 void FAULTDETECTOR_SW_train(FAULTDETECTOR_controlStr* in) {
-	insert_point(regions[in->checkId],
-			&(n_regions[in->checkId]),
+	insert_point(regionsGlob[in->checkId],
+			&(n_regionsGlob[in->checkId]),
 			in->AOV);
 }

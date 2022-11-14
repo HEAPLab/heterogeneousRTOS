@@ -241,9 +241,6 @@ int FAULTDET_testing_getTotal() PRIVILEGED_FUNCTION;
 int FAULTDET_testing_getOk() PRIVILEGED_FUNCTION;
 int FAULTDET_testing_getFalsePositives() PRIVILEGED_FUNCTION;
 int FAULTDET_testing_getFalseNegatives() PRIVILEGED_FUNCTION;
-#ifdef trainMode
-int FAULTDET_testing_getFailedTrainedPoints() PRIVILEGED_FUNCTION;
-#endif
 
 //#define FAULTDET_testing_initTesting()\
 //	FAULTDET_testing_injectingErrors=0

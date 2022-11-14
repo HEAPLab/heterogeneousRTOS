@@ -1082,10 +1082,10 @@ FAULTDETECTOR_controlStr controlForFaultDet __attribute__((aligned(4096)));
 //#define DMA_DEV_ID		XPAR_AXIDMA_0_DEVICE_ID
 void DumpRegions() {
 	if (prvDumpTrainedData(&FAULTDETECTOR_InstancePtr, &SdInstance)==XST_SUCCESS) {
-				xil_printf("SUCCESS\n");
-			} else {
-				xil_printf("FAILED\n");
-			}
+		xil_printf("SUCCESS\n");
+	} else {
+		xil_printf("FAILED\n");
+	}
 }
 volatile void BtnPressHandler(void *CallbackRef)
 {
@@ -1218,9 +1218,6 @@ int FAULTDET_testing_total=0;
 int FAULTDET_testing_ok=0;
 int FAULTDET_testing_falsePositives=0;
 int FAULTDET_testing_falseNegatives=0;
-#ifdef trainMode
-int FAULTDET_testing_failedTrainedPoints=0;
-#endif
 
 int FAULTDET_testing_getTotal() {
 	return FAULTDET_testing_total;
@@ -1238,11 +1235,7 @@ int FAULTDET_testing_getFalseNegatives() {
 	return FAULTDET_testing_falseNegatives;
 }
 
-#ifdef trainMode
-int FAULTDET_testing_getFailedTrainedPoints() {
-	return FAULTDET_testing_failedTrainedPoints;
-}
-#endif
+
 FAULTDETECTOR_testpointDescriptorStr* FAULTDET_testing_findGolden (FAULTDETECTOR_testpointDescriptorStr* newRes) {
 	for (int i=0; i<GOLDEN_RESULT_SIZE; i++) {
 		if (newRes->checkId==FAULTDET_testing_goldenResults[i].checkId &&
@@ -1264,9 +1257,6 @@ u8 FAULTDET_testing_resetStats() {
 	FAULTDET_testing_ok=0;
 	FAULTDET_testing_falsePositives=0;
 	FAULTDET_testing_falseNegatives=0;
-#ifdef trainMode
-			 FAULTDET_testing_failedTrainedPoints=0;
-#endif
 }
 
 #endif
@@ -1352,7 +1342,7 @@ void FAULTDET_testPoint(
 				if (fault) {
 					FAULTDET_testing_falsePositives++;
 				} else {
-//					xil_printf("ok, fault: %x", fault);
+					//					xil_printf("ok, fault: %x", fault);
 					FAULTDET_testing_ok++;
 				}
 
@@ -1412,6 +1402,7 @@ void FAULTDET_testPoint(
 			} else {
 				FAULTDET_testing_ok++;
 			}
+			FAULTDETECTOR_resetFault(&FAULTDETECTOR_InstancePtr, contr.taskId);
 
 			FAULTDETECTOR_getLastTestedPoint(&FAULTDETECTOR_InstancePtr, contr.taskId, &(FAULTDET_testing_goldenResults[FAULTDET_testing_goldenResults_idx]));
 			FAULTDET_testing_goldenResults_idx++;
@@ -1473,16 +1464,12 @@ void FAULTDET_trainPoint(int uniId, int checkId, int argCount, ...) {
 	char fault=FAULTDETECTOR_SW_test(&controlForFaultDet);
 	if (fault) {
 		FAULTDETECTOR_SW_train(&controlForFaultDet);
-		 fault=FAULTDETECTOR_SW_test(&controlForFaultDet);
-		 if (fault) {
-//			 xil_printf("Train failed, checkId %d, uniId %d", checkId, uniId);
-#ifdef trainMode
-			 FAULTDET_testing_failedTrainedPoints++;
-
-#endif
-		 }
-//		 else
-//			 xil_printf("Train ok, checkId %d, uniId %d", checkId, uniId);
+		fault=FAULTDETECTOR_SW_test(&controlForFaultDet);
+		if (fault) {
+				xil_printf("Train failed, checkId %d, uniId %d", checkId, uniId);
+		}
+		//		 else
+		//			 xil_printf("Train ok, checkId %d, uniId %d", checkId, uniId);
 
 	}
 #else
