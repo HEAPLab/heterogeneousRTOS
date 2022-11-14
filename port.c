@@ -1296,9 +1296,6 @@ void FAULTDET_testPoint(
 		contr.AOV[i]=0.0;
 	}
 
-	controlForFaultDet=contr;
-
-
 	u16 lastErrorUniId=tcbPtr->lastError.uniId;
 	u8 lastErrorCheckId=tcbPtr->lastError.checkId;
 
@@ -1310,9 +1307,9 @@ void FAULTDET_testPoint(
 	if (tcbPtr->executionMode==EXECMODE_FAULT && lastErrorUniId==uniId && lastErrorCheckId==checkId && memcmp(tcbPtr->lastError.AOV, contr.AOV, sizeof(contr.AOV))==0) {
 #ifdef FAULTDETECTOR_EXECINSW
 		//		xil_printf(" SW FAULT DETECTOR: train");
-		FAULTDETECTOR_SW_train(&controlForFaultDet);
+		FAULTDETECTOR_SW_train(&contr);
 #else
-		FAULTDET_Train(&controlForFaultDet);
+		FAULTDET_Train(&contr);
 		//						FAULTDET_Test(&controlForFaultDet);
 		//						instance->testedOnce=0xFF;
 		//						instance->lastTest.checkId=checkId;
@@ -1325,7 +1322,7 @@ void FAULTDET_testPoint(
 #endif
 	} else if (tcbPtr->reExecutions<configMAX_REEXECUTIONS_SET_IN_HW_SCHEDULER) {
 #ifdef FAULTDETECTOR_EXECINSW
-		char fault=FAULTDETECTOR_SW_test(&controlForFaultDet);
+		char fault=FAULTDETECTOR_SW_test(&contr);
 		//		xil_printf(" SW FAULT DETECTOR: fault %x", fault);
 		if (fault) {
 			tcbPtr->lastError.uniId=contr.uniId;
@@ -1384,7 +1381,7 @@ void FAULTDET_testPoint(
 #endif
 
 #else
-	FAULTDET_Test(&controlForFaultDet);
+	FAULTDET_Test(&contr);
 	instance->testedOnce=0xFF;
 	instance->lastTest.checkId=checkId;
 	instance->lastTest.executionId=tcbPtr->executionId;
@@ -1456,14 +1453,12 @@ void FAULTDET_trainPoint(int uniId, int checkId, int argCount, ...) {
 		contr.AOV[i]=0.0;
 	}
 
-	controlForFaultDet=contr;
-
 #ifdef FAULTDETECTOR_EXECINSW
 
-	char fault=FAULTDETECTOR_SW_test(&controlForFaultDet);
+	char fault=FAULTDETECTOR_SW_test(&contr);
 	if (fault) {
-		FAULTDETECTOR_SW_train(&controlForFaultDet);
-		fault=FAULTDETECTOR_SW_test(&controlForFaultDet);
+		FAULTDETECTOR_SW_train(&contr);
+		fault=FAULTDETECTOR_SW_test(&contr);
 		if (fault) {
 				xil_printf("Train failed, checkId %d, uniId %d", checkId, uniId);
 		}
@@ -1472,18 +1467,18 @@ void FAULTDET_trainPoint(int uniId, int checkId, int argCount, ...) {
 
 	}
 #else
-//	FAULTDET_Test(&controlForFaultDet);
-//
-//	FAULTDET_ExecutionDescriptor instance;
-//	instance.testedOnce=0xFF;
-//	instance.lastTest.checkId=checkId;
-//	instance.lastTest.executionId=tcbPtr->executionId;
-//	instance.lastTest.uniId=uniId;
-//
-//	FAULTDET_testing_blockUntilProcessed(&instance);
-//	if (FAULTDETECTOR_hasFault(&FAULTDETECTOR_InstancePtr, contr.taskId)) {
-		FAULTDET_Train(&controlForFaultDet);
-//	}
+	FAULTDET_Test(&contr);
+
+	FAULTDET_ExecutionDescriptor instance;
+	instance.testedOnce=0xFF;
+	instance.lastTest.checkId=checkId;
+	instance.lastTest.executionId=tcbPtr->executionId;
+	instance.lastTest.uniId=uniId;
+
+	FAULTDET_testing_blockUntilProcessed(&instance);
+	if (FAULTDETECTOR_hasFault(&FAULTDETECTOR_InstancePtr, contr.taskId)) {
+		FAULTDET_Train(&contr);
+	}
 #endif
 	va_end(ap);
 }
