@@ -1,5 +1,5 @@
 #define testingCampaign
-#define FAULTDETECTOR_EXECINSW
+//#define FAULTDETECTOR_EXECINSW
 
 /*
  * FreeRTOS Kernel V10.4.3
@@ -1387,65 +1387,63 @@ void FAULTDET_testPoint(
 			FAULTDET_testing_temp_changed = FAULTDET_testing_temp_changed || FAULTDET_testing_isAovEqual(&curr, golden)==0;
 			FAULTDET_testing_temp_fault=FAULTDET_testing_temp_fault || fault;
 		}
-	}
 #else //!testingCampaign
-	SCHEDULER_restartFaultyJob((void*) SCHEDULER_BASEADDR, tcbPtr->uxTaskNumber, contr.executionId);
-	while(1) {}
-}
+		SCHEDULER_restartFaultyJob((void*) SCHEDULER_BASEADDR, tcbPtr->uxTaskNumber, contr.executionId);
+		while(1) {}
+	}
 #endif //testingCampaign
 
 #else //!FAULTDETECTOR_EXECINSW
-FAULTDET_Test(&contr);
-instance->testedOnce=0xFF;
-instance->lastTest.checkId=checkId;
-instance->lastTest.executionId=tcbPtr->executionId;
-instance->lastTest.uniId=uniId;
+	FAULTDET_Test(&contr);
+	instance->testedOnce=0xFF;
+	instance->lastTest.checkId=checkId;
+	instance->lastTest.executionId=tcbPtr->executionId;
+	instance->lastTest.uniId=uniId;
 
 #ifdef testingCampaign
 
-if (injectingErrors==0) {
-	FAULTDET_testing_total++;
+	if (injectingErrors==0) {
+		FAULTDET_testing_total++;
 
-	if (FAULTDET_testing_goldenResults_idx<GOLDEN_RESULT_SIZE) {
-		FAULTDET_testing_blockUntilProcessed(instance);
-		if (FAULTDETECTOR_hasFault(&FAULTDETECTOR_InstancePtr, contr.taskId)) {
-			FAULTDETECTOR_resetFault(&FAULTDETECTOR_InstancePtr, contr.taskId);
-			FAULTDET_testing_falsePositives++;
+		if (FAULTDET_testing_goldenResults_idx<GOLDEN_RESULT_SIZE) {
+			FAULTDET_testing_blockUntilProcessed(instance);
+			if (FAULTDETECTOR_hasFault(&FAULTDETECTOR_InstancePtr, contr.taskId)) {
+				FAULTDETECTOR_resetFault(&FAULTDETECTOR_InstancePtr, contr.taskId);
+				FAULTDET_testing_falsePositives++;
+			} else {
+				FAULTDET_testing_ok++;
+			}
+
+			FAULTDETECTOR_getLastTestedPoint(&FAULTDETECTOR_InstancePtr, contr.taskId, &(FAULTDET_testing_goldenResults[FAULTDET_testing_goldenResults_idx]));
+			FAULTDET_testing_goldenResults_idx++;
 		} else {
-			FAULTDET_testing_ok++;
+			xil_printf("ERROR: reached max number golden result size. Not saved.");
+		}
+	} else {
+		FAULTDET_testing_blockUntilProcessed(instance);
+		FAULTDETECTOR_testpointDescriptorStr curr;
+		FAULTDETECTOR_getLastTestedPoint(&FAULTDETECTOR_InstancePtr, contr.taskId, &curr);
+
+		FAULTDETECTOR_testpointDescriptorStr* golden=FAULTDET_testing_findGolden(&curr);
+		char fault=FAULTDETECTOR_hasFault(&FAULTDETECTOR_InstancePtr, contr.taskId);
+		if (fault) {
+			FAULTDETECTOR_resetFault(&FAULTDETECTOR_InstancePtr, contr.taskId);
 		}
 
-		FAULTDETECTOR_getLastTestedPoint(&FAULTDETECTOR_InstancePtr, contr.taskId, &(FAULTDET_testing_goldenResults[FAULTDET_testing_goldenResults_idx]));
-		FAULTDET_testing_goldenResults_idx++;
-	} else {
-		xil_printf("ERROR: reached max number golden result size. Not saved.");
+		FAULTDET_testing_temp_changed = FAULTDET_testing_temp_changed || FAULTDET_testing_isAovEqual(&curr, golden)==0;
+		FAULTDET_testing_temp_fault=FAULTDET_testing_temp_fault || fault;
 	}
-} else {
-	FAULTDET_testing_blockUntilProcessed(instance);
-	FAULTDETECTOR_testpointDescriptorStr curr;
-	FAULTDETECTOR_getLastTestedPoint(&FAULTDETECTOR_InstancePtr, contr.taskId, &curr);
-
-	FAULTDETECTOR_testpointDescriptorStr* golden=FAULTDET_testing_findGolden(&curr);
-	char fault=FAULTDETECTOR_hasFault(&FAULTDETECTOR_InstancePtr, contr.taskId);
-	if (fault) {
-		FAULTDETECTOR_resetFault(&FAULTDETECTOR_InstancePtr, contr.taskId);
-	}
-
-	FAULTDET_testing_temp_changed = FAULTDET_testing_temp_changed || FAULTDET_testing_isAovEqual(&curr, golden)==0;
-	FAULTDET_testing_temp_fault=FAULTDET_testing_temp_fault || fault;
-}
 
 #else //!testingCampaign
-if (blocking) {
-	FAULTDET_blockIfFaultDetectedInTask(instance);
-}
+	if (blocking) {
+		FAULTDET_blockIfFaultDetectedInTask(instance);
+	}
 #endif //testingCampaign
 #endif //FAULTDETECTOR_EXECINSW
-
+}
 
 va_end(ap);
 }
-
 
 void FAULTDET_trainPoint(int uniId, int checkId, int argCount, ...) {
 	va_list ap;
