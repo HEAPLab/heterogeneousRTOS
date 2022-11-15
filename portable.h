@@ -241,6 +241,9 @@ int FAULTDET_testing_getTotal() PRIVILEGED_FUNCTION;
 int FAULTDET_testing_getOk() PRIVILEGED_FUNCTION;
 int FAULTDET_testing_getFalsePositives() PRIVILEGED_FUNCTION;
 int FAULTDET_testing_getFalseNegatives() PRIVILEGED_FUNCTION;
+void FAULTDET_testing_commitTmpStatsAndReset();
+//void FAULTDET_testing_increaseOk() PRIVILEGED_FUNCTION;
+//void FAULTDET_testing_increaseFalseNegatives() PRIVILEGED_FUNCTION;
 
 //#define FAULTDET_testing_initTesting()\
 //	FAULTDET_testing_injectingErrors=0

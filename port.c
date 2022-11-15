@@ -1,5 +1,5 @@
 #define testingCampaign
-//#define FAULTDETECTOR_EXECINSW
+#define FAULTDETECTOR_EXECINSW
 
 /*
  * FreeRTOS Kernel V10.4.3
@@ -79,24 +79,24 @@
 #endif
 
 /* Some vendor specific files default configCLEAR_TICK_INTERRUPT() in
-portmacro.h. */
+	portmacro.h. */
 #ifndef configCLEAR_TICK_INTERRUPT
 #define configCLEAR_TICK_INTERRUPT()
 #endif
 
 /* A critical section is exited when the critical section nesting count reaches
-this value. */
+	this value. */
 #define portNO_CRITICAL_NESTING			( ( uint32_t ) 0 )
 
 /* In all GICs 255 can be written to the priority mask register to unmask all
-(but the lowest) interrupt priority. */
+	(but the lowest) interrupt priority. */
 #define portUNMASK_VALUE				( 0xFFUL )
 
 /* Tasks are not created with a floating point context, but can be given a
-floating point context after they have been created.  A variable is stored as
-part of the tasks context that holds portNO_FLOATING_POINT_CONTEXT if the task
-does not have an FPU context, or any other value if the task does have an FPU
-context. */
+	floating point context after they have been created.  A variable is stored as
+	part of the tasks context that holds portNO_FLOATING_POINT_CONTEXT if the task
+	does not have an FPU context, or any other value if the task does have an FPU
+	context. */
 #define portNO_FLOATING_POINT_CONTEXT	( ( StackType_t ) 0 )
 
 /* Constants required to setup the initial task context. */
@@ -106,19 +106,19 @@ context. */
 #define portTHUMB_MODE_ADDRESS			( 0x01UL )
 
 /* Used by portASSERT_IF_INTERRUPT_PRIORITY_INVALID() when ensuring the binary
-point is zero. */
+	point is zero. */
 #define portBINARY_POINT_BITS			( ( uint8_t ) 0x03 )
 
 /* Masks all bits in the APSR other than the mode bits. */
 #define portAPSR_MODE_BITS_MASK			( 0x1F )
 
 /* The value of the mode bits in the APSR when the CPU is executing in user
-mode. */
+	mode. */
 #define portAPSR_USER_MODE				( 0x10 )
 
 /* The critical section macros only mask interrupts up to an application
-determined priority level.  Sometimes it is necessary to turn interrupt off in
-the CPU itself before modifying certain hardware registers. */
+	determined priority level.  Sometimes it is necessary to turn interrupt off in
+	the CPU itself before modifying certain hardware registers. */
 #define portCPU_IRQ_DISABLE()										\
 		__asm volatile ( "CPSID i" ::: "memory" );						\
 		__asm volatile ( "DSB" );										\
@@ -145,12 +145,12 @@ the CPU itself before modifying certain hardware registers. */
 #define portBIT_0_SET								( ( uint8_t ) 0x01 )
 
 /* Let the user override the pre-loading of the initial LR with the address of
-prvTaskExitError() in case it messes up unwinding of the stack in the
-debugger. */
+	prvTaskExitError() in case it messes up unwinding of the stack in the
+	debugger. */
 #define portTASK_RETURN_ADDRESS	configTASK_RETURN_ADDRESS
 
 /* The space on the stack required to hold the FPU registers.  This is 32 64-bit
-registers, plus a 32-bit status register. */
+	registers, plus a 32-bit status register. */
 #define portFPU_REGISTER_WORDS	( ( 32 * 2 ) + 1 )
 
 /*-----------------------------------------------------------*/
@@ -208,21 +208,21 @@ void vApplicationFPUSafeIRQHandler( uint32_t ulICCIAR ) __attribute__((weak) );
 /*-----------------------------------------------------------*/
 
 /* A variable is used to keep track of the critical section nesting.  This
-variable has to be stored as part of the task context and must be initialised to
-a non zero value to ensure interrupts don't inadvertently become unmasked before
-the scheduler starts.  As it is stored as part of the task context it will
-automatically be set to 0 when the first task is started. */
+	variable has to be stored as part of the task context and must be initialised to
+	a non zero value to ensure interrupts don't inadvertently become unmasked before
+	the scheduler starts.  As it is stored as part of the task context it will
+	automatically be set to 0 when the first task is started. */
 volatile uint32_t ulCriticalNesting = 9999UL;
 
 /* Saved as part of the task context.  If ulPortTaskHasFPUContext is non-zero then
-a floating point context must be saved and restored for the task. */
+	a floating point context must be saved and restored for the task. */
 volatile uint32_t ulPortTaskHasFPUContext = pdFALSE;
 
 /* Set to 1 to pend a context switch from an ISR. */
 volatile uint32_t ulPortYieldRequired = pdFALSE;
 
 /* Counts the interrupt nesting depth.  A context switch is only performed if
-if the nesting depth is 0. */
+	if the nesting depth is 0. */
 volatile uint32_t ulPortInterruptNesting = 0UL;
 /*
  * Global counter used for calculation of run time statistics of tasks.
@@ -246,11 +246,11 @@ __attribute__(( used )) const uint32_t ulMaxAPIPriorityMask = ( configMAX_API_CA
 StackType_t *pxPortInitialiseStack( StackType_t *pxTopOfStack, TaskFunction_t pxCode, void *pvParameters )
 {
 	/* Setup the initial stack of the task.  The stack is set exactly as
-	expected by the portRESTORE_CONTEXT() macro.
+		expected by the portRESTORE_CONTEXT() macro.
 
-	The fist real value on the stack is the status register, which is set for
-	system mode, with interrupts enabled.  A few NULLs are added first to ensure
-	GDB does not try decoding a non-existent return address. */
+		The fist real value on the stack is the status register, which is set for
+		system mode, with interrupts enabled.  A few NULLs are added first to ensure
+		GDB does not try decoding a non-existent return address. */
 	*pxTopOfStack = ( StackType_t ) NULL;
 	pxTopOfStack--;
 	*pxTopOfStack = ( StackType_t ) NULL;
@@ -302,21 +302,21 @@ StackType_t *pxPortInitialiseStack( StackType_t *pxTopOfStack, TaskFunction_t px
 	pxTopOfStack--;
 
 	/* The task will start with a critical nesting count of 0 as interrupts are
-	enabled. */
+		enabled. */
 	*pxTopOfStack = portNO_CRITICAL_NESTING;
 
 #if( configUSE_TASK_FPU_SUPPORT == 1 )
 	{
 		/* The task will start without a floating point context.  A task that
-		uses the floating point hardware must call vPortTaskUsesFPU() before
-		executing any floating point instructions. */
+			uses the floating point hardware must call vPortTaskUsesFPU() before
+			executing any floating point instructions. */
 		pxTopOfStack--;
 		*pxTopOfStack = portNO_FLOATING_POINT_CONTEXT;
 	}
 #elif( configUSE_TASK_FPU_SUPPORT == 2 )
 	{
 		/* The task will start with a floating point context.  Leave enough
-		space for the registers - and ensure they are initialised to 0. */
+			space for the registers - and ensure they are initialised to 0. */
 		pxTopOfStack -= portFPU_REGISTER_WORDS;
 		memset( pxTopOfStack, 0x00, portFPU_REGISTER_WORDS * sizeof( StackType_t ) );
 
@@ -673,11 +673,11 @@ StackType_t *pxPortInitialiseStack( StackType_t *pxTopOfStack, TaskFunction_t px
 static void prvTaskExitError( void )
 {
 	/* A function that implements a task must not exit or attempt to return to
-	its caller as there is nothing to return to.  If a task wants to exit it
-	should instead call vTaskDelete( NULL ).
+		its caller as there is nothing to return to.  If a task wants to exit it
+		should instead call vTaskDelete( NULL ).
 
-	Artificially force an assert() to be triggered if configASSERT() is
-	defined, then stop here so application writers can catch the error. */
+		Artificially force an assert() to be triggered if configASSERT() is
+		defined, then stop here so application writers can catch the error. */
 	xil_printf("Warning: return statement has been called from task %s, deleting it\n",pcTaskGetName(NULL));
 	if (uxTaskGetNumberOfTasks() == 2)
 	{
@@ -713,7 +713,7 @@ static int32_t prvEnsureInterruptControllerIsInitialised( void )
 	int32_t lReturn;
 
 	/* Ensure the interrupt controller instance variable is initialised before
-	it is used, and that the initialisation only happens once. */
+		it is used, and that the initialisation only happens once. */
 	if( lInterruptControllerInitialised != pdTRUE )
 	{
 		lReturn = prvInitialiseInterruptController();
@@ -759,7 +759,7 @@ void vPortEnableInterrupt( uint8_t ucInterruptID )
 	int32_t lReturn;
 
 	/* An API function is provided to enable an interrupt in the interrupt
-	controller. */
+		controller. */
 	lReturn = prvEnsureInterruptControllerIsInitialised();
 	if( lReturn == pdPASS )
 	{
@@ -774,7 +774,7 @@ void vPortDisableInterrupt( uint8_t ucInterruptID )
 	int32_t lReturn;
 
 	/* An API function is provided to disable an interrupt in the interrupt
-	controller. */
+		controller. */
 	lReturn = prvEnsureInterruptControllerIsInitialised();
 	if( lReturn == pdPASS )
 	{
@@ -1217,6 +1217,21 @@ int FAULTDET_testing_total=0;
 int FAULTDET_testing_ok=0;
 int FAULTDET_testing_falsePositives=0;
 int FAULTDET_testing_falseNegatives=0;
+char FAULTDET_testing_temp_changed=0;
+char FAULTDET_testing_temp_fault=0;
+
+void FAULTDET_testing_commitTmpStatsAndReset() {
+	if (FAULTDET_testing_temp_changed) {
+		FAULTDET_testing_total++;
+		if (FAULTDET_testing_temp_fault) {
+			FAULTDET_testing_ok++;
+		} else {
+			FAULTDET_testing_falseNegatives++;
+		}
+	}
+	FAULTDET_testing_temp_fault=0;
+	FAULTDET_testing_temp_changed=0;
+}
 
 int FAULTDET_testing_getTotal() {
 	return FAULTDET_testing_total;
@@ -1234,9 +1249,17 @@ int FAULTDET_testing_getFalseNegatives() {
 	return FAULTDET_testing_falseNegatives;
 }
 
+//void FAULTDET_testing_increaseOk() {
+//	FAULTDET_testing_ok++;
+//}
+//
+//void FAULTDET_testing_increaseFalseNegatives() {
+//	FAULTDET_testing_falseNegatives++;
+//}
+
 
 FAULTDETECTOR_testpointDescriptorStr* FAULTDET_testing_findGolden (FAULTDETECTOR_testpointDescriptorStr* newRes) {
-	for (int i=0; i<GOLDEN_RESULT_SIZE; i++) {
+	for (int i=0; i<=FAULTDET_testing_goldenResults_idx; i++) {
 		if (newRes->checkId==FAULTDET_testing_goldenResults[i].checkId &&
 				newRes->executionId==FAULTDET_testing_goldenResults[i].executionId &&
 				newRes->uniId==FAULTDET_testing_goldenResults[i].uniId) {
@@ -1256,6 +1279,8 @@ u8 FAULTDET_testing_resetStats() {
 	FAULTDET_testing_ok=0;
 	FAULTDET_testing_falsePositives=0;
 	FAULTDET_testing_falseNegatives=0;
+	FAULTDET_testing_temp_changed=0;
+	FAULTDET_testing_temp_fault=0;
 }
 
 #endif
@@ -1308,7 +1333,7 @@ void FAULTDET_testPoint(
 #ifdef FAULTDETECTOR_EXECINSW
 		//		xil_printf(" SW FAULT DETECTOR: train");
 		FAULTDETECTOR_SW_train(&contr);
-#else
+#else //!FAULTDETECTOR_EXECINSW
 		FAULTDET_Train(&contr);
 		//						FAULTDET_Test(&controlForFaultDet);
 		//						instance->testedOnce=0xFF;
@@ -1319,7 +1344,7 @@ void FAULTDET_testPoint(
 		//						if (blocking) {
 		//							FAULTDET_blockIfFaultDetectedInTask(instance);
 		//						}
-#endif
+#endif //FAULTDETECTOR_EXECINSW
 	} else if (tcbPtr->reExecutions<configMAX_REEXECUTIONS_SET_IN_HW_SCHEDULER) {
 #ifdef FAULTDETECTOR_EXECINSW
 		char fault=FAULTDETECTOR_SW_test(&contr);
@@ -1331,9 +1356,8 @@ void FAULTDET_testPoint(
 			memcpy(&(tcbPtr->lastError.AOV), &(contr.AOV), sizeof(contr.AOV));
 #ifdef testingCampaign
 		}
-		FAULTDET_testing_total++;
-
 		if (injectingErrors==0) {
+			FAULTDET_testing_total++;
 			if (FAULTDET_testing_goldenResults_idx<GOLDEN_RESULT_SIZE) {
 				if (fault) {
 					FAULTDET_testing_falsePositives++;
@@ -1360,83 +1384,65 @@ void FAULTDET_testPoint(
 			memcpy(&(curr.AOV), &(contr.AOV), sizeof(contr.AOV));
 
 			FAULTDETECTOR_testpointDescriptorStr* golden=FAULTDET_testing_findGolden(&curr);
-			if (FAULTDET_testing_isAovEqual(&curr, golden)) {
-				if (fault) {
-					FAULTDET_testing_falsePositives++;
-				} else {
-					FAULTDET_testing_ok++;
-				}
-			} else {
-				if (fault) {
-					FAULTDET_testing_ok++;
-				} else {
-					FAULTDET_testing_falseNegatives++;
-				}
-			}
+			FAULTDET_testing_temp_changed = FAULTDET_testing_temp_changed || FAULTDET_testing_isAovEqual(&curr, golden)==0;
+			FAULTDET_testing_temp_fault=FAULTDET_testing_temp_fault || fault;
 		}
-#else
-		SCHEDULER_restartFaultyJob((void*) SCHEDULER_BASEADDR, tcbPtr->uxTaskNumber, contr.executionId);
-		while(1) {}
 	}
-#endif
+#else //!testingCampaign
+	SCHEDULER_restartFaultyJob((void*) SCHEDULER_BASEADDR, tcbPtr->uxTaskNumber, contr.executionId);
+	while(1) {}
+}
+#endif //testingCampaign
 
-#else
-	FAULTDET_Test(&contr);
-	instance->testedOnce=0xFF;
-	instance->lastTest.checkId=checkId;
-	instance->lastTest.executionId=tcbPtr->executionId;
-	instance->lastTest.uniId=uniId;
+#else //!FAULTDETECTOR_EXECINSW
+FAULTDET_Test(&contr);
+instance->testedOnce=0xFF;
+instance->lastTest.checkId=checkId;
+instance->lastTest.executionId=tcbPtr->executionId;
+instance->lastTest.uniId=uniId;
 
 #ifdef testingCampaign
+
+if (injectingErrors==0) {
 	FAULTDET_testing_total++;
 
-	if (injectingErrors==0) {
-		if (FAULTDET_testing_goldenResults_idx<GOLDEN_RESULT_SIZE) {
-			FAULTDET_testing_blockUntilProcessed(instance);
-			if (FAULTDETECTOR_hasFault(&FAULTDETECTOR_InstancePtr, contr.taskId)) {
-				FAULTDETECTOR_resetFault(&FAULTDETECTOR_InstancePtr, contr.taskId);
-				FAULTDET_testing_falsePositives++;
-			} else {
-				FAULTDET_testing_ok++;
-			}
-
-			FAULTDETECTOR_getLastTestedPoint(&FAULTDETECTOR_InstancePtr, contr.taskId, &(FAULTDET_testing_goldenResults[FAULTDET_testing_goldenResults_idx]));
-			FAULTDET_testing_goldenResults_idx++;
-		} else {
-			xil_printf("ERROR: reached max number golden result size. Not saved.");
-		}
-	} else {
+	if (FAULTDET_testing_goldenResults_idx<GOLDEN_RESULT_SIZE) {
 		FAULTDET_testing_blockUntilProcessed(instance);
-		FAULTDETECTOR_testpointDescriptorStr curr;
-		FAULTDETECTOR_getLastTestedPoint(&FAULTDETECTOR_InstancePtr, contr.taskId, &curr);
-
-		FAULTDETECTOR_testpointDescriptorStr* golden=FAULTDET_testing_findGolden(&curr);
-		char fault=FAULTDETECTOR_hasFault(&FAULTDETECTOR_InstancePtr, contr.taskId);
-		if (FAULTDET_testing_isAovEqual(&curr, golden)) {
-			if (fault) {
-				FAULTDETECTOR_resetFault(&FAULTDETECTOR_InstancePtr, contr.taskId);
-				FAULTDET_testing_falsePositives++;
-			} else {
-				FAULTDET_testing_ok++;
-			}
+		if (FAULTDETECTOR_hasFault(&FAULTDETECTOR_InstancePtr, contr.taskId)) {
+			FAULTDETECTOR_resetFault(&FAULTDETECTOR_InstancePtr, contr.taskId);
+			FAULTDET_testing_falsePositives++;
 		} else {
-			if (fault) {
-				FAULTDETECTOR_resetFault(&FAULTDETECTOR_InstancePtr, contr.taskId);
-				FAULTDET_testing_ok++;
-			} else {
-				FAULTDET_testing_falseNegatives++;
-			}
+			FAULTDET_testing_ok++;
 		}
+
+		FAULTDETECTOR_getLastTestedPoint(&FAULTDETECTOR_InstancePtr, contr.taskId, &(FAULTDET_testing_goldenResults[FAULTDET_testing_goldenResults_idx]));
+		FAULTDET_testing_goldenResults_idx++;
+	} else {
+		xil_printf("ERROR: reached max number golden result size. Not saved.");
+	}
+} else {
+	FAULTDET_testing_blockUntilProcessed(instance);
+	FAULTDETECTOR_testpointDescriptorStr curr;
+	FAULTDETECTOR_getLastTestedPoint(&FAULTDETECTOR_InstancePtr, contr.taskId, &curr);
+
+	FAULTDETECTOR_testpointDescriptorStr* golden=FAULTDET_testing_findGolden(&curr);
+	char fault=FAULTDETECTOR_hasFault(&FAULTDETECTOR_InstancePtr, contr.taskId);
+	if (fault) {
+		FAULTDETECTOR_resetFault(&FAULTDETECTOR_InstancePtr, contr.taskId);
 	}
 
-#else
-	if (blocking) {
-		FAULTDET_blockIfFaultDetectedInTask(instance);
-	}
-#endif
-#endif
-
+	FAULTDET_testing_temp_changed = FAULTDET_testing_temp_changed || FAULTDET_testing_isAovEqual(&curr, golden)==0;
+	FAULTDET_testing_temp_fault=FAULTDET_testing_temp_fault || fault;
 }
+
+#else //!testingCampaign
+if (blocking) {
+	FAULTDET_blockIfFaultDetectedInTask(instance);
+}
+#endif //testingCampaign
+#endif //FAULTDETECTOR_EXECINSW
+
+
 va_end(ap);
 }
 
@@ -1552,13 +1558,13 @@ void xPortScheduleNewTask(void)
 		// #endif
 
 		/* #if ( configUSE_TASK_NOTIFICATIONS == 1 )
-			{
-				memset((void *) &(pxNewTCB->ulNotifiedValue[0]), 0x00,
-						sizeof(pxNewTCB->ulNotifiedValue));
-				memset((void *) &(pxNewTCB->ucNotifyState[0]), 0x00,
-						sizeof(pxNewTCB->ucNotifyState));
-			}
-#endif */
+				{
+					memset((void *) &(pxNewTCB->ulNotifiedValue[0]), 0x00,
+							sizeof(pxNewTCB->ulNotifiedValue));
+					memset((void *) &(pxNewTCB->ucNotifyState[0]), 0x00,
+							sizeof(pxNewTCB->ucNotifyState));
+				}
+	#endif */
 
 #if ( INCLUDE_xTaskAbortDelay == 1 )
 		{
@@ -1584,9 +1590,9 @@ void xPortScheduleNewTask(void)
 	SCHEDULER_ACKInterrupt((void *) SCHEDULER_BASEADDR);
 
 	/*	xil_printf(" initial SP: %X ", ((*pxCurrentTCB_ptr)->pxStack));
-	xil_printf(" SP: %X ", ((*pxCurrentTCB_ptr)->pxTopOfStack));
-	xil_printf(" PC address: %X ", ((*pxCurrentTCB_ptr)->pxTopOfStack + 13));
-	xil_printf(" PC instr: %X |", *((*pxCurrentTCB_ptr)->pxTopOfStack + 13));*/
+		xil_printf(" SP: %X ", ((*pxCurrentTCB_ptr)->pxTopOfStack));
+		xil_printf(" PC address: %X ", ((*pxCurrentTCB_ptr)->pxTopOfStack + 13));
+		xil_printf(" PC instr: %X |", *((*pxCurrentTCB_ptr)->pxTopOfStack + 13));*/
 }
 
 void xPortSchedulerResumeTask(u16 uxTaskNumber) {
@@ -1655,11 +1661,11 @@ BaseType_t xPortStartScheduler( void )
 
 		/* Determine how many priority bits are implemented in the GIC.
 
-		Save the interrupt priority value that is about to be clobbered. */
+			Save the interrupt priority value that is about to be clobbered. */
 		ulOriginalPriority = *pucFirstUserPriorityRegister;
 
 		/* Determine the number of priority bits available.  First write to
-		all possible bits. */
+			all possible bits. */
 		*pucFirstUserPriorityRegister = portMAX_8_BIT_VALUE;
 
 		/* Read the value back to see how many bits stuck. */
@@ -1672,18 +1678,18 @@ BaseType_t xPortStartScheduler( void )
 		}
 
 		/* Sanity check configUNIQUE_INTERRUPT_PRIORITIES matches the read
-		value. */
+			value. */
 		configASSERT( ucMaxPriorityValue == portLOWEST_INTERRUPT_PRIORITY );
 
 		/* Restore the clobbered interrupt priority register to its original
-		value. */
+			value. */
 		*pucFirstUserPriorityRegister = ulOriginalPriority;
 	}
 #endif /* conifgASSERT_DEFINED */
 
 
 	/* Only continue if the CPU is not in User mode.  The CPU must be in a
-	Privileged mode for the scheduler to start. */
+		Privileged mode for the scheduler to start. */
 	__asm volatile ( "MRS %0, APSR" : "=r" ( ulAPSR ) :: "memory" );
 	ulAPSR &= portAPSR_MODE_BITS_MASK;
 	configASSERT( ulAPSR != portAPSR_USER_MODE );
@@ -1691,16 +1697,16 @@ BaseType_t xPortStartScheduler( void )
 	if( ulAPSR != portAPSR_USER_MODE )
 	{
 		/* Only continue if the binary point value is set to its lowest possible
-		setting.  See the comments in vPortValidateInterruptPriority() below for
-		more information. */
+			setting.  See the comments in vPortValidateInterruptPriority() below for
+			more information. */
 		configASSERT( ( portICCBPR_BINARY_POINT_REGISTER & portBINARY_POINT_BITS ) <= portMAX_BINARY_POINT_VALUE );
 
 		if( ( portICCBPR_BINARY_POINT_REGISTER & portBINARY_POINT_BITS ) <= portMAX_BINARY_POINT_VALUE )
 		{
 			/* Interrupts are turned off in the CPU itself to ensure tick does
-			not execute	while the scheduler is being started.  Interrupts are
-			automatically turned back on in the CPU when the first task starts
-			executing. */
+				not execute	while the scheduler is being started.  Interrupts are
+				automatically turned back on in the CPU when the first task starts
+				executing. */
 			portCPU_IRQ_DISABLE();
 
 			/* Start the timer that generates the tick ISR. */
@@ -1719,10 +1725,10 @@ BaseType_t xPortStartScheduler( void )
 	}
 
 	/* Will only get here if vTaskStartScheduler() was called with the CPU in
-	a non-privileged mode or the binary point register was not set to its lowest
-	possible value.  prvTaskExitError() is referenced to prevent a compiler
-	warning about it being defined but not referenced in the case that the user
-	defines their own exit address. */
+		a non-privileged mode or the binary point register was not set to its lowest
+		possible value.  prvTaskExitError() is referenced to prevent a compiler
+		warning about it being defined but not referenced in the case that the user
+		defines their own exit address. */
 	( void ) prvTaskExitError;
 	return 0;
 }
@@ -1735,7 +1741,7 @@ void xPortSchedulerDisableIntr() {
 void vPortEndScheduler( void )
 {
 	/* Not implemented in ports where there is nothing to return to.
-	Artificially force an assert. */
+		Artificially force an assert. */
 	SCHEDULER_stop((void*) SCHEDULER_BASEADDR);
 	SCHEDULER_DisableInterrupt((void*) SCHEDULER_BASEADDR);
 	configASSERT( ulCriticalNesting == 1000UL );
@@ -1748,15 +1754,15 @@ void vPortEnterCritical( void )
 	ulPortSetInterruptMask();
 
 	/* Now interrupts are disabled ulCriticalNesting can be accessed
-	directly.  Increment ulCriticalNesting to keep a count of how many times
-	portENTER_CRITICAL() has been called. */
+		directly.  Increment ulCriticalNesting to keep a count of how many times
+		portENTER_CRITICAL() has been called. */
 	ulCriticalNesting++;
 
 	/* This is not the interrupt safe version of the enter critical function so
-	assert() if it is being called from an interrupt context.  Only API
-	functions that end in "FromISR" can be used in an interrupt.  Only assert if
-	the critical nesting count is 1 to protect against recursive calls if the
-	assert function also uses a critical section. */
+		assert() if it is being called from an interrupt context.  Only API
+		functions that end in "FromISR" can be used in an interrupt.  Only assert if
+		the critical nesting count is 1 to protect against recursive calls if the
+		assert function also uses a critical section. */
 	if( ulCriticalNesting == 1 )
 	{
 		configASSERT( ulPortInterruptNesting == 0 );
@@ -1769,15 +1775,15 @@ void vPortExitCritical( void )
 	if( ulCriticalNesting > portNO_CRITICAL_NESTING )
 	{
 		/* Decrement the nesting count as the critical section is being
-		exited. */
+			exited. */
 		ulCriticalNesting--;
 
 		/* If the nesting level has reached zero then all interrupt
-		priorities must be re-enabled. */
+			priorities must be re-enabled. */
 		if( ulCriticalNesting == portNO_CRITICAL_NESTING )
 		{
 			/* Critical nesting has reached zero so all interrupt priorities
-			should be unmasked. */
+				should be unmasked. */
 			portCLEAR_INTERRUPT_MASK();
 		}
 	}
@@ -1830,7 +1836,7 @@ void vPortTaskUsesFPU( void )
 	uint32_t ulInitialFPSCR = 0;
 
 	/* A task is registering the fact that it needs an FPU context.  Set the
-		FPU flag (which is saved as part of the task context). */
+			FPU flag (which is saved as part of the task context). */
 	ulPortTaskHasFPUContext = pdTRUE;
 
 	/* Initialise the floating point status register. */
@@ -1854,7 +1860,7 @@ uint32_t ulPortSetInterruptMask( void )
 	uint32_t ulReturn;
 
 	/* Interrupt in the CPU must be turned off while the ICCPMR is being
-	updated. */
+		updated. */
 	portCPU_IRQ_DISABLE();
 	if( portICCPMR_PRIORITY_MASK_REGISTER == ( uint32_t ) ( configMAX_API_CALL_INTERRUPT_PRIORITY << portPRIORITY_SHIFT ) )
 	{
@@ -1879,31 +1885,31 @@ uint32_t ulPortSetInterruptMask( void )
 void vPortValidateInterruptPriority( void )
 {
 	/* The following assertion will fail if a service routine (ISR) for
-		an interrupt that has been assigned a priority above
-		configMAX_SYSCALL_INTERRUPT_PRIORITY calls an ISR safe FreeRTOS API
-		function.  ISR safe FreeRTOS API functions must *only* be called
-		from interrupts that have been assigned a priority at or below
-		configMAX_SYSCALL_INTERRUPT_PRIORITY.
+			an interrupt that has been assigned a priority above
+			configMAX_SYSCALL_INTERRUPT_PRIORITY calls an ISR safe FreeRTOS API
+			function.  ISR safe FreeRTOS API functions must *only* be called
+			from interrupts that have been assigned a priority at or below
+			configMAX_SYSCALL_INTERRUPT_PRIORITY.
 
-		Numerically low interrupt priority numbers represent logically high
-		interrupt priorities, therefore the priority of the interrupt must
-		be set to a value equal to or numerically *higher* than
-		configMAX_SYSCALL_INTERRUPT_PRIORITY.
+			Numerically low interrupt priority numbers represent logically high
+			interrupt priorities, therefore the priority of the interrupt must
+			be set to a value equal to or numerically *higher* than
+			configMAX_SYSCALL_INTERRUPT_PRIORITY.
 
-		FreeRTOS maintains separate thread and ISR API functions to ensure
-		interrupt entry is as fast and simple as possible. */
+			FreeRTOS maintains separate thread and ISR API functions to ensure
+			interrupt entry is as fast and simple as possible. */
 	configASSERT( portICCRPR_RUNNING_PRIORITY_REGISTER >= ( uint32_t ) ( configMAX_API_CALL_INTERRUPT_PRIORITY << portPRIORITY_SHIFT ) );
 
 	/* Priority grouping:  The interrupt controller (GIC) allows the bits
-		that define each interrupt's priority to be split between bits that
-		define the interrupt's pre-emption priority bits and bits that define
-		the interrupt's sub-priority.  For simplicity all bits must be defined
-		to be pre-emption priority bits.  The following assertion will fail if
-		this is not the case (if some bits represent a sub-priority).
+			that define each interrupt's priority to be split between bits that
+			define the interrupt's pre-emption priority bits and bits that define
+			the interrupt's sub-priority.  For simplicity all bits must be defined
+			to be pre-emption priority bits.  The following assertion will fail if
+			this is not the case (if some bits represent a sub-priority).
 
-		The priority grouping is configured by the GIC's binary point register
-		(ICCBPR).  Writing 0 to ICCBPR will ensure it is set to its lowest
-		possible value (which may be above 0). */
+			The priority grouping is configured by the GIC's binary point register
+			(ICCBPR).  Writing 0 to ICCBPR will ensure it is set to its lowest
+			possible value (which may be above 0). */
 	configASSERT( ( portICCBPR_BINARY_POINT_REGISTER & portBINARY_POINT_BITS ) <= portMAX_BINARY_POINT_VALUE );
 }
 
