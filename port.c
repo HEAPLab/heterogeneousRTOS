@@ -1257,13 +1257,20 @@ int FAULTDET_testing_getFalseNegatives() {
 //	FAULTDET_testing_falseNegatives++;
 //}
 
+int FAULTDET_testing_goldenResults_idx_tmp=0;
 
 FAULTDETECTOR_testpointDescriptorStr* FAULTDET_testing_findGolden (FAULTDETECTOR_testpointDescriptorStr* newRes) {
 	for (int i=0; i<=FAULTDET_testing_goldenResults_idx; i++) {
-		if (newRes->checkId==FAULTDET_testing_goldenResults[i].checkId &&
-				newRes->executionId==FAULTDET_testing_goldenResults[i].executionId &&
-				newRes->uniId==FAULTDET_testing_goldenResults[i].uniId) {
-			return &(FAULTDET_testing_goldenResults[i]);
+		if (newRes->checkId==FAULTDET_testing_goldenResults[FAULTDET_testing_goldenResults_idx_tmp].checkId &&
+				newRes->executionId==FAULTDET_testing_goldenResults[FAULTDET_testing_goldenResults_idx_tmp].executionId &&
+				newRes->uniId==FAULTDET_testing_goldenResults[FAULTDET_testing_goldenResults_idx_tmp].uniId) {
+			return &(FAULTDET_testing_goldenResults[FAULTDET_testing_goldenResults_idx_tmp]);
+		}
+		if (FAULTDET_testing_goldenResults_idx==FAULTDET_testing_goldenResults_idx_tmp) {
+			FAULTDET_testing_goldenResults_idx_tmp=0;
+		}
+		else {
+			FAULTDET_testing_goldenResults_idx_tmp++;
 		}
 	}
 	xil_printf("ERROR: golden not found");
@@ -1274,7 +1281,7 @@ u8 FAULTDET_testing_isAovEqual(FAULTDETECTOR_testpointDescriptorStr* desc1, FAUL
 	return memcmp(&(desc1->AOV), &(desc2->AOV), sizeof(desc1->AOV))==0;
 }
 
-u8 FAULTDET_testing_resetStats() {
+void FAULTDET_testing_resetStats() {
 	FAULTDET_testing_total=0;
 	FAULTDET_testing_ok=0;
 	FAULTDET_testing_falsePositives=0;
