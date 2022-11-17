@@ -14,7 +14,7 @@
 
 #define FAULTDETECTOR_MAX_REGIONS 16
 
-#define FAULTDETECTOR_THRESH_CONSTANT (1e-10)
+#define FAULTDETECTOR_THRESH_CONSTANT (1e-10f)
 
 typedef struct {
 	u8 checkId;

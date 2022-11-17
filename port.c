@@ -1,4 +1,5 @@
 #define testingCampaign
+//#define verboseScheduler
 //#define FAULTDETECTOR_EXECINSW
 
 /*
@@ -1210,11 +1211,17 @@ void FAULTDET_testing_blockUntilProcessed (FAULTDET_ExecutionDescriptor* instanc
 }
 
 #define GOLDEN_RESULT_SIZE 5120
-int FAULTDET_testing_goldenResults_idx=0;
+int FAULTDET_testing_goldenResults_size=0;
 FAULTDETECTOR_testpointDescriptorStr FAULTDET_testing_goldenResults[GOLDEN_RESULT_SIZE];
+
+volatile float FAULTDET_testing_relativeErrors[GOLDEN_RESULT_SIZE*FAULTDETECTOR_MAX_AOV_DIM];
+int FAULTDET_testing_relativeErrors_size=0;
+
 
 int FAULTDET_testing_total=0;
 int FAULTDET_testing_ok=0;
+int FAULTDET_testing_total_golden=0;
+int FAULTDET_testing_ok_golden=0;
 int FAULTDET_testing_falsePositives=0;
 int FAULTDET_testing_falseNegatives=0;
 char FAULTDET_testing_temp_changed=0;
@@ -1227,10 +1234,22 @@ void FAULTDET_testing_commitTmpStatsAndReset() {
 			FAULTDET_testing_ok++;
 		} else {
 			FAULTDET_testing_falseNegatives++;
+			for (int i=0; i<FAULTDET_testing_relativeErrors_size; i++) {
+				printf("%f;", FAULTDET_testing_relativeErrors[i]);
+			}
 		}
 	}
+	FAULTDET_testing_relativeErrors_size=0;
 	FAULTDET_testing_temp_fault=0;
 	FAULTDET_testing_temp_changed=0;
+}
+
+int FAULTDET_testing_getTotal_golden() {
+	return FAULTDET_testing_total_golden;
+}
+
+int FAULTDET_testing_getOk_golden() {
+	return FAULTDET_testing_ok_golden;
 }
 
 int FAULTDET_testing_getTotal() {
@@ -1240,6 +1259,7 @@ int FAULTDET_testing_getTotal() {
 int FAULTDET_testing_getOk() {
 	return FAULTDET_testing_ok;
 }
+
 
 int FAULTDET_testing_getFalsePositives() {
 	return FAULTDET_testing_falsePositives;
@@ -1260,13 +1280,13 @@ int FAULTDET_testing_getFalseNegatives() {
 int FAULTDET_testing_goldenResults_idx_tmp=0;
 
 FAULTDETECTOR_testpointDescriptorStr* FAULTDET_testing_findGolden (FAULTDETECTOR_testpointDescriptorStr* newRes) {
-	for (int i=0; i<=FAULTDET_testing_goldenResults_idx; i++) {
+	for (int i=0; i<FAULTDET_testing_goldenResults_size; i++) {
 		if (newRes->checkId==FAULTDET_testing_goldenResults[FAULTDET_testing_goldenResults_idx_tmp].checkId &&
 				newRes->executionId==FAULTDET_testing_goldenResults[FAULTDET_testing_goldenResults_idx_tmp].executionId &&
 				newRes->uniId==FAULTDET_testing_goldenResults[FAULTDET_testing_goldenResults_idx_tmp].uniId) {
 			return &(FAULTDET_testing_goldenResults[FAULTDET_testing_goldenResults_idx_tmp]);
 		}
-		if (FAULTDET_testing_goldenResults_idx==FAULTDET_testing_goldenResults_idx_tmp) {
+		if (FAULTDET_testing_goldenResults_idx_tmp==(FAULTDET_testing_goldenResults_size-1)) {
 			FAULTDET_testing_goldenResults_idx_tmp=0;
 		}
 		else {
@@ -1276,12 +1296,40 @@ FAULTDETECTOR_testpointDescriptorStr* FAULTDET_testing_findGolden (FAULTDETECTOR
 	xil_printf("ERROR: golden not found");
 	return 0x0;
 }
+#include <math.h>
+#define GOLDENCOMPARE_THRESH_CONSTANT (1e-10f)
 
-u8 FAULTDET_testing_isAovEqual(FAULTDETECTOR_testpointDescriptorStr* desc1, FAULTDETECTOR_testpointDescriptorStr* desc2) {
-	return memcmp(&(desc1->AOV), &(desc2->AOV), sizeof(desc1->AOV))==0;
+u8 FAULTDET_testing_isAovEqual(FAULTDETECTOR_testpointDescriptorStr* golden, FAULTDETECTOR_testpointDescriptorStr* toTest) {
+	//	return memcmp(&(desc1->AOV), &(desc2->AOV), sizeof(desc1->AOV))==0;
+	u8 equal=0xFF;
+	for (int i=0; i<FAULTDETECTOR_MAX_AOV_DIM; i++) {
+		//		float tresh=fabs(golden->AOV[i])*0.1;
+		if (fabs(toTest->AOV[i] - golden->AOV[i]) > GOLDENCOMPARE_THRESH_CONSTANT) {
+			/*fabs(toTest->AOV[i] - golden->AOV[i])>tresh)*/
+			//			return 0x0;
+			float relErr=fabs(toTest->AOV[i] - golden->AOV[i])/fabs(golden->AOV[i]);
+			//			if (printTolerance) {
+			//				for (int i=0; i<FAULTDET_testing_relativeErrors_size; i++) {
+			//					xil_printf("%.6f;", relErr);
+			//				}
+			//			} else {
+			if (FAULTDET_testing_relativeErrors_size<=GOLDEN_RESULT_SIZE*FAULTDETECTOR_MAX_AOV_DIM) {
+				FAULTDET_testing_relativeErrors[FAULTDET_testing_relativeErrors_size]=relErr;
+				FAULTDET_testing_relativeErrors_size++;
+			} else {
+				xil_printf("ERROR: max relative errors size exceeded");
+			}
+			//			}
+			equal=0x0;
+		}
+	}
+	//	return 0xFF;
+	return equal;
 }
 
 void FAULTDET_testing_resetStats() {
+	FAULTDET_testing_total_golden=0;
+	FAULTDET_testing_ok_golden=0;
 	FAULTDET_testing_total=0;
 	FAULTDET_testing_ok=0;
 	FAULTDET_testing_falsePositives=0;
@@ -1364,21 +1412,21 @@ void FAULTDET_testPoint(
 #ifdef testingCampaign
 		}
 		if (injectingErrors==0) {
-			FAULTDET_testing_total++;
-			if (FAULTDET_testing_goldenResults_idx<GOLDEN_RESULT_SIZE) {
+			FAULTDET_testing_total_golden++;
+			if (FAULTDET_testing_goldenResults_size<GOLDEN_RESULT_SIZE) {
 				if (fault) {
 					FAULTDET_testing_falsePositives++;
 				} else {
 					//					xil_printf("ok, fault: %x", fault);
-					FAULTDET_testing_ok++;
+					FAULTDET_testing_ok_golden++;
 				}
 
-				FAULTDET_testing_goldenResults[FAULTDET_testing_goldenResults_idx].uniId=contr.uniId;
-				FAULTDET_testing_goldenResults[FAULTDET_testing_goldenResults_idx].executionId=contr.executionId;
-				FAULTDET_testing_goldenResults[FAULTDET_testing_goldenResults_idx].checkId=contr.checkId;
-				memcpy(&(FAULTDET_testing_goldenResults[FAULTDET_testing_goldenResults_idx].AOV), &(contr.AOV), sizeof(contr.AOV));
+				FAULTDET_testing_goldenResults[FAULTDET_testing_goldenResults_size].uniId=contr.uniId;
+				FAULTDET_testing_goldenResults[FAULTDET_testing_goldenResults_size].executionId=contr.executionId;
+				FAULTDET_testing_goldenResults[FAULTDET_testing_goldenResults_size].checkId=contr.checkId;
+				memcpy(&(FAULTDET_testing_goldenResults[FAULTDET_testing_goldenResults_size].AOV), &(contr.AOV), sizeof(contr.AOV));
 
-				FAULTDET_testing_goldenResults_idx++;
+				FAULTDET_testing_goldenResults_size++;
 			} else {
 				xil_printf("ERROR: reached max number golden result size. Not saved.");
 			}
@@ -1391,7 +1439,7 @@ void FAULTDET_testPoint(
 			memcpy(&(curr.AOV), &(contr.AOV), sizeof(contr.AOV));
 
 			FAULTDETECTOR_testpointDescriptorStr* golden=FAULTDET_testing_findGolden(&curr);
-			FAULTDET_testing_temp_changed = FAULTDET_testing_temp_changed || FAULTDET_testing_isAovEqual(&curr, golden)==0;
+			FAULTDET_testing_temp_changed = FAULTDET_testing_temp_changed || FAULTDET_testing_isAovEqual(golden, &curr)==0;
 			FAULTDET_testing_temp_fault=FAULTDET_testing_temp_fault || fault;
 		}
 #else //!testingCampaign
@@ -1410,19 +1458,19 @@ void FAULTDET_testPoint(
 #ifdef testingCampaign
 
 	if (injectingErrors==0) {
-		FAULTDET_testing_total++;
+		FAULTDET_testing_total_golden++;
 
-		if (FAULTDET_testing_goldenResults_idx<GOLDEN_RESULT_SIZE) {
+		if (FAULTDET_testing_goldenResults_size<GOLDEN_RESULT_SIZE) {
 			FAULTDET_testing_blockUntilProcessed(instance);
 			if (FAULTDETECTOR_hasFault(&FAULTDETECTOR_InstancePtr, contr.taskId)) {
 				FAULTDETECTOR_resetFault(&FAULTDETECTOR_InstancePtr, contr.taskId);
 				FAULTDET_testing_falsePositives++;
 			} else {
-				FAULTDET_testing_ok++;
+				FAULTDET_testing_ok_golden++;
 			}
 
-			FAULTDETECTOR_getLastTestedPoint(&FAULTDETECTOR_InstancePtr, contr.taskId, &(FAULTDET_testing_goldenResults[FAULTDET_testing_goldenResults_idx]));
-			FAULTDET_testing_goldenResults_idx++;
+			FAULTDETECTOR_getLastTestedPoint(&FAULTDETECTOR_InstancePtr, contr.taskId, &(FAULTDET_testing_goldenResults[FAULTDET_testing_goldenResults_size]));
+			FAULTDET_testing_goldenResults_size++;
 		} else {
 			xil_printf("ERROR: reached max number golden result size. Not saved.");
 		}
@@ -1520,7 +1568,9 @@ void xPortScheduleNewTask(void)
 
 	pxNewTCB->executionId=newtaskdesc->executionId;
 	pxNewTCB->reExecutions=newtaskdesc->reExecutions;
+#ifdef verboseScheduler
 	xil_printf("exec mode SCH %x, exec id %d, reExecutions %d", newtaskdesc->executionMode, pxNewTCB->executionId, pxNewTCB->reExecutions);
+#endif
 	if (newtaskdesc->executionMode!=EXECMODE_NORMAL && newtaskdesc->executionMode!=EXECMODE_NORMAL_NEWJOB) {
 		//RESET TO BEGIN
 

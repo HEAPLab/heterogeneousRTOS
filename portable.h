@@ -239,6 +239,8 @@ void FAULTDET_resetFault() PRIVILEGED_FUNCTION;
 
 int FAULTDET_testing_getTotal() PRIVILEGED_FUNCTION;
 int FAULTDET_testing_getOk() PRIVILEGED_FUNCTION;
+int FAULTDET_testing_getTotal_golden() PRIVILEGED_FUNCTION;
+int FAULTDET_testing_getOk_golden() PRIVILEGED_FUNCTION;
 int FAULTDET_testing_getFalsePositives() PRIVILEGED_FUNCTION;
 int FAULTDET_testing_getFalseNegatives() PRIVILEGED_FUNCTION;
 void FAULTDET_testing_resetStats() PRIVILEGED_FUNCTION;
@@ -254,6 +256,12 @@ void FAULTDET_testing_commitTmpStatsAndReset() PRIVILEGED_FUNCTION;
 			(*((u32*)(&var))) = ( (*((u32*)(&var))) & (~(0x1 << ( lobound == 0 ? execId : ( execId % lobound ) ) ))) | ((~ (*((u32*)(&var))) ) & (0x1 << ( lobound == 0 ? execId : ( execId % lobound ) )));\
 		}
 #endif
+
+//#define FAULTDET_testing_injectFault32(var, execId, lobound, upbound, inject, offset, offseti)\
+//		if ( inject && execId >= ( lobound + ( offset * offseti ) ) = && execId <= ( upbound +  ( offset * offseti ) ) ) {\
+//			(*((u32*)(&var))) = ( (*((u32*)(&var))) & (~(0x1 << ( ( lobound + ( offset * offseti ) == 0 ? execId : ( execId % ( lobound + ( offset * offseti ) ) ) ))) | ((~ (*((u32*)(&var))) ) & (0x1 << ( ( lobound + ( offset * offseti ) == 0 ? execId : ( execId % ( lobound + ( offset * offseti ) ) )));\
+//		}
+//#endif
 
 //int prvDmaBlockingTransferFreeByteSize( u32 prvDmaDestAddr, u32 prvDmaSourceAddr, u32 byteSize ) PRIVILEGED_FUNCTION;
 //
