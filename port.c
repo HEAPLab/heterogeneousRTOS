@@ -1214,7 +1214,7 @@ void FAULTDET_testing_blockUntilProcessed (FAULTDET_ExecutionDescriptor* instanc
 int FAULTDET_testing_goldenResults_size=0;
 FAULTDETECTOR_testpointDescriptorStr FAULTDET_testing_goldenResults[GOLDEN_RESULT_SIZE];
 
-volatile float FAULTDET_testing_relativeErrors[GOLDEN_RESULT_SIZE*FAULTDETECTOR_MAX_AOV_DIM];
+float FAULTDET_testing_relativeErrors[GOLDEN_RESULT_SIZE*FAULTDETECTOR_MAX_AOV_DIM];
 int FAULTDET_testing_relativeErrors_size=0;
 
 
@@ -1299,10 +1299,10 @@ FAULTDETECTOR_testpointDescriptorStr* FAULTDET_testing_findGolden (FAULTDETECTOR
 #include <math.h>
 #define GOLDENCOMPARE_THRESH_CONSTANT (1e-10f)
 
-u8 FAULTDET_testing_isAovEqual(FAULTDETECTOR_testpointDescriptorStr* golden, FAULTDETECTOR_testpointDescriptorStr* toTest) {
+u8 FAULTDET_testing_isAovEqual(FAULTDETECTOR_testpointDescriptorStr* golden, FAULTDETECTOR_testpointDescriptorStr* toTest, int lobound, int upbound) {
 	//	return memcmp(&(desc1->AOV), &(desc2->AOV), sizeof(desc1->AOV))==0;
 	u8 equal=0xFF;
-	for (int i=0; i<FAULTDETECTOR_MAX_AOV_DIM; i++) {
+	for (int i=fmax(0, lobound); i<fmin(FAULTDETECTOR_MAX_AOV_DIM, upbound); i++) {
 		//		float tresh=fabs(golden->AOV[i])*0.1;
 		if (fabs(toTest->AOV[i] - golden->AOV[i]) > GOLDENCOMPARE_THRESH_CONSTANT) {
 			/*fabs(toTest->AOV[i] - golden->AOV[i])>tresh)*/
@@ -1352,6 +1352,8 @@ void FAULTDET_testPoint(
 		int uniId, int checkId, char blocking,
 #ifdef testingCampaign
 		u8 injectingErrors,
+		int goldenLobound,
+		int goldenUpbound,
 #endif
 		int argCount, ...) {
 
@@ -1466,7 +1468,7 @@ void FAULTDET_testPoint(
 				FAULTDETECTOR_resetFault(&FAULTDETECTOR_InstancePtr, contr.taskId);
 				FAULTDET_testing_falsePositives++;
 			} else {
-				FAULTDET_testing_ok_golden++;
+//				FAULTDET_testing_ok_golden++;
 			}
 
 			FAULTDETECTOR_getLastTestedPoint(&FAULTDETECTOR_InstancePtr, contr.taskId, &(FAULTDET_testing_goldenResults[FAULTDET_testing_goldenResults_size]));
@@ -1485,7 +1487,7 @@ void FAULTDET_testPoint(
 			FAULTDETECTOR_resetFault(&FAULTDETECTOR_InstancePtr, contr.taskId);
 		}
 
-		FAULTDET_testing_temp_changed = FAULTDET_testing_temp_changed || FAULTDET_testing_isAovEqual(&curr, golden)==0;
+		FAULTDET_testing_temp_changed = FAULTDET_testing_temp_changed || FAULTDET_testing_isAovEqual(&curr, golden, goldenLobound, goldenUpbound)==0;
 		FAULTDET_testing_temp_fault=FAULTDET_testing_temp_fault || fault;
 	}
 

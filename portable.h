@@ -230,6 +230,8 @@ FAULTDET_ExecutionDescriptor* instance,
 int uniId, int checkId, char blocking,
 #ifdef testingCampaign
 		u8 injectingErrors,
+		int goldenLobound,
+		int goldenUpbound,
 #endif
 		int argCount, ...) PRIVILEGED_FUNCTION;
 //char FAULTDET_hasFault()  PRIVILEGED_FUNCTION;
