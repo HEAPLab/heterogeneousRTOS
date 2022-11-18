@@ -39,8 +39,6 @@
 #include "timers.h"
 #include "stack_macros.h"
 
-//fedit
-#include "xil_printf.h"
 
 /* Lint e9021, e961 and e750 are suppressed as a MISRA exception justified
  * because the MPU ports require MPU_WRAPPERS_INCLUDED_FROM_API_FILE to be defined
@@ -1261,7 +1259,7 @@ u8 xTaskGetExecutionId() {
 			}
 			taskEXIT_CRITICAL()
 			;
-			//xil_printf("created tasks array address: %p", pxRTTasksList);
+			//printf("created tasks array address: %p", pxRTTasksList);
 			return pdPASS;
 		} else {
 			/* Error, stasks must be added before scheduler startup */
@@ -1283,12 +1281,12 @@ u8 xTaskGetExecutionId() {
 
 		//blockIfFaultDetectedInTask();
 
-		xil_printf(" end ");
+		printf(" end ");
 		pxCurrentTCB->executionMode=EXECMODE_NORMAL;
 		pxCurrentTCB->jobEnded=1;
 
 		xPortSchedulerSignalJobEnded(pxCurrentTCB->uxTaskNumber, pxCurrentTCB->executionId);
-		//xil_printf(" JOBEND SENT ");
+		//printf(" JOBEND SENT ");
 
 		//if (pxTCB == pxCurrentTCB) {
 		//		portYIELD_WITHIN_API()
@@ -2288,7 +2286,7 @@ u8 xTaskGetExecutionId() {
 
 				traceTASK_SWITCHED_IN();
 
-				//xil_printf("idle task global pointer in tasks.c: %p", &pxIdleTCB);
+				//printf("idle task global pointer in tasks.c: %p", &pxIdleTCB);
 
 				//fedit add
 				/* now schedule idle task; first -not idle - task will be scheduled on FPGA interrupt */
@@ -3165,7 +3163,7 @@ u8 xTaskGetExecutionId() {
 void SchedulerNewTaskIntrHandl(void)
 {
 	//portDISABLE_INTERRUPTS();
-	//xil_printf("new task, ptr: %X", *((u32*)0x20018000));
+	//printf("new task, ptr: %X", *((u32*)0x20018000));
 	//Xil_MemCpy(pxCurrentTCB_ptr, (u32*)0x20018000, (u32)4);
 	//portCPU_IRQ_DISABLE();
 	//vPortSaveTaskContext();
@@ -3586,7 +3584,7 @@ void SchedulerNewTaskIntrHandl(void)
 			prvCheckTasksWaitingTermination();
 
 			//fedit add
-			//    	xil_printf("idle task running");
+			//    	printf("idle task running");
 			//fedit remove : removed yelds from IDLE task since tasks to be allocated will be called via an interrupt of the fpga-queue is not available to PS at the moment, idle task will simply run until preempted by someone else
 			//        #if ( configUSE_PREEMPTION == 0 )
 			//            {

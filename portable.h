@@ -218,6 +218,7 @@ void FAULTDET_start() PRIVILEGED_FUNCTION;
 //void FAULTDET_dumpRegions(region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS], u8 n_regions[FAULTDETECTOR_MAX_CHECKS]) PRIVILEGED_FUNCTION;
 void FAULTDET_Train(FAULTDETECTOR_controlStr* contr) PRIVILEGED_FUNCTION;
 void FAULTDET_Test(FAULTDETECTOR_controlStr* contr) PRIVILEGED_FUNCTION;
+void FAULTDET_hotUpdateRegions(FAULTDETECTOR_region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS], u8 n_regions[FAULTDETECTOR_MAX_CHECKS]) PRIVILEGED_FUNCTION;
 void FAULTDET_blockIfFaultDetectedInTask (FAULTDET_ExecutionDescriptor* instance) PRIVILEGED_FUNCTION;
 void FAULTDET_getLastTestedPoint(FAULTDETECTOR_testpointDescriptorStr* dest) PRIVILEGED_FUNCTION;
 void FAULTDET_initFaultDetection(FAULTDET_ExecutionDescriptor* instance) PRIVILEGED_FUNCTION;
@@ -225,13 +226,15 @@ void FAULTDET_initFaultDetection(FAULTDET_ExecutionDescriptor* instance) PRIVILE
 void FAULTDET_trainPoint(int uniId, int checkId, int argCount, ...) PRIVILEGED_FUNCTION;
 void FAULTDET_testPoint(
 #ifndef FAULTDETECTOR_EXECINSW
-FAULTDET_ExecutionDescriptor* instance,
+		FAULTDET_ExecutionDescriptor* instance,
 #endif
-int uniId, int checkId, char blocking,
+		int uniId, int checkId, char blocking,
 #ifdef testingCampaign
 		u8 injectingErrors,
 		int goldenLobound,
 		int goldenUpbound,
+		int roundId,
+		int testingExecutionId,
 #endif
 		int argCount, ...) PRIVILEGED_FUNCTION;
 //char FAULTDET_hasFault()  PRIVILEGED_FUNCTION;
@@ -243,10 +246,13 @@ int FAULTDET_testing_getTotal() PRIVILEGED_FUNCTION;
 int FAULTDET_testing_getOk() PRIVILEGED_FUNCTION;
 int FAULTDET_testing_getTotal_golden() PRIVILEGED_FUNCTION;
 int FAULTDET_testing_getOk_golden() PRIVILEGED_FUNCTION;
-int FAULTDET_testing_getFalsePositives() PRIVILEGED_FUNCTION;
+int FAULTDET_testing_getFalsePositives_golden() PRIVILEGED_FUNCTION;
 int FAULTDET_testing_getFalseNegatives() PRIVILEGED_FUNCTION;
+int FAULTDET_testing_getFalseNegatives_wtolerance() PRIVILEGED_FUNCTION;
+int FAULTDET_testing_getOk_wtolerance() PRIVILEGED_FUNCTION;
+int FAULTDET_testing_getNoEffects() PRIVILEGED_FUNCTION;
 void FAULTDET_testing_resetStats() PRIVILEGED_FUNCTION;
-void FAULTDET_testing_commitTmpStatsAndReset() PRIVILEGED_FUNCTION;
+void FAULTDET_testing_commitTmpStatsAndReset(u8 injectingFault) PRIVILEGED_FUNCTION;
 //void FAULTDET_testing_increaseOk() PRIVILEGED_FUNCTION;
 //void FAULTDET_testing_increaseFalseNegatives() PRIVILEGED_FUNCTION;
 

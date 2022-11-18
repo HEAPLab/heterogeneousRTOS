@@ -364,7 +364,7 @@ StackType_t *pxPortInitialiseStack( StackType_t *pxTopOfStack, TaskFunction_t px
 //void prvWriteSchedControl() {
 //	u16 prvSchedControlU16;
 //	memcpy(&prvSchedControlU16, &prvSchedControl, sizeof(prvSchedControl));
-//	xil_printf("written %x to GPIO0\n", prvSchedControlU16);
+//	printf("written %x to GPIO0\n", prvSchedControlU16);
 //	XGpio_DiscreteWrite(&prvGpio0, GPIO_START_SCHED_CHANNEL, prvSchedControlU16);
 //}
 
@@ -496,14 +496,14 @@ StackType_t *pxPortInitialiseStack( StackType_t *pxTopOfStack, TaskFunction_t px
 //	 */
 //	CfgPtr = XAxiCdma_LookupConfig(DeviceId);
 //	if (!CfgPtr) {
-//		xil_printf("init failure");
+//		printf("init failure");
 //		return XST_FAILURE;
 //	}
 //
 //	Status = XAxiCdma_CfgInitialize(InstancePtr, CfgPtr, CfgPtr->BaseAddress);
 //	if (Status != XST_SUCCESS) {
-//		xil_printf("CfgInitialize failure");
-//		xil_printf("status %i", Status);
+//		printf("CfgInitialize failure");
+//		printf("status %i", Status);
 //
 //		return XST_FAILURE;
 //	}
@@ -525,11 +525,11 @@ StackType_t *pxPortInitialiseStack( StackType_t *pxTopOfStack, TaskFunction_t px
 //{
 //	if (IrqMask & XAXICDMA_XR_IRQ_ERROR_MASK) {
 //		prvDmaError = TRUE;
-//		xil_printf("\r\n--- Transfer Error --- \r\n");
+//		printf("\r\n--- Transfer Error --- \r\n");
 //	}
 //
 //	if (IrqMask & XAXICDMA_XR_IRQ_IOC_MASK) {
-//		xil_printf("\r\n--- Transfer Done --- \r\n");
+//		printf("\r\n--- Transfer Done --- \r\n");
 //		prvDmaDone = TRUE;
 //	}
 //}
@@ -544,7 +544,7 @@ StackType_t *pxPortInitialiseStack( StackType_t *pxTopOfStack, TaskFunction_t px
 //	prvDmaError = 0;
 //
 //
-//	xil_printf("Start Transfer \n\r");
+//	printf("Start Transfer \n\r");
 //	/* Try to start the DMA transfer
 //	 */
 //
@@ -561,7 +561,7 @@ StackType_t *pxPortInitialiseStack( StackType_t *pxTopOfStack, TaskFunction_t px
 //										(void *)InstancePtr);
 //
 //		if (Status == XST_FAILURE) {
-//			xil_printf("Error in Transfer  \n\r");
+//			printf("Error in Transfer  \n\r");
 //			return 1;
 //		}
 //
@@ -571,7 +571,7 @@ StackType_t *pxPortInitialiseStack( StackType_t *pxTopOfStack, TaskFunction_t px
 //			 */
 //			while (!prvDmaDone && !prvDmaError) {
 //				/* Wait */
-//				xil_printf("waiting Transfer to finish \n\r");
+//				printf("waiting Transfer to finish \n\r");
 //			}
 //
 //			if (prvDmaError) {
@@ -619,32 +619,32 @@ StackType_t *pxPortInitialiseStack( StackType_t *pxTopOfStack, TaskFunction_t px
 
 //	status=prvDmaInit();
 //	if (status!=XST_SUCCESS) {
-//		xil_printf("DMA init failed");
+//		printf("DMA init failed");
 //		return status;
 //	}
 ////SINGLE TRANSACTION IF SOURCE ADDRESSES ARE CONTIGUOUS
 //	status=prvDmaBlockingTransferFreeByteSize( prvDmaRTTasksListDestAddr, prvRTTasksListPtr, prvRTTasksListByteSize + prvOrderedQueuesByteSize + orderedDeadlineActivationQPayloadByteSize);
 //	if (status!=XST_SUCCESS) {
-//		xil_printf("DMA RTTTaskSet transfer failed");
+//		printf("DMA RTTTaskSet transfer failed");
 //		return status;
 //	};
 //	//MULTIPLE TRANSACTIONS
 ///*
 //	status=prvDmaBlockingTransferFreeByteSize( prvDmaRTTasksListDestAddr, prvRTTasksListPtr, prvRTTasksListByteSize);
 //	if (status!=XST_SUCCESS) {
-//		xil_printf("DMA RTTTaskSet transfer failed");
+//		printf("DMA RTTTaskSet transfer failed");
 //		return status;
 //	};
 //
 //	status=prvDmaBlockingTransferFreeByteSize( prvDmaRTTasksListDestAddr+prvRTTasksListByteSize, prvOrderedQueuesPtr, prvOrderedQueuesByteSize );
 //	if (status!=XST_SUCCESS) {
-//		xil_printf("DMA OrderedDeadlineActivationQueue transfer failed");
+//		printf("DMA OrderedDeadlineActivationQueue transfer failed");
 //		return status;
 //	};
 //
 //	status=prvDmaBlockingTransferFreeByteSize( prvDmaRTTasksListDestAddr+prvRTTasksListByteSize+prvOrderedQueuesByteSize, orderedDeadlineActivationQPayload, orderedDeadlineActivationQPayloadByteSize );
 //	if (status!=XST_SUCCESS) {
-//		xil_printf("DMA OrderedDeadlineActivationQueue transfer failed");
+//		printf("DMA OrderedDeadlineActivationQueue transfer failed");
 //		return status;
 //	};
 //
@@ -656,7 +656,7 @@ StackType_t *pxPortInitialiseStack( StackType_t *pxTopOfStack, TaskFunction_t px
 //
 //	status = XGpio_Initialize(&prvGpio0, GPIO_START_SCHED_DEVICE_ID);
 //	if (status != XST_SUCCESS) {
-//		xil_printf("Gpio Initialization Failed\r\n");
+//		printf("Gpio Initialization Failed\r\n");
 //		return status;
 //	}
 //
@@ -679,10 +679,10 @@ static void prvTaskExitError( void )
 
 		Artificially force an assert() to be triggered if configASSERT() is
 		defined, then stop here so application writers can catch the error. */
-	xil_printf("Warning: return statement has been called from task %s, deleting it\n",pcTaskGetName(NULL));
+	printf("Warning: return statement has been called from task %s, deleting it\n",pcTaskGetName(NULL));
 	if (uxTaskGetNumberOfTasks() == 2)
 	{
-		xil_printf("Warning: Kernel does not have any task to manage other than idle task\n");
+		printf("Warning: Kernel does not have any task to manage other than idle task\n");
 	}
 	vTaskDelete( NULL );
 }
@@ -828,7 +828,7 @@ int prvInitSd(XSdPs* SD_InstancePtr)
 
 	Status = XSdPs_CardInitialize(SD_InstancePtr);
 	if (Status != XST_SUCCESS) {
-		xil_printf("\nSD CARD INIT FAILED. CHECK AN SD CARD IS IN THE SLOT. TRAINED DATA DUMP DISABLED UNTIL RESET\n");
+		printf("\nSD CARD INIT FAILED. CHECK AN SD CARD IS IN THE SLOT. TRAINED DATA DUMP DISABLED UNTIL RESET\n");
 		return XST_FAILURE;
 	}
 
@@ -866,13 +866,13 @@ void FAULTDET_StopRunMode();
 
 int prvDumpTrainedData(XFaultdetector* FaultDet_InstancePtr, XSdPs* SD_InstancePtr) {
 #ifdef FAULTDETECTOR_EXECINSW
-	xil_printf("\nSTARTING TO DUMP DATA\n");
+	printf("\nSTARTING TO DUMP DATA\n");
 	FAULTDETECTOR_SW_dumpRegions(dumpedDataSdBuf.trainedRegions, dumpedDataSdBuf.n_regions);
 
 #else
 	FAULTDET_StopRunMode();
 
-	xil_printf("\nFAULT DETECTOR EXITED RUN MODE. STARTING TO DUMP DATA\n");
+	printf("\nFAULT DETECTOR EXITED RUN MODE. STARTING TO DUMP DATA\n");
 
 	FAULTDETECTOR_dumpRegions(FaultDet_InstancePtr, dumpedDataSdBuf.trainedRegions, dumpedDataSdBuf.n_regions);
 
@@ -881,7 +881,7 @@ int prvDumpTrainedData(XFaultdetector* FaultDet_InstancePtr, XSdPs* SD_InstanceP
 	 * Write data to SD/eMMC.
 	 */
 
-	xil_printf("\nDUMPED DATA FROM FAULT DETECTOR SUCCESFULLY. WRITING TO SD\n");
+	printf("\nDUMPED DATA FROM FAULT DETECTOR SUCCESFULLY. WRITING TO SD\n");
 	int Status;
 	Status = XSdPs_WritePolled(SD_InstancePtr, Sd_Sector, TRAINEDDATA_BLOCKS_SIZE,
 			(u8*) (&dumpedDataSdBuf));
@@ -900,7 +900,6 @@ int prvDumpTrainedData(XFaultdetector* FaultDet_InstancePtr, XSdPs* SD_InstanceP
 #include <stdio.h>
 #else
 #include "xscugic.h"
-#include "xil_printf.h"
 #endif
 
 
@@ -1082,9 +1081,9 @@ FAULTDETECTOR_controlStr controlForFaultDet __attribute__((aligned(4096)));
 //#define DMA_DEV_ID		XPAR_AXIDMA_0_DEVICE_ID
 void FAULTDET_dumpRegions() {
 	if (prvDumpTrainedData(&FAULTDETECTOR_InstancePtr, &SdInstance)==XST_SUCCESS) {
-		xil_printf("SUCCESS\n");
+		printf("SUCCESS\n");
 	} else {
-		xil_printf("FAILED\n");
+		printf("FAILED\n");
 	}
 }
 volatile void BtnPressHandler(void *CallbackRef)
@@ -1094,17 +1093,18 @@ volatile void BtnPressHandler(void *CallbackRef)
 	XGpio *GpioPtr = (XGpio *)CallbackRef;
 	if (XGpio_DiscreteRead(&Gpio0, GPIO_CHANNEL1)!=0) {
 
-		xil_printf("\nBEGIN TRAINED DATA DUMP\n");
+		printf("\nBEGIN TRAINED DATA DUMP\n");
 		if (prvDumpTrainedData(&FAULTDETECTOR_InstancePtr, &SdInstance)==XST_SUCCESS) {
-			xil_printf("SUCCESS\n");
+			printf("SUCCESS\n");
 		} else {
-			xil_printf("FAILED\n");
+			printf("FAILED\n");
 		}
 	}
 
 	/* Clear the Interrupt */
 	XGpio_InterruptClear(GpioPtr, GPIOGlobalIntrMask);
 }
+
 
 void FAULTDET_init(u8 restoreTrainDataFromSd, FAULTDETECTOR_region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS], u8 n_regions[FAULTDETECTOR_MAX_CHECKS]) {
 	//setup GPIO interrupt to enable dump trained data to SD when the user presses a button
@@ -1133,6 +1133,16 @@ void FAULTDET_init(u8 restoreTrainDataFromSd, FAULTDETECTOR_region_t trainedRegi
 void FAULTDET_start () {
 	FAULTDETECTOR_setModeRun(&FAULTDETECTOR_InstancePtr);
 	XFaultdetector_Start(&FAULTDETECTOR_InstancePtr);
+}
+
+void FAULTDET_hotUpdateRegions(FAULTDETECTOR_region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS], u8 n_regions[FAULTDETECTOR_MAX_CHECKS]) {
+#ifdef FAULTDETECTOR_EXECINSW
+	FAULTDETECTOR_SW_initRegions(trainedRegions, n_regions);
+#else
+	FAULTDET_StopRunMode();
+	FAULTDETECTOR_initRegions(&FAULTDETECTOR_InstancePtr, trainedRegions, n_regions);
+	FAULTDET_start ();
+#endif
 }
 
 void FAULTDET_Train(FAULTDETECTOR_controlStr* contr) {
@@ -1222,26 +1232,58 @@ int FAULTDET_testing_total=0;
 int FAULTDET_testing_ok=0;
 int FAULTDET_testing_total_golden=0;
 int FAULTDET_testing_ok_golden=0;
-int FAULTDET_testing_falsePositives=0;
+int FAULTDET_testing_falsePositives_golden=0;
 int FAULTDET_testing_falseNegatives=0;
-char FAULTDET_testing_temp_changed=0;
-char FAULTDET_testing_temp_fault=0;
+int FAULTDET_testing_noeffects=0;
+int FAULTDET_testing_falseNegatives_wtolerance=0;
+int FAULTDET_testing_ok_wtolerance=0;
 
-void FAULTDET_testing_commitTmpStatsAndReset() {
-	if (FAULTDET_testing_temp_changed) {
+char FAULTDET_testing_temp_aovchanged=0;
+char FAULTDET_testing_temp_faultdetected=0;
+char FAULTDET_testing_temp_lastoutputchanged=0;
+
+void FAULTDET_testing_commitTmpStatsAndReset(u8 injectingFault) {
+#ifndef csvOut
+	if (injectingFault) {
 		FAULTDET_testing_total++;
-		if (FAULTDET_testing_temp_fault) {
-			FAULTDET_testing_ok++;
-		} else {
-			FAULTDET_testing_falseNegatives++;
-			for (int i=0; i<FAULTDET_testing_relativeErrors_size; i++) {
-				printf("%f;", FAULTDET_testing_relativeErrors[i]);
+
+		if (FAULTDET_testing_temp_aovchanged) {
+			if (FAULTDET_testing_temp_faultdetected) {
+				FAULTDET_testing_ok++;
+			} else {
+				if (FAULTDET_testing_temp_lastoutputchanged) {
+					FAULTDET_testing_falseNegatives++;
+					if (FAULTDET_testing_relativeErrors[FAULTDET_testing_relativeErrors_size-1]>0.1f)
+						FAULTDET_testing_falseNegatives_wtolerance++;
+					else
+						FAULTDET_testing_ok_wtolerance++;
+					//				for (int i=0; i<FAULTDET_testing_relativeErrors_size; i++) {
+					//					printf("%f;", FAULTDET_testing_relativeErrors[i]);
+					//				}
+//					printf("%f;", FAULTDET_testing_relativeErrors[FAULTDET_testing_relativeErrors_size-1]);
+				} else {
+					FAULTDET_testing_ok++;
+					FAULTDET_testing_ok_wtolerance++;
+
+				}
 			}
+		} else {
+			FAULTDET_testing_noeffects++;
+		}
+	} else {
+		FAULTDET_testing_total_golden++;
+		if (FAULTDET_testing_temp_faultdetected) {
+			FAULTDET_testing_falsePositives_golden++;
+		} else {
+			FAULTDET_testing_ok_golden++;
 		}
 	}
 	FAULTDET_testing_relativeErrors_size=0;
-	FAULTDET_testing_temp_fault=0;
-	FAULTDET_testing_temp_changed=0;
+
+	FAULTDET_testing_temp_faultdetected=0;
+	FAULTDET_testing_temp_aovchanged=0;
+	FAULTDET_testing_temp_lastoutputchanged=0;
+#endif
 }
 
 int FAULTDET_testing_getTotal_golden() {
@@ -1260,13 +1302,24 @@ int FAULTDET_testing_getOk() {
 	return FAULTDET_testing_ok;
 }
 
+int FAULTDET_testing_getOk_wtolerance() {
+	return FAULTDET_testing_ok_wtolerance;
+}
 
-int FAULTDET_testing_getFalsePositives() {
-	return FAULTDET_testing_falsePositives;
+int FAULTDET_testing_getFalsePositives_golden() {
+	return FAULTDET_testing_falsePositives_golden;
 }
 
 int FAULTDET_testing_getFalseNegatives() {
 	return FAULTDET_testing_falseNegatives;
+}
+
+int FAULTDET_testing_getFalseNegatives_wtolerance() {
+	return FAULTDET_testing_falseNegatives_wtolerance;
+}
+
+int FAULTDET_testing_getNoEffects() {
+	return FAULTDET_testing_noeffects;
 }
 
 //void FAULTDET_testing_increaseOk() {
@@ -1293,7 +1346,7 @@ FAULTDETECTOR_testpointDescriptorStr* FAULTDET_testing_findGolden (FAULTDETECTOR
 			FAULTDET_testing_goldenResults_idx_tmp++;
 		}
 	}
-	xil_printf("ERROR: golden not found");
+	printf("ERROR: golden not found");
 	return 0x0;
 }
 #include <math.h>
@@ -1302,28 +1355,44 @@ FAULTDETECTOR_testpointDescriptorStr* FAULTDET_testing_findGolden (FAULTDETECTOR
 u8 FAULTDET_testing_isAovEqual(FAULTDETECTOR_testpointDescriptorStr* golden, FAULTDETECTOR_testpointDescriptorStr* toTest, int lobound, int upbound) {
 	//	return memcmp(&(desc1->AOV), &(desc2->AOV), sizeof(desc1->AOV))==0;
 	u8 equal=0xFF;
-	for (int i=fmax(0, lobound); i<fmin(FAULTDETECTOR_MAX_AOV_DIM, upbound); i++) {
+	u8 outEqual=0xFF;
+	for (int i=0; i<FAULTDETECTOR_MAX_AOV_DIM; i++) {
 		//		float tresh=fabs(golden->AOV[i])*0.1;
 		if (fabs(toTest->AOV[i] - golden->AOV[i]) > GOLDENCOMPARE_THRESH_CONSTANT) {
-			/*fabs(toTest->AOV[i] - golden->AOV[i])>tresh)*/
-			//			return 0x0;
-			float relErr=fabs(toTest->AOV[i] - golden->AOV[i])/fabs(golden->AOV[i]);
-			//			if (printTolerance) {
-			//				for (int i=0; i<FAULTDET_testing_relativeErrors_size; i++) {
-			//					xil_printf("%.6f;", relErr);
-			//				}
-			//			} else {
-			if (FAULTDET_testing_relativeErrors_size<=GOLDEN_RESULT_SIZE*FAULTDETECTOR_MAX_AOV_DIM) {
-				FAULTDET_testing_relativeErrors[FAULTDET_testing_relativeErrors_size]=relErr;
-				FAULTDET_testing_relativeErrors_size++;
-			} else {
-				xil_printf("ERROR: max relative errors size exceeded");
+			if (i>=lobound && i<=upbound) {
+				outEqual=0x0;
+				float relErr=fabs(toTest->AOV[i] - golden->AOV[i])/fabs(golden->AOV[i]);
+#if csvOut
+				printf("0.%f.", relErr);
+#else
+				if (FAULTDET_testing_relativeErrors_size<=GOLDEN_RESULT_SIZE*FAULTDETECTOR_MAX_AOV_DIM) {
+					FAULTDET_testing_relativeErrors[FAULTDET_testing_relativeErrors_size]=relErr;
+					FAULTDET_testing_relativeErrors_size++;
+				} else {
+					printf("ERROR: max relative errors size exceeded");
+				}
+#endif
 			}
-			//			}
 			equal=0x0;
 		}
 	}
 	//	return 0xFF;
+#ifdef csvOut
+	if (outEqual)
+		printf("1.0.");
+#else
+	FAULTDET_testing_temp_lastoutputchanged=!outEqual;
+#endif
+
+#ifdef csvOut
+	if (equal)
+		printf("1;");
+	else
+		printf("0;");
+#else
+	if (!equal)
+		FAULTDET_testing_temp_aovchanged=0xFF;
+#endif
 	return equal;
 }
 
@@ -1332,10 +1401,14 @@ void FAULTDET_testing_resetStats() {
 	FAULTDET_testing_ok_golden=0;
 	FAULTDET_testing_total=0;
 	FAULTDET_testing_ok=0;
-	FAULTDET_testing_falsePositives=0;
+	FAULTDET_testing_falsePositives_golden=0;
 	FAULTDET_testing_falseNegatives=0;
-	FAULTDET_testing_temp_changed=0;
-	FAULTDET_testing_temp_fault=0;
+	FAULTDET_testing_temp_aovchanged=0;
+	FAULTDET_testing_temp_faultdetected=0;
+	FAULTDET_testing_relativeErrors_size=0;
+	FAULTDET_testing_temp_lastoutputchanged=0;
+	FAULTDET_testing_falseNegatives_wtolerance=0;
+	FAULTDET_testing_ok_wtolerance=0;
 }
 
 #endif
@@ -1354,6 +1427,8 @@ void FAULTDET_testPoint(
 		u8 injectingErrors,
 		int goldenLobound,
 		int goldenUpbound,
+		int roundId,
+		int testingExecutionId,
 #endif
 		int argCount, ...) {
 
@@ -1388,7 +1463,7 @@ void FAULTDET_testPoint(
 
 	if (tcbPtr->executionMode==EXECMODE_FAULT && lastErrorUniId==uniId && lastErrorCheckId==checkId && memcmp(tcbPtr->lastError.AOV, contr.AOV, sizeof(contr.AOV))==0) {
 #ifdef FAULTDETECTOR_EXECINSW
-		//		xil_printf(" SW FAULT DETECTOR: train");
+		//		printf(" SW FAULT DETECTOR: train");
 		FAULTDETECTOR_SW_train(&contr);
 #else //!FAULTDETECTOR_EXECINSW
 		FAULTDET_Train(&contr);
@@ -1405,7 +1480,7 @@ void FAULTDET_testPoint(
 	} else if (tcbPtr->reExecutions<configMAX_REEXECUTIONS_SET_IN_HW_SCHEDULER) {
 #ifdef FAULTDETECTOR_EXECINSW
 		char fault=FAULTDETECTOR_SW_test(&contr);
-		//		xil_printf(" SW FAULT DETECTOR: fault %x", fault);
+		//		printf(" SW FAULT DETECTOR: fault %x", fault);
 		if (fault) {
 			tcbPtr->lastError.uniId=contr.uniId;
 			tcbPtr->lastError.checkId=contr.checkId;
@@ -1417,10 +1492,15 @@ void FAULTDET_testPoint(
 			FAULTDET_testing_total_golden++;
 			if (FAULTDET_testing_goldenResults_size<GOLDEN_RESULT_SIZE) {
 				if (fault) {
-					FAULTDET_testing_falsePositives++;
+					printf("%d.%d.%d.%d.1.0.0.0;",roundId, testingExecutionId, checkId, uniId);
+
+					//					FAULTDET_testing_falsePositives++;
 				} else {
-					//					xil_printf("ok, fault: %x", fault);
-					FAULTDET_testing_ok_golden++;
+
+					printf("%d.%d.%d.%d.0.0.0.0;",roundId, testingExecutionId, checkId, uniId);
+
+					//					printf("ok, fault: %x", fault);
+					//					FAULTDET_testing_ok_golden++;
 				}
 
 				FAULTDET_testing_goldenResults[FAULTDET_testing_goldenResults_size].uniId=contr.uniId;
@@ -1430,7 +1510,7 @@ void FAULTDET_testPoint(
 
 				FAULTDET_testing_goldenResults_size++;
 			} else {
-				xil_printf("ERROR: reached max number golden result size. Not saved.");
+				printf("ERROR: reached max number golden result size. Not saved.");
 			}
 		} else {
 			FAULTDETECTOR_testpointDescriptorStr curr;
@@ -1440,9 +1520,15 @@ void FAULTDET_testPoint(
 			curr.checkId=contr.checkId;
 			memcpy(&(curr.AOV), &(contr.AOV), sizeof(contr.AOV));
 
+			if (fault) {
+				printf("%d.%d.%d.%d.1.",roundId, testingExecutionId, checkId, uniId);
+
+			} else {
+				printf("%d.%d.%d.%d.0.",roundId, testingExecutionId, checkId, uniId);
+			}
+
 			FAULTDETECTOR_testpointDescriptorStr* golden=FAULTDET_testing_findGolden(&curr);
-			FAULTDET_testing_temp_changed = FAULTDET_testing_temp_changed || FAULTDET_testing_isAovEqual(golden, &curr)==0;
-			FAULTDET_testing_temp_fault=FAULTDET_testing_temp_fault || fault;
+			FAULTDET_testing_isAovEqual(golden, &curr);
 		}
 #else //!testingCampaign
 		SCHEDULER_restartFaultyJob((void*) SCHEDULER_BASEADDR, tcbPtr->uxTaskNumber, contr.executionId);
@@ -1460,21 +1546,26 @@ void FAULTDET_testPoint(
 #ifdef testingCampaign
 
 	if (injectingErrors==0) {
-		FAULTDET_testing_total_golden++;
-
 		if (FAULTDET_testing_goldenResults_size<GOLDEN_RESULT_SIZE) {
 			FAULTDET_testing_blockUntilProcessed(instance);
 			if (FAULTDETECTOR_hasFault(&FAULTDETECTOR_InstancePtr, contr.taskId)) {
 				FAULTDETECTOR_resetFault(&FAULTDETECTOR_InstancePtr, contr.taskId);
-				FAULTDET_testing_falsePositives++;
+
+#ifdef csvOut
+				printf("%d.%d.%d.%d.1.0.0.0;",roundId, testingExecutionId, checkId, uniId);
+#else
+				FAULTDET_testing_temp_faultdetected=0xFF;
+#endif
 			} else {
-//				FAULTDET_testing_ok_golden++;
+#ifdef csvOut
+				printf("%d.%d.%d.%d.0.0.0.0;",roundId, testingExecutionId, checkId, uniId);
+#endif
 			}
 
 			FAULTDETECTOR_getLastTestedPoint(&FAULTDETECTOR_InstancePtr, contr.taskId, &(FAULTDET_testing_goldenResults[FAULTDET_testing_goldenResults_size]));
 			FAULTDET_testing_goldenResults_size++;
 		} else {
-			xil_printf("ERROR: reached max number golden result size. Not saved.");
+			printf("ERROR: reached max number golden result size. Not saved.");
 		}
 	} else {
 		FAULTDET_testing_blockUntilProcessed(instance);
@@ -1482,13 +1573,25 @@ void FAULTDET_testPoint(
 		FAULTDETECTOR_getLastTestedPoint(&FAULTDETECTOR_InstancePtr, contr.taskId, &curr);
 
 		FAULTDETECTOR_testpointDescriptorStr* golden=FAULTDET_testing_findGolden(&curr);
-		char fault=FAULTDETECTOR_hasFault(&FAULTDETECTOR_InstancePtr, contr.taskId);
-		if (fault) {
-			FAULTDETECTOR_resetFault(&FAULTDETECTOR_InstancePtr, contr.taskId);
-		}
 
-		FAULTDET_testing_temp_changed = FAULTDET_testing_temp_changed || FAULTDET_testing_isAovEqual(&curr, golden, goldenLobound, goldenUpbound)==0;
-		FAULTDET_testing_temp_fault=FAULTDET_testing_temp_fault || fault;
+		if (FAULTDET_testing_isAovEqual(golden, &curr, goldenLobound, goldenUpbound)==0) {
+			char fault=FAULTDETECTOR_hasFault(&FAULTDETECTOR_InstancePtr, contr.taskId);
+			if (fault) {
+//				FAULTDETECTOR_resetFault(&FAULTDETECTOR_InstancePtr, contr.taskId);
+#ifdef csvOut
+				printf("%d.%d.%d.%d.1.",roundId, testingExecutionId, checkId, uniId);
+
+
+			} else {
+				printf("%d.%d.%d.%d.0.",roundId, testingExecutionId, checkId, uniId);
+#endif
+			}
+			FAULTDET_testing_temp_faultdetected=fault;
+		}
+		FAULTDETECTOR_resetFault(&FAULTDETECTOR_InstancePtr, contr.taskId);
+
+		//		FAULTDET_testing_temp_changed = FAULTDET_testing_temp_changed || FAULTDET_testing_isAovEqual(&curr, golden, goldenLobound, goldenUpbound)==0;
+		//		FAULTDET_testing_temp_faultdetected=FAULTDET_testing_temp_faultdetected || fault;
 	}
 
 #else //!testingCampaign
@@ -1531,10 +1634,10 @@ void FAULTDET_trainPoint(int uniId, int checkId, int argCount, ...) {
 		FAULTDETECTOR_SW_train(&contr);
 		fault=FAULTDETECTOR_SW_test(&contr);
 		if (fault) {
-			xil_printf("Train failed, checkId %d, uniId %d", checkId, uniId);
+			printf("Train failed, checkId %d, uniId %d", checkId, uniId);
 		}
 		//		 else
-		//			 xil_printf("Train ok, checkId %d, uniId %d", checkId, uniId);
+		//			 printf("Train ok, checkId %d, uniId %d", checkId, uniId);
 
 	}
 #else
@@ -1563,7 +1666,7 @@ void xPortScheduleNewTask(void)
 	*pxCurrentTCB_ptr = newtaskdesc->pxNextTcb;
 
 	TCB_t* pxNewTCB=*(pxCurrentTCB_ptr);
-	//xil_printf("| NEW, %X ", *pxCurrentTCB_ptr);
+	//printf("| NEW, %X ", *pxCurrentTCB_ptr);
 	if (newtaskdesc->executionMode==EXECMODE_NORMAL_NEWJOB) {
 		pxNewTCB->jobEnded=0;
 	}
@@ -1571,7 +1674,7 @@ void xPortScheduleNewTask(void)
 	pxNewTCB->executionId=newtaskdesc->executionId;
 	pxNewTCB->reExecutions=newtaskdesc->reExecutions;
 #ifdef verboseScheduler
-	xil_printf("exec mode SCH %x, exec id %d, reExecutions %d", newtaskdesc->executionMode, pxNewTCB->executionId, pxNewTCB->reExecutions);
+	printf("exec mode SCH %x, exec id %d, reExecutions %d", newtaskdesc->executionMode, pxNewTCB->executionId, pxNewTCB->reExecutions);
 #endif
 	if (newtaskdesc->executionMode!=EXECMODE_NORMAL && newtaskdesc->executionMode!=EXECMODE_NORMAL_NEWJOB) {
 		//RESET TO BEGIN
@@ -1643,13 +1746,13 @@ void xPortScheduleNewTask(void)
 	}
 
 
-	//	xil_printf("exec mode TASK %x", pxNewTCB->executionMode);
+	//	printf("exec mode TASK %x", pxNewTCB->executionMode);
 	SCHEDULER_ACKInterrupt((void *) SCHEDULER_BASEADDR);
 
-	/*	xil_printf(" initial SP: %X ", ((*pxCurrentTCB_ptr)->pxStack));
-		xil_printf(" SP: %X ", ((*pxCurrentTCB_ptr)->pxTopOfStack));
-		xil_printf(" PC address: %X ", ((*pxCurrentTCB_ptr)->pxTopOfStack + 13));
-		xil_printf(" PC instr: %X |", *((*pxCurrentTCB_ptr)->pxTopOfStack + 13));*/
+	/*	printf(" initial SP: %X ", ((*pxCurrentTCB_ptr)->pxStack));
+		printf(" SP: %X ", ((*pxCurrentTCB_ptr)->pxTopOfStack));
+		printf(" PC address: %X ", ((*pxCurrentTCB_ptr)->pxTopOfStack + 13));
+		printf(" PC instr: %X |", *((*pxCurrentTCB_ptr)->pxTopOfStack + 13));*/
 }
 
 void xPortSchedulerResumeTask(u16 uxTaskNumber) {
