@@ -88,7 +88,8 @@ typedef struct tskTaskControlBlock * TaskHandle_t;
 //	u16 uniId;
 //	float AOV[configMAX_AOV_DIM];
 //} FAULTDETECTOR_OutcomeStr;
-#include "xfaultdetector.h"
+
+//#include "xfaultdetector.h"
 
 typedef struct tskTaskControlBlock       /* The old naming convention is used to prevent breaking kernel aware debuggers. */
 {

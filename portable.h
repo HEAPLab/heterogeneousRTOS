@@ -1,3 +1,6 @@
+#define FAULTDETECTOR_EXECINSW
+
+
 /*
  * FreeRTOS Kernel V10.4.3
  * Copyright (C) 2020 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
@@ -206,7 +209,12 @@ BaseType_t xPortInitScheduler( u32 numberOfTasks,
 		u32* pxCurrentTCBPtr ) PRIVILEGED_FUNCTION;
 
 void newTaskHandler(void *HandlerRef) PRIVILEGED_FUNCTION;
+
+#ifdef FAULTDETECTOR_EXECINSW
+#include "faultdetector_sw.h"
+#else
 #include "xfaultdetector.h"
+#endif
 
 typedef struct {
 	FAULTDETECTOR_testpointDescriptorStr lastTest;
@@ -241,7 +249,7 @@ void FAULTDET_testPoint(
 void FAULTDET_resetFault() PRIVILEGED_FUNCTION;
 
 #ifdef testingCampaign
-
+void FAULTDET_testing_resetGoldens () PRIVILEGED_FUNCTION;
 int FAULTDET_testing_getTotal() PRIVILEGED_FUNCTION;
 int FAULTDET_testing_getOk() PRIVILEGED_FUNCTION;
 int FAULTDET_testing_getTotal_golden() PRIVILEGED_FUNCTION;

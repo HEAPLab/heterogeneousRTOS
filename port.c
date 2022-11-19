@@ -1,6 +1,6 @@
 #define testingCampaign
+#define FAULTDETECTOR_EXECINSW
 //#define verboseScheduler
-//#define FAULTDETECTOR_EXECINSW
 
 /*
  * FreeRTOS Kernel V10.4.3
@@ -842,7 +842,11 @@ trainedData dumpedDataSdBuf;
 trainedData dumpedDataSdBuf __attribute__ ((aligned(32)));
 #endif
 
-int prvRestoreTrainedData(XFaultdetector* FaultDet_InstancePtr, XSdPs* SD_InstancePtr) {
+int prvRestoreTrainedData(
+#ifndef FAULTDETECTOR_EXECINSW
+XFaultdetector* FaultDet_InstancePtr,
+#endif
+XSdPs* SD_InstancePtr) {
 	/*
 	 * Read data from SD/eMMC.
 	 */
@@ -864,7 +868,11 @@ int prvRestoreTrainedData(XFaultdetector* FaultDet_InstancePtr, XSdPs* SD_Instan
 
 void FAULTDET_StopRunMode();
 
-int prvDumpTrainedData(XFaultdetector* FaultDet_InstancePtr, XSdPs* SD_InstancePtr) {
+int prvDumpTrainedData(
+#ifndef FAULTDETECTOR_EXECINSW
+XFaultdetector* FaultDet_InstancePtr,
+#endif
+XSdPs* SD_InstancePtr) {
 #ifdef FAULTDETECTOR_EXECINSW
 	printf("\nSTARTING TO DUMP DATA\n");
 	FAULTDETECTOR_SW_dumpRegions(dumpedDataSdBuf.trainedRegions, dumpedDataSdBuf.n_regions);
@@ -1071,8 +1079,9 @@ TCB_t** pxCurrentTCB_ptr;
 
 //#include "xrun.h"
 
-
+#ifndef FAULTDETECTOR_EXECINSW
 XFaultdetector FAULTDETECTOR_InstancePtr;
+#endif
 FAULTDETECTOR_controlStr controlForFaultDet __attribute__((aligned(4096)));
 
 //#include "xaxidma.h"
@@ -1080,7 +1089,11 @@ FAULTDETECTOR_controlStr controlForFaultDet __attribute__((aligned(4096)));
 #define FAULTDETECTOR_DEVICEID XPAR_FAULTDETECTOR_0_DEVICE_ID
 //#define DMA_DEV_ID		XPAR_AXIDMA_0_DEVICE_ID
 void FAULTDET_dumpRegions() {
-	if (prvDumpTrainedData(&FAULTDETECTOR_InstancePtr, &SdInstance)==XST_SUCCESS) {
+	if (prvDumpTrainedData(
+#ifndef FAULTDETECTOR_EXECINSW
+			&FAULTDETECTOR_InstancePtr,
+#endif
+			&SdInstance)==XST_SUCCESS) {
 		printf("SUCCESS\n");
 	} else {
 		printf("FAILED\n");
@@ -1094,7 +1107,11 @@ volatile void BtnPressHandler(void *CallbackRef)
 	if (XGpio_DiscreteRead(&Gpio0, GPIO_CHANNEL1)!=0) {
 
 		printf("\nBEGIN TRAINED DATA DUMP\n");
-		if (prvDumpTrainedData(&FAULTDETECTOR_InstancePtr, &SdInstance)==XST_SUCCESS) {
+		if (prvDumpTrainedData(
+#ifndef FAULTDETECTOR_EXECINSW
+				&FAULTDETECTOR_InstancePtr,
+#endif
+				&SdInstance)==XST_SUCCESS) {
 			printf("SUCCESS\n");
 		} else {
 			printf("FAILED\n");
@@ -1105,9 +1122,9 @@ volatile void BtnPressHandler(void *CallbackRef)
 	XGpio_InterruptClear(GpioPtr, GPIOGlobalIntrMask);
 }
 
-
 void FAULTDET_init(u8 restoreTrainDataFromSd, FAULTDETECTOR_region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS], u8 n_regions[FAULTDETECTOR_MAX_CHECKS]) {
 	//setup GPIO interrupt to enable dump trained data to SD when the user presses a button
+#ifndef FAULTDETECTOR_EXECINSW
 
 	int sdStatus=prvInitSd(&SdInstance);
 
@@ -1124,16 +1141,24 @@ void FAULTDET_init(u8 restoreTrainDataFromSd, FAULTDETECTOR_region_t trainedRegi
 	XFaultdetector_Set_inputData(&FAULTDETECTOR_InstancePtr, (u32) (&controlForFaultDet));
 
 	if (sdStatus==XST_SUCCESS && restoreTrainDataFromSd) {
-		prvRestoreTrainedData(&FAULTDETECTOR_InstancePtr, &SdInstance);
+		prvRestoreTrainedData(
+#ifndef FAULTDETECTOR_EXECINSW
+				&FAULTDETECTOR_InstancePtr,
+#endif
+				&SdInstance);
 	} else {
 		FAULTDETECTOR_initRegions(&FAULTDETECTOR_InstancePtr, trainedRegions, n_regions);
 	}
+#endif
 }
 
 void FAULTDET_start () {
+#ifndef FAULTDETECTOR_EXECINSW
 	FAULTDETECTOR_setModeRun(&FAULTDETECTOR_InstancePtr);
 	XFaultdetector_Start(&FAULTDETECTOR_InstancePtr);
+#endif
 }
+
 
 void FAULTDET_hotUpdateRegions(FAULTDETECTOR_region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS], u8 n_regions[FAULTDETECTOR_MAX_CHECKS]) {
 #ifdef FAULTDETECTOR_EXECINSW
@@ -1144,6 +1169,9 @@ void FAULTDET_hotUpdateRegions(FAULTDETECTOR_region_t trainedRegions[FAULTDETECT
 	FAULTDET_start ();
 #endif
 }
+
+#ifndef FAULTDETECTOR_EXECINSW
+
 
 void FAULTDET_Train(FAULTDETECTOR_controlStr* contr) {
 	contr->command=COMMAND_TRAIN;
@@ -1184,7 +1212,9 @@ void FAULTDET_initFaultDetection(FAULTDET_ExecutionDescriptor* instance) {
 	}
 	instance->testedOnce=0x0;
 }
+#endif
 
+#ifndef FAULTDETECTOR_EXECINSW
 void FAULTDET_blockIfFaultDetectedInTask (FAULTDET_ExecutionDescriptor* instance) {
 	if ((*pxCurrentTCB_ptr)->reExecutions<configMAX_REEXECUTIONS_SET_IN_HW_SCHEDULER) {
 		if (instance->testedOnce) {
@@ -1202,9 +1232,10 @@ void FAULTDET_blockIfFaultDetectedInTask (FAULTDET_ExecutionDescriptor* instance
 		}
 	}
 }
-
+#endif
 
 #ifdef testingCampaign
+#ifndef FAULTDETECTOR_EXECINSW
 
 void FAULTDET_testing_blockUntilProcessed (FAULTDET_ExecutionDescriptor* instance) {
 	if ((*pxCurrentTCB_ptr)->reExecutions<configMAX_REEXECUTIONS_SET_IN_HW_SCHEDULER) {
@@ -1219,10 +1250,17 @@ void FAULTDET_testing_blockUntilProcessed (FAULTDET_ExecutionDescriptor* instanc
 		}
 	}
 }
-
-#define GOLDEN_RESULT_SIZE 5120
+#endif
+#define GOLDEN_RESULT_SIZE 64
 int FAULTDET_testing_goldenResults_size=0;
+int FAULTDET_testing_goldenResults_idx_tmp=0;
+
 FAULTDETECTOR_testpointDescriptorStr FAULTDET_testing_goldenResults[GOLDEN_RESULT_SIZE];
+
+void FAULTDET_testing_resetGoldens () {
+	FAULTDET_testing_goldenResults_size=0;
+	FAULTDET_testing_goldenResults_idx_tmp=0;
+}
 
 float FAULTDET_testing_relativeErrors[GOLDEN_RESULT_SIZE*FAULTDETECTOR_MAX_AOV_DIM];
 int FAULTDET_testing_relativeErrors_size=0;
@@ -1250,17 +1288,19 @@ void FAULTDET_testing_commitTmpStatsAndReset(u8 injectingFault) {
 		if (FAULTDET_testing_temp_aovchanged) {
 			if (FAULTDET_testing_temp_faultdetected) {
 				FAULTDET_testing_ok++;
+				FAULTDET_testing_ok_wtolerance++;
+
 			} else {
 				if (FAULTDET_testing_temp_lastoutputchanged) {
 					FAULTDET_testing_falseNegatives++;
-					if (FAULTDET_testing_relativeErrors[FAULTDET_testing_relativeErrors_size-1]>0.1f)
+					if (FAULTDET_testing_relativeErrors[FAULTDET_testing_relativeErrors_size-1]>0.15f)
 						FAULTDET_testing_falseNegatives_wtolerance++;
 					else
 						FAULTDET_testing_ok_wtolerance++;
 					//				for (int i=0; i<FAULTDET_testing_relativeErrors_size; i++) {
 					//					printf("%f;", FAULTDET_testing_relativeErrors[i]);
 					//				}
-//					printf("%f;", FAULTDET_testing_relativeErrors[FAULTDET_testing_relativeErrors_size-1]);
+					//					printf("%f;", FAULTDET_testing_relativeErrors[FAULTDET_testing_relativeErrors_size-1]);
 				} else {
 					FAULTDET_testing_ok++;
 					FAULTDET_testing_ok_wtolerance++;
@@ -1330,7 +1370,6 @@ int FAULTDET_testing_getNoEffects() {
 //	FAULTDET_testing_falseNegatives++;
 //}
 
-int FAULTDET_testing_goldenResults_idx_tmp=0;
 
 FAULTDETECTOR_testpointDescriptorStr* FAULTDET_testing_findGolden (FAULTDETECTOR_testpointDescriptorStr* newRes) {
 	for (int i=0; i<FAULTDET_testing_goldenResults_size; i++) {
@@ -1413,9 +1452,6 @@ void FAULTDET_testing_resetStats() {
 
 #endif
 
-#ifdef FAULTDETECTOR_EXECINSW
-#include "faultdetector_sw.h"
-#endif
 
 //warning: uniId must start from 1!
 void FAULTDET_testPoint(
@@ -1488,19 +1524,19 @@ void FAULTDET_testPoint(
 			memcpy(&(tcbPtr->lastError.AOV), &(contr.AOV), sizeof(contr.AOV));
 #ifdef testingCampaign
 		}
+
 		if (injectingErrors==0) {
-			FAULTDET_testing_total_golden++;
 			if (FAULTDET_testing_goldenResults_size<GOLDEN_RESULT_SIZE) {
 				if (fault) {
+#ifdef csvOut
 					printf("%d.%d.%d.%d.1.0.0.0;",roundId, testingExecutionId, checkId, uniId);
-
-					//					FAULTDET_testing_falsePositives++;
+#else
+					FAULTDET_testing_temp_faultdetected=0xFF;
+#endif
 				} else {
-
+#ifdef csvOut
 					printf("%d.%d.%d.%d.0.0.0.0;",roundId, testingExecutionId, checkId, uniId);
-
-					//					printf("ok, fault: %x", fault);
-					//					FAULTDET_testing_ok_golden++;
+#endif
 				}
 
 				FAULTDET_testing_goldenResults[FAULTDET_testing_goldenResults_size].uniId=contr.uniId;
@@ -1520,16 +1556,23 @@ void FAULTDET_testPoint(
 			curr.checkId=contr.checkId;
 			memcpy(&(curr.AOV), &(contr.AOV), sizeof(contr.AOV));
 
-			if (fault) {
-				printf("%d.%d.%d.%d.1.",roundId, testingExecutionId, checkId, uniId);
-
-			} else {
-				printf("%d.%d.%d.%d.0.",roundId, testingExecutionId, checkId, uniId);
-			}
-
 			FAULTDETECTOR_testpointDescriptorStr* golden=FAULTDET_testing_findGolden(&curr);
-			FAULTDET_testing_isAovEqual(golden, &curr);
+
+			if (FAULTDET_testing_isAovEqual(golden, &curr, goldenLobound, goldenUpbound)==0) {
+				if (fault) {
+					//				FAULTDETECTOR_resetFault(&FAULTDETECTOR_InstancePtr, contr.taskId);
+#ifdef csvOut
+					printf("%d.%d.%d.%d.1.",roundId, testingExecutionId, checkId, uniId);
+
+
+				} else {
+					printf("%d.%d.%d.%d.0.",roundId, testingExecutionId, checkId, uniId);
+#endif
+				}
+				FAULTDET_testing_temp_faultdetected=fault;
+			}
 		}
+
 #else //!testingCampaign
 		SCHEDULER_restartFaultyJob((void*) SCHEDULER_BASEADDR, tcbPtr->uxTaskNumber, contr.executionId);
 		while(1) {}
@@ -1577,7 +1620,7 @@ void FAULTDET_testPoint(
 		if (FAULTDET_testing_isAovEqual(golden, &curr, goldenLobound, goldenUpbound)==0) {
 			char fault=FAULTDETECTOR_hasFault(&FAULTDETECTOR_InstancePtr, contr.taskId);
 			if (fault) {
-//				FAULTDETECTOR_resetFault(&FAULTDETECTOR_InstancePtr, contr.taskId);
+				//				FAULTDETECTOR_resetFault(&FAULTDETECTOR_InstancePtr, contr.taskId);
 #ifdef csvOut
 				printf("%d.%d.%d.%d.1.",roundId, testingExecutionId, checkId, uniId);
 
