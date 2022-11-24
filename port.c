@@ -1397,7 +1397,7 @@ u8 FAULTDET_testing_isAovEqual(FAULTDETECTOR_testpointDescriptorStr* golden, FAU
 	u8 outEqual=0xFF;
 	for (int i=0; i<FAULTDETECTOR_MAX_AOV_DIM; i++) {
 		//		float tresh=fabs(golden->AOV[i])*0.1;
-		if (fabs(toTest->AOV[i] - golden->AOV[i]) > GOLDENCOMPARE_THRESH_CONSTANT) {
+		if (toTest->AOV[i] != golden->AOV[i]/*fabs(toTest->AOV[i] - golden->AOV[i]) > GOLDENCOMPARE_THRESH_CONSTANT*/) {
 			if (i>=lobound && i<=upbound) {
 				outEqual=0x0;
 				float relErr=fabs(toTest->AOV[i] - golden->AOV[i])/fabs(golden->AOV[i]);
