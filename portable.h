@@ -1,4 +1,4 @@
-#define FAULTDETECTOR_EXECINSW
+//#define FAULTDETECTOR_EXECINSW
 
 
 /*
@@ -215,6 +215,10 @@ void newTaskHandler(void *HandlerRef) PRIVILEGED_FUNCTION;
 #else
 #include "xfaultdetector.h"
 #endif
+
+unsigned int getMeanTrainClock() PRIVILEGED_FUNCTION;
+unsigned int getMeanTestClock() PRIVILEGED_FUNCTION;
+
 
 typedef struct {
 	FAULTDETECTOR_testpointDescriptorStr lastTest;

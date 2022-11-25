@@ -31,7 +31,7 @@ unsigned int get_delay_for_number_of_cycles(unsigned int number_of_cycles)
 }
 
 /* stop timer */
-void perf_disable_clock(void)
+void perf_stop_clock(void)
 {
 	*(volatile unsigned int*)SCU_GLOBAL_TIMER_CONTROL = 0;
 }
@@ -40,12 +40,12 @@ void perf_disable_clock(void)
 /* stop timer and reset timer count regs */
 void perf_reset_clock(void)
 {
-	perf_disable_clock();
+	perf_stop_clock();
 	*(volatile unsigned int*)SCU_GLOBAL_TIMER_COUNT_L32 = 0;
 	*(volatile unsigned int*)SCU_GLOBAL_TIMER_COUNT_U32 = 0;
 }
 
-void perf_reset_and_start_timer()
+void perf_reset_and_start_clock()
 {
 	perf_reset_clock();
 	perf_start_clock();

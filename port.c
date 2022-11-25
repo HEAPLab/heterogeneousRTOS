@@ -1,5 +1,4 @@
 #define testingCampaign
-#define FAULTDETECTOR_EXECINSW
 //#define verboseScheduler
 
 /*
@@ -1450,6 +1449,21 @@ void FAULTDET_testing_resetStats() {
 	FAULTDET_testing_ok_wtolerance=0;
 }
 
+//TIMING
+
+volatile unsigned long long int clk_count_train_total=0;
+volatile unsigned int clk_count_train_total_times=0;
+
+volatile unsigned long long int clk_count_test_total=0;
+volatile unsigned int clk_count_test_total_times=0;
+
+unsigned int getMeanTrainClock() {
+	return clk_count_train_total/clk_count_train_total_times;
+}
+
+unsigned int getMeanTestClock() {
+	return clk_count_test_total/clk_count_test_total_times;
+}
 #endif
 
 
@@ -1515,7 +1529,15 @@ void FAULTDET_testPoint(
 #endif //FAULTDETECTOR_EXECINSW
 	} else if (tcbPtr->reExecutions<configMAX_REEXECUTIONS_SET_IN_HW_SCHEDULER) {
 #ifdef FAULTDETECTOR_EXECINSW
+#ifdef testingCampaign
+		perf_reset_and_start_clock();
+#endif
 		char fault=FAULTDETECTOR_SW_test(&contr);
+#ifdef testingCampaign
+		perf_stop_clock();
+		clk_count_test_total+=get_clock_L();
+		clk_count_test_total_times++;
+#endif
 		//		printf(" SW FAULT DETECTOR: fault %x", fault);
 		if (fault) {
 			tcbPtr->lastError.uniId=contr.uniId;
@@ -1577,17 +1599,28 @@ void FAULTDET_testPoint(
 #endif //testingCampaign
 
 #else //!FAULTDETECTOR_EXECINSW
-	FAULTDET_Test(&contr);
+
 	instance->testedOnce=0xFF;
 	instance->lastTest.checkId=checkId;
 	instance->lastTest.executionId=tcbPtr->executionId;
 	instance->lastTest.uniId=uniId;
 
 #ifdef testingCampaign
+		perf_reset_and_start_clock();
+#endif
+		FAULTDET_Test(&contr);
+		FAULTDET_testing_blockUntilProcessed(instance);
+#ifdef testingCampaign
+		perf_stop_clock();
+		clk_count_test_total+=get_clock_L();
+		clk_count_test_total_times++;
+#endif
+
+#ifdef testingCampaign
 
 	if (injectingErrors==0) {
 		if (FAULTDET_testing_goldenResults_size<GOLDEN_RESULT_SIZE) {
-			FAULTDET_testing_blockUntilProcessed(instance);
+//			FAULTDET_testing_blockUntilProcessed(instance);
 			if (FAULTDETECTOR_hasFault(&FAULTDETECTOR_InstancePtr, contr.taskId)) {
 				FAULTDETECTOR_resetFault(&FAULTDETECTOR_InstancePtr, contr.taskId);
 				FAULTDET_testing_temp_faultdetected=0xFF;
@@ -1606,7 +1639,7 @@ void FAULTDET_testPoint(
 			printf("ERROR: reached max number golden result size. Not saved.");
 		}
 	} else {
-		FAULTDET_testing_blockUntilProcessed(instance);
+//		FAULTDET_testing_blockUntilProcessed(instance);
 		FAULTDETECTOR_testpointDescriptorStr curr;
 		FAULTDETECTOR_getLastTestedPoint(&FAULTDETECTOR_InstancePtr, contr.taskId, &curr);
 
@@ -1669,7 +1702,16 @@ void FAULTDET_trainPoint(int uniId, int checkId, int argCount, ...) {
 
 	char fault=FAULTDETECTOR_SW_test(&contr);
 	if (fault) {
+#ifdef testingCampaign
+		perf_reset_and_start_clock();
+#endif
 		FAULTDETECTOR_SW_train(&contr);
+#ifdef testingCampaign
+		perf_stop_clock();
+		clk_count_train_total+=get_clock_L();
+		clk_count_train_total_times++;
+#endif
+
 		fault=FAULTDETECTOR_SW_test(&contr);
 		if (fault) {
 			printf("Train failed, checkId %d, uniId %d", checkId, uniId);
