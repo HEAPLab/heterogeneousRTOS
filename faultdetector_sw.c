@@ -2,7 +2,6 @@
 #include <math.h>
 #include <string.h>
 
-const float FAULTDETECTOR_THRESH=FAULTDETECTOR_THRESH_CONSTANT;
 static FAULTDETECTOR_region_t regionsGlob[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS]; //regions from the distribution
 static u8 n_regionsGlob[FAULTDETECTOR_MAX_CHECKS];
 
@@ -13,7 +12,7 @@ char hasRegion(const FAULTDETECTOR_region_t regions[FAULTDETECTOR_MAX_REGIONS], 
 		//			break;
 		for(int j=0; j < FAULTDETECTOR_MAX_AOV_DIM; j++){
 
-			if((regions[i].min[j] <= d[j] || fabs(regions[i].min[j] - d[j]) < FAULTDETECTOR_THRESH ) && ( regions[i].max[j] >= d[j] || fabs(regions[i].max[j] - d[j]) < FAULTDETECTOR_THRESH)) {
+			if((regions[i].min[j] <= d[j] ) && ( regions[i].max[j] >= d[j] )) {
 				if (j==FAULTDETECTOR_MAX_AOV_DIM-1)
 					return 0xFF;
 			} else break;
