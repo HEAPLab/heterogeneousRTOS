@@ -1528,13 +1528,10 @@ void FAULTDET_testPoint(
 		if (injectingErrors==0) {
 			if (FAULTDET_testing_goldenResults_size<GOLDEN_RESULT_SIZE) {
 				if (fault) {
+					FAULTDET_testing_temp_faultdetected=0xFF;
 #ifdef csvOut
 					printf("%d.%d.%d.%d.1.0.0.0;",roundId, testingExecutionId, checkId, uniId);
-#else
-					FAULTDET_testing_temp_faultdetected=0xFF;
-#endif
 				} else {
-#ifdef csvOut
 					printf("%d.%d.%d.%d.0.0.0.0;",roundId, testingExecutionId, checkId, uniId);
 #endif
 				}
@@ -1561,6 +1558,7 @@ void FAULTDET_testPoint(
 			if (FAULTDET_testing_isAovEqual(golden, &curr, goldenLobound, goldenUpbound)==0) {
 				if (fault) {
 					//				FAULTDETECTOR_resetFault(&FAULTDETECTOR_InstancePtr, contr.taskId);
+					FAULTDET_testing_temp_faultdetected=0xFF;
 #ifdef csvOut
 					printf("%d.%d.%d.%d.1.",roundId, testingExecutionId, checkId, uniId);
 
@@ -1569,7 +1567,6 @@ void FAULTDET_testPoint(
 					printf("%d.%d.%d.%d.0.",roundId, testingExecutionId, checkId, uniId);
 #endif
 				}
-				FAULTDET_testing_temp_faultdetected=fault;
 			}
 		}
 
@@ -1593,11 +1590,9 @@ void FAULTDET_testPoint(
 			FAULTDET_testing_blockUntilProcessed(instance);
 			if (FAULTDETECTOR_hasFault(&FAULTDETECTOR_InstancePtr, contr.taskId)) {
 				FAULTDETECTOR_resetFault(&FAULTDETECTOR_InstancePtr, contr.taskId);
-
+				FAULTDET_testing_temp_faultdetected=0xFF;
 #ifdef csvOut
 				printf("%d.%d.%d.%d.1.0.0.0;",roundId, testingExecutionId, checkId, uniId);
-#else
-				FAULTDET_testing_temp_faultdetected=0xFF;
 #endif
 			} else {
 #ifdef csvOut
@@ -1620,6 +1615,7 @@ void FAULTDET_testPoint(
 		if (FAULTDET_testing_isAovEqual(golden, &curr, goldenLobound, goldenUpbound)==0) {
 			char fault=FAULTDETECTOR_hasFault(&FAULTDETECTOR_InstancePtr, contr.taskId);
 			if (fault) {
+				FAULTDET_testing_temp_faultdetected=0xFF;
 				//				FAULTDETECTOR_resetFault(&FAULTDETECTOR_InstancePtr, contr.taskId);
 #ifdef csvOut
 				printf("%d.%d.%d.%d.1.",roundId, testingExecutionId, checkId, uniId);
@@ -1629,7 +1625,6 @@ void FAULTDET_testPoint(
 				printf("%d.%d.%d.%d.0.",roundId, testingExecutionId, checkId, uniId);
 #endif
 			}
-			FAULTDET_testing_temp_faultdetected=fault;
 		}
 		FAULTDETECTOR_resetFault(&FAULTDETECTOR_InstancePtr, contr.taskId);
 
