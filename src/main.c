@@ -1032,7 +1032,6 @@ static void prvTaskFour( void *pvParameters )
 {
 #ifdef testingCampaign
 	xPortSchedulerDisableIntr(); //if uncommented, task will execute continuously
-#endif
 	printf("start\n");
 
 	random_set_seed(1);
@@ -1084,6 +1083,8 @@ static void prvTaskFour( void *pvParameters )
 	//	printf("%d|", FAULTDET_testing_getFalseNegatives_wtolerance());
 	printf("\"no_effect_bitflips\": %d", FAULTDET_testing_getNoEffects());
 	printf("}");
+#endif
+
 }
 //
 //
