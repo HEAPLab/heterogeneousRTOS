@@ -1,4 +1,6 @@
-#define testingCampaign
+//#define testingCampaign
+#define timingM
+
 //#define verboseScheduler
 
 /*
@@ -1449,6 +1451,9 @@ void FAULTDET_testing_resetStats() {
 	FAULTDET_testing_ok_wtolerance=0;
 }
 
+
+#endif
+
 //TIMING
 
 volatile unsigned long long int clk_count_train_total=0;
@@ -1464,8 +1469,6 @@ unsigned int getMeanTrainClock() {
 unsigned int getMeanTestClock() {
 	return clk_count_test_total/clk_count_test_total_times;
 }
-#endif
-
 
 //warning: uniId must start from 1!
 void FAULTDET_testPoint(
@@ -1482,8 +1485,17 @@ void FAULTDET_testPoint(
 #endif
 		int argCount, ...) {
 
+
+
+
+
 	va_list ap;
 	va_start(ap, argCount);
+#ifdef timingM
+		perf_reset_and_start_clock();
+#endif
+
+
 	if (argCount>FAULTDETECTOR_MAX_AOV_DIM) //MAX_AOV_DIM
 		return; //error
 
@@ -1593,8 +1605,8 @@ void FAULTDET_testPoint(
 		}
 
 #else //!testingCampaign
-		SCHEDULER_restartFaultyJob((void*) SCHEDULER_BASEADDR, tcbPtr->uxTaskNumber, contr.executionId);
-		while(1) {}
+//		SCHEDULER_restartFaultyJob((void*) SCHEDULER_BASEADDR, tcbPtr->uxTaskNumber, contr.executionId);
+//		while(1) {}
 	}
 #endif //testingCampaign
 
@@ -1672,7 +1684,13 @@ void FAULTDET_testPoint(
 #endif //testingCampaign
 #endif //FAULTDETECTOR_EXECINSW
 }
-
+#ifdef timingM
+		perf_stop_clock();
+		clk_count_test_total+=get_clock_L();
+		clk_count_test_total_times++;
+		if (get_clock_U()!=0)
+			printf("err up not 0");
+#endif
 va_end(ap);
 }
 
