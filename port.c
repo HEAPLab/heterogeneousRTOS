@@ -1235,7 +1235,6 @@ void FAULTDET_blockIfFaultDetectedInTask (FAULTDET_ExecutionDescriptor* instance
 }
 #endif
 
-#ifdef testingCampaign
 #ifndef FAULTDETECTOR_EXECINSW
 
 void FAULTDET_testing_blockUntilProcessed (FAULTDET_ExecutionDescriptor* instance) {
@@ -1252,6 +1251,8 @@ void FAULTDET_testing_blockUntilProcessed (FAULTDET_ExecutionDescriptor* instanc
 	}
 }
 #endif
+#ifdef testingCampaign
+
 #define GOLDEN_RESULT_SIZE 64
 int FAULTDET_testing_goldenResults_size=0;
 int FAULTDET_testing_goldenResults_idx_tmp=0;
