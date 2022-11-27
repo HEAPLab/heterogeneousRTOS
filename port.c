@@ -1,5 +1,5 @@
 //#define testingCampaign
-#define timingM
+//#define timingM
 
 //#define verboseScheduler
 
@@ -1125,8 +1125,6 @@ volatile void BtnPressHandler(void *CallbackRef)
 
 void FAULTDET_init(u8 restoreTrainDataFromSd, FAULTDETECTOR_region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS], u8 n_regions[FAULTDETECTOR_MAX_CHECKS]) {
 	//setup GPIO interrupt to enable dump trained data to SD when the user presses a button
-#ifndef FAULTDETECTOR_EXECINSW
-
 	int sdStatus=prvInitSd(&SdInstance);
 
 	if (sdStatus==XST_SUCCESS) {
@@ -1136,10 +1134,12 @@ void FAULTDET_init(u8 restoreTrainDataFromSd, FAULTDETECTOR_region_t trainedRegi
 				GPIO_CHANNEL1);
 	}
 
+#ifndef FAULTDETECTOR_EXECINSW
 	//setup FAULT DETECTOR
 	XFaultdetector_Config* configPtr=XFaultdetector_LookupConfig(FAULTDETECTOR_DEVICEID);
 	XFaultdetector_CfgInitialize(&FAULTDETECTOR_InstancePtr, configPtr);
 	XFaultdetector_Set_inputData(&FAULTDETECTOR_InstancePtr, (u32) (&controlForFaultDet));
+#endif
 
 	if (sdStatus==XST_SUCCESS && restoreTrainDataFromSd) {
 		prvRestoreTrainedData(
@@ -1148,18 +1148,20 @@ void FAULTDET_init(u8 restoreTrainDataFromSd, FAULTDETECTOR_region_t trainedRegi
 #endif
 				&SdInstance);
 	} else {
+#ifdef FAULTDETECTOR_EXECINSW
+		FAULTDETECTOR_SW_initRegions(trainedRegions, n_regions);
+#else
 		FAULTDETECTOR_initRegions(&FAULTDETECTOR_InstancePtr, trainedRegions, n_regions);
-	}
 #endif
-}
+	}
 
-void FAULTDET_start () {
+}
 #ifndef FAULTDETECTOR_EXECINSW
+void FAULTDET_start () {
 	FAULTDETECTOR_setModeRun(&FAULTDETECTOR_InstancePtr);
 	XFaultdetector_Start(&FAULTDETECTOR_InstancePtr);
-#endif
 }
-
+#endif
 
 void FAULTDET_hotUpdateRegions(FAULTDETECTOR_region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS], u8 n_regions[FAULTDETECTOR_MAX_CHECKS]) {
 #ifdef FAULTDETECTOR_EXECINSW
@@ -1227,9 +1229,9 @@ void FAULTDET_blockIfFaultDetectedInTask (FAULTDET_ExecutionDescriptor* instance
 			}
 			while(memcmp(&(instance->lastTest), &out, sizeof(FAULTDETECTOR_testpointShortDescriptorStr))!=0);
 
-			if(FAULTDETECTOR_hasFault(&FAULTDETECTOR_InstancePtr, taskId)) {
-				while(1) {}
-			}
+//			if(FAULTDETECTOR_hasFault(&FAULTDETECTOR_InstancePtr, taskId)) {
+//				while(1) {}
+//			}
 		}
 	}
 }
@@ -1457,19 +1459,19 @@ void FAULTDET_testing_resetStats() {
 
 //TIMING
 
-volatile unsigned long long int clk_count_train_total=0;
-volatile unsigned int clk_count_train_total_times=0;
-
-volatile unsigned long long int clk_count_test_total=0;
-volatile unsigned int clk_count_test_total_times=0;
-
-unsigned int getMeanTrainClock() {
-	return clk_count_train_total/clk_count_train_total_times;
-}
-
-unsigned int getMeanTestClock() {
-	return clk_count_test_total/clk_count_test_total_times;
-}
+//volatile unsigned long long int clk_count_train_total=0;
+//volatile unsigned int clk_count_train_total_times=0;
+//
+//volatile unsigned long long int clk_count_test_total=0;
+//volatile unsigned int clk_count_test_total_times=0;
+//
+//unsigned int getMeanTrainClock() {
+//	return clk_count_train_total/clk_count_train_total_times;
+//}
+//
+//unsigned int getMeanTestClock() {
+//	return clk_count_test_total/clk_count_test_total_times;
+//}
 
 //warning: uniId must start from 1!
 void FAULTDET_testPoint(
@@ -1492,9 +1494,9 @@ void FAULTDET_testPoint(
 
 	va_list ap;
 	va_start(ap, argCount);
-#ifdef timingM
-		perf_reset_and_start_clock();
-#endif
+//#ifdef timingM
+//		perf_reset_and_start_clock();
+//#endif
 
 
 	if (argCount>FAULTDETECTOR_MAX_AOV_DIM) //MAX_AOV_DIM
@@ -1542,15 +1544,15 @@ void FAULTDET_testPoint(
 #endif //FAULTDETECTOR_EXECINSW
 	} else if (tcbPtr->reExecutions<configMAX_REEXECUTIONS_SET_IN_HW_SCHEDULER) {
 #ifdef FAULTDETECTOR_EXECINSW
-#ifdef testingCampaign
-		perf_reset_and_start_clock();
-#endif
+//#ifdef testingCampaign
+//		perf_reset_and_start_clock();
+//#endif
 		char fault=FAULTDETECTOR_SW_test(&contr);
-#ifdef testingCampaign
-		perf_stop_clock();
-		clk_count_test_total+=get_clock_L();
-		clk_count_test_total_times++;
-#endif
+//#ifdef testingCampaign
+//		perf_stop_clock();
+//		clk_count_test_total+=get_clock_L();
+//		clk_count_test_total_times++;
+//#endif
 		//		printf(" SW FAULT DETECTOR: fault %x", fault);
 		if (fault) {
 			tcbPtr->lastError.uniId=contr.uniId;
@@ -1618,22 +1620,22 @@ void FAULTDET_testPoint(
 	instance->lastTest.executionId=tcbPtr->executionId;
 	instance->lastTest.uniId=uniId;
 
-#ifdef testingCampaign
-		perf_reset_and_start_clock();
-#endif
+//#ifdef testingCampaign
+//		perf_reset_and_start_clock();
+//#endif
 		FAULTDET_Test(&contr);
-		FAULTDET_testing_blockUntilProcessed(instance);
-#ifdef testingCampaign
-		perf_stop_clock();
-		clk_count_test_total+=get_clock_L();
-		clk_count_test_total_times++;
-#endif
+//		FAULTDET_testing_blockUntilProcessed(instance);
+//#ifdef testingCampaign
+////		perf_stop_clock();
+////		clk_count_test_total+=get_clock_L();
+////		clk_count_test_total_times++;
+//#endif
 
 #ifdef testingCampaign
 
 	if (injectingErrors==0) {
 		if (FAULTDET_testing_goldenResults_size<GOLDEN_RESULT_SIZE) {
-//			FAULTDET_testing_blockUntilProcessed(instance);
+			FAULTDET_testing_blockUntilProcessed(instance);
 			if (FAULTDETECTOR_hasFault(&FAULTDETECTOR_InstancePtr, contr.taskId)) {
 				FAULTDETECTOR_resetFault(&FAULTDETECTOR_InstancePtr, contr.taskId);
 				FAULTDET_testing_temp_faultdetected=0xFF;
@@ -1652,7 +1654,7 @@ void FAULTDET_testPoint(
 			printf("ERROR: reached max number golden result size. Not saved.");
 		}
 	} else {
-//		FAULTDET_testing_blockUntilProcessed(instance);
+		FAULTDET_testing_blockUntilProcessed(instance);
 		FAULTDETECTOR_testpointDescriptorStr curr;
 		FAULTDETECTOR_getLastTestedPoint(&FAULTDETECTOR_InstancePtr, contr.taskId, &curr);
 
@@ -1679,19 +1681,19 @@ void FAULTDET_testPoint(
 	}
 
 #else //!testingCampaign
-	if (blocking) {
-		FAULTDET_blockIfFaultDetectedInTask(instance);
-	}
+//	if (blocking) {
+//		FAULTDET_blockIfFaultDetectedInTask(instance);
+//	}
 #endif //testingCampaign
 #endif //FAULTDETECTOR_EXECINSW
 }
-#ifdef timingM
-		perf_stop_clock();
-		clk_count_test_total+=get_clock_L();
-		clk_count_test_total_times++;
-		if (get_clock_U()!=0)
-			printf("err up not 0");
-#endif
+//#ifdef timingM
+//		perf_stop_clock();
+//		clk_count_test_total+=get_clock_L();
+//		clk_count_test_total_times++;
+//		if (get_clock_U()!=0)
+//			printf("err up not 0");
+//#endif
 va_end(ap);
 }
 
@@ -1721,15 +1723,15 @@ void FAULTDET_trainPoint(int uniId, int checkId, int argCount, ...) {
 
 	char fault=FAULTDETECTOR_SW_test(&contr);
 	if (fault) {
-#ifdef testingCampaign
-		perf_reset_and_start_clock();
-#endif
+//#ifdef testingCampaign
+//		perf_reset_and_start_clock();
+//#endif
 		FAULTDETECTOR_SW_train(&contr);
-#ifdef testingCampaign
-		perf_stop_clock();
-		clk_count_train_total+=get_clock_L();
-		clk_count_train_total_times++;
-#endif
+//#ifdef testingCampaign
+//		perf_stop_clock();
+//		clk_count_train_total+=get_clock_L();
+//		clk_count_train_total_times++;
+//#endif
 
 		fault=FAULTDETECTOR_SW_test(&contr);
 		if (fault) {

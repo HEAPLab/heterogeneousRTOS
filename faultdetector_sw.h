@@ -12,7 +12,7 @@
 
 #define FAULTDETECTOR_MAX_AOV_DIM 4
 
-#define FAULTDETECTOR_MAX_REGIONS 32
+#define FAULTDETECTOR_MAX_REGIONS 8
 
 typedef struct {
 	u8 checkId;

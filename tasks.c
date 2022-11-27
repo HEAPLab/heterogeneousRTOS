@@ -2165,7 +2165,9 @@ u8 xTaskGetExecutionId() {
 
 	void vTaskStartFaultDetector(u8 restoreTrainDataFromSd, FAULTDETECTOR_region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS], u8 n_regions[FAULTDETECTOR_MAX_CHECKS]) {
 		FAULTDET_init(restoreTrainDataFromSd, trainedRegions, n_regions);
+#ifndef FAULTDETECTOR_EXECINSW
 		FAULTDET_start();
+#endif
 	}
 
 	void vTaskStartScheduler() {
