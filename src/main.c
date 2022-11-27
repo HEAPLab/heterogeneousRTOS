@@ -14,8 +14,8 @@
 /* FreeRTOS includes. */
 //#include "xil_printf.h"
 
-#define testingCampaign
-#define FAULTDETECTOR_EXECINSW
+//#define testingCampaign
+//#define FAULTDETECTOR_EXECINSW
 //#define trainMode
 #define onOutputOnly
 
@@ -136,12 +136,32 @@ int main( void )
 	for (int i=0; i<FAULTDETECTOR_MAX_CHECKS; i++) {
 		n_regions[i]=0;
 		for (int j=0; j<FAULTDETECTOR_MAX_REGIONS; j++) {
-			for (int k=0; k<FAULTDETECTOR_MAX_AOV_DIM; k++) {
-				trainedRegions[i][j].center[k]=0.0;
-				//				trainedRegions[i][j].max[k]=100.0;
-				//				trainedRegions[i][j].min[k]=-100.0;
-				trainedRegions[i][j].max[k]=0.0;
-				trainedRegions[i][j].min[k]=0.0;
+			for (int k=0; k<=FAULTDETECTOR_MAX_AOV_DIM; k++) {
+				trainedRegions[i][j].center[k]=0.0f;
+				trainedRegions[i][j].max[k]=0.0f;
+				trainedRegions[i][j].min[k]=0.0f;
+
+//				if (j>=0 && j<=2) {
+//					if (k>=0 && k<1) {
+//					trainedRegions[i][j].center[k]=0.0f;
+//					trainedRegions[i][j].max[k]=1000.0f;
+//					trainedRegions[i][j].min[k]=-1000.0f;
+//					} else if ( k<=2 ) {
+//						trainedRegions[i][j].center[k]=1000.0f;
+//						trainedRegions[i][j].max[k]=1000.0f;
+//						trainedRegions[i][j].min[k]=1000.0f;
+//					}
+//				} else if (j>=3 && j<=5) {
+//					if (k>=0 && k<=)
+//					trainedRegions[i][j].center[k]=0.0f;
+//					trainedRegions[i][j].max[k]=1000.0f;
+//					trainedRegions[i][j].min[k]=-1000.0f;
+//				} else if (j==6) {
+//					trainedRegions[i][j].center[k]=0.0f;
+//					trainedRegions[i][j].max[k]=1000.0f;
+//					trainedRegions[i][j].min[k]=-1000.0f;
+//				}
+
 			}
 		}
 
@@ -223,9 +243,10 @@ typedef struct pid_controller_s {
 } pid_controller_t;
 
 
+
 float run_pid(pid_controller_t* pid, float error, int executionId) {
 	float output;
-
+#ifdef testingCampaign
 	FAULTDET_testing_injectFault32(pid->p, executionId, 32*0, (32*1)-1, injectingErrors);
 	FAULTDET_testing_injectFault32(pid->i, executionId, 32*1, (32*2)-1, injectingErrors);
 	FAULTDET_testing_injectFault32(pid->d, executionId, 32*2, (32*3)-1, injectingErrors);
@@ -233,23 +254,26 @@ float run_pid(pid_controller_t* pid, float error, int executionId) {
 	FAULTDET_testing_injectFault32(pid->prev_error, executionId, 32*4, (32*5)-1, injectingErrors);
 	FAULTDET_testing_injectFault32(pid->integral_sum, executionId, 32*5, (32*6)-1, injectingErrors);
 	FAULTDET_testing_injectFault32(pid->backpropagation, executionId, 32*6, (32*7)-1, injectingErrors);
-
+#endif
 	output = error * pid->p;
+#ifdef testingCampaign
 
 	FAULTDET_testing_injectFault32(output, executionId, 32*7, (32*8)-1, injectingErrors);
-
+#endif
 	pid->integral_sum += ((error * pid->i) + (pid->b * pid->backpropagation)) * TIME_STEP;
-
+#ifdef testingCampaign
 	FAULTDET_testing_injectFault32(pid->integral_sum, executionId, 32*8, (32*9)-1, injectingErrors);
-
+#endif
 	output += pid->integral_sum;
+#ifdef testingCampaign
 
 	FAULTDET_testing_injectFault32(output, executionId, 32*9, (32*10)-1, injectingErrors);
-
+#endif
 	output += pid->d * (error - pid->prev_error) / TIME_STEP;
+#ifdef testingCampaign
 
 	FAULTDET_testing_injectFault32(output, executionId, 32*10, (32*11)-1, injectingErrors);
-
+#endif
 	pid->prev_error = error;
 
 	return output;
@@ -257,34 +281,39 @@ float run_pid(pid_controller_t* pid, float error, int executionId) {
 
 float roll_limiter(float desired_roll, float speed, int executionId) {
 	float limit_perc,limit;
+#ifdef testingCampaign
 
 	FAULTDET_testing_injectFault32(speed, executionId, 32*0, (32*1)-1, injectingErrors);
 	FAULTDET_testing_injectFault32(desired_roll, executionId, 32*4, (32*5)-1, injectingErrors);
-
+#endif
 	if (speed <= 140) {
 		return CLAMP(desired_roll, -30, 30);
 	}
 	if (speed >= 300) {
 		return CLAMP(desired_roll, -40, 40);
 	}
+#ifdef testingCampaign
 
 	FAULTDET_testing_injectFault32(speed, executionId, 32*1, (32*2)-1, injectingErrors);
-
+#endif
 	limit_perc = (speed < 220) ? (speed-140) / 80 : ((speed-220) / 80);
+#ifdef testingCampaign
 
 	FAULTDET_testing_injectFault32(limit_perc, executionId, 32*2, (32*3)-1, injectingErrors);
-
+#endif
 	limit = (speed < 220) ? (30 + limit_perc * 37) : (40 + (1-limit_perc) * 27);
+#ifdef testingCampaign
 
 	FAULTDET_testing_injectFault32(limit, executionId, 32*3, (32*4)-1, injectingErrors);
-
+#endif
 	return CLAMP (desired_roll, -limit, limit);
 }
 
 float roll_rate_limiter(float desired_roll_rate, float roll, int executionId) {
+#ifdef testingCampaign
 	FAULTDET_testing_injectFault32(roll, executionId, 32*0, (32*1)-1, injectingErrors);
 	FAULTDET_testing_injectFault32(desired_roll_rate, executionId, 32*1, (32*2)-1, injectingErrors);
-
+#endif
 
 	if (roll < 20 && roll > -20) {
 		return CLAMP (desired_roll_rate, -5, 5);
@@ -296,19 +325,36 @@ float roll_rate_limiter(float desired_roll_rate, float roll, int executionId) {
 }
 
 float ailerons_limiter(float aileron, int executionId) {
-	FAULTDET_testing_injectFault32(aileron, executionId, 32*0, (32*1)-1, injectingErrors);
+#ifdef testingCampaign
 
+	FAULTDET_testing_injectFault32(aileron, executionId, 32*0, (32*1)-1, injectingErrors);
+#endif
 	return CLAMP(aileron, -30, 30);
 }
 
 float r1, r2, r3, r4;
+
+volatile unsigned long long int clk_count_bench_total=0;
+volatile unsigned int clk_count_bench_total_times=0;
+
+char first=0xFF;
 
 void latnav(int roundId, int executionId) {
 
 #ifndef FAULTDETECTOR_EXECINSW
 	FAULTDET_ExecutionDescriptor inst;
 	FAULTDET_initFaultDetection(&inst);
+
+
+	inst.lastTest.checkId = first ? 0:6;
+	inst.lastTest.executionId=0;
+	inst.lastTest.uniId= first ? 0:1;
+	inst.testedOnce=0xFF;
+	first=0;
 #endif
+
+	perf_reset_and_start_clock();
+
 
 	pid_controller_t pid_roll_rate,pid_roll,pid_heading;
 	float curr_heading,curr_roll,curr_roll_rate;
@@ -352,7 +398,10 @@ void latnav(int roundId, int executionId) {
 		float err_orig=err;
 
 		desired_roll = run_pid(&pid_heading, err, executionId);
-		actual_roll = roll_limiter(desired_roll, 400, executionId-(32*11));
+
+#ifndef FAULTDETECTOR_EXECINSW
+		FAULTDET_blockIfFaultDetectedInTask(&inst);
+#endif
 
 		if (executionId<-1) {
 			FAULTDET_trainPoint(
@@ -381,6 +430,9 @@ void latnav(int roundId, int executionId) {
 					//					/*&(pid_heading.b),*/ &(pid_heading_backpropagation_orig), /*&(pid_heading.d), &(pid_heading.i), &(pid_heading.p),*/ /*&(pid_heading.prev_error),*/ &err_orig, &desired_roll);//, &actual_roll);
 					/*&(pid_heading.b),*/ &(pid_heading.backpropagation), /*&(pid_heading.d), &(pid_heading.i), &(pid_heading.p),*/ /*&(pid_heading.prev_error),*/ &err, &desired_roll);//, &actual_roll);
 		}
+
+		actual_roll = roll_limiter(desired_roll, 400, executionId-(32*11));
+
 
 		if (executionId<-1) {
 			FAULTDET_trainPoint(
@@ -416,7 +468,6 @@ void latnav(int roundId, int executionId) {
 		float err1=curr_roll - actual_roll;
 		float err1_orig=curr_roll - actual_roll;
 		desired_roll_rate = run_pid(&pid_roll, err1, executionId-(32*11)-(32*5));
-		actual_roll_rate = roll_rate_limiter(desired_roll_rate, curr_roll, executionId-(32*11)-(32*5)-(32*11));
 
 		if (executionId<-1) {
 			FAULTDET_trainPoint(
@@ -445,6 +496,8 @@ void latnav(int roundId, int executionId) {
 					//					/*&(pid_roll.b),*/ &(pid_roll_backpropagation_orig), /*&(pid_roll.d), &(pid_roll.i), &(pid_roll.p),*/ /*&(pid_roll.prev_error),*/ &err1_orig, &desired_roll_rate);//, &actual_roll_rate);
 					/*&(pid_roll.b),*/ &(pid_roll.backpropagation), /*&(pid_roll.d), &(pid_roll.i), &(pid_roll.p),*/ /*&(pid_roll.prev_error),*/ &err1, &desired_roll_rate);//, &actual_roll_rate);
 		}
+
+		actual_roll_rate = roll_rate_limiter(desired_roll_rate, curr_roll, executionId-(32*11)-(32*5)-(32*11));
 
 		if (executionId<-1) {
 			FAULTDET_trainPoint(
@@ -477,7 +530,6 @@ void latnav(int roundId, int executionId) {
 		float err2=curr_roll_rate - actual_roll_rate;
 		float err2_orig=err2;
 		desired_ailerons = run_pid(&pid_roll, err2, executionId-(32*11)-(32*5)-(32*11)-(32*2));
-		actual_ailerons = ailerons_limiter(desired_ailerons, executionId-(32*11)-(32*5)-(32*11)-(32*2)-(32*11));
 
 		if (executionId<-1) {
 			FAULTDET_trainPoint(
@@ -506,7 +558,7 @@ void latnav(int roundId, int executionId) {
 					//					/*&(pid_roll.b),*/ &(pid_roll_backpropagation_orig), /*&(pid_roll.d), &(pid_roll.i), &(pid_roll.p),*/ /*&(pid_roll.prev_error),*/ &err2_orig, &desired_ailerons);//, &actual_ailerons);
 					/*&(pid_roll.b),*/ &(pid_roll.backpropagation), /*&(pid_roll.d), &(pid_roll.i), &(pid_roll.p),*/ /*&(pid_roll.prev_error),*/ &err2, &desired_ailerons);//, &actual_ailerons);
 		}
-
+		actual_ailerons = ailerons_limiter(desired_ailerons, executionId-(32*11)-(32*5)-(32*11)-(32*2)-(32*11));
 
 		if (executionId<-1) {
 			FAULTDET_trainPoint(
@@ -561,6 +613,8 @@ void latnav(int roundId, int executionId) {
 					/*&(pid_roll.b),*/ &(curr_heading), /*&(pid_roll.d), &(pid_roll.i), &(pid_roll.p),*/ &(curr_roll), &curr_roll_rate, &actual_ailerons);
 		}
 
+
+
 		/* Just a random plane model*/
 		//		FAULTDET_testing_injectFault32(curr_roll, executionId, (32*11)+(32*5)+(32*11)+(32*2)+(32*11)+(32*1), (32*11)+(32*5)+(32*11)+(32*2)+(32*11)+(32*1)+(32)-1, injectingErrors);
 		//		FAULTDET_testing_injectFault32(curr_roll_rate, executionId, (32*11)+(32*5)+(32*11)+(32*2)+(32*11)+(32*1)+(32), (32*11)+(32*5)+(32*11)+(32*2)+(32*11)+(32*1)+(32)+(32)-1,  injectingErrors);
@@ -576,6 +630,13 @@ void latnav(int roundId, int executionId) {
 		//		FAULTDET_testing_injectFault32(curr_roll_rate, executionId, 1408+32+32, 1408+32+32+32-1 /*1503*/,  injectingErrors);
 
 	}
+	perf_stop_clock();
+	if (executionId>=-1) {
+		clk_count_bench_total+=get_clock_L();
+		clk_count_bench_total_times++;
+		if (get_clock_U()!=0)
+			printf("err up not 0");
+	}
 
 #ifdef testingCampaign
 	if (executionId>=-1) {
@@ -590,7 +651,6 @@ void latnav(int roundId, int executionId) {
 #endif
 }
 
-#endif
 
 #ifdef imgscalingBench
 //SOURCED FROM ABSURD BENCHMARK SUITE BY HEAPLAB - POLIMI
@@ -930,11 +990,12 @@ void imgScaling(int executionId) {
 
 #endif
 			//#ifndef trainMode
+#ifdef testingCampaign
 			FAULTDET_testing_injectFault32(col0, executionId, 768, 799, injectingErrors);
 			FAULTDET_testing_injectFault32(col1, executionId, 800, 831, injectingErrors);
 			FAULTDET_testing_injectFault32(col2, executionId, 832, 863, injectingErrors);
 			FAULTDET_testing_injectFault32(col3, executionId, 864, 895, injectingErrors);
-
+#endif
 			//						FAULTDET_testing_injectFault32(res, executionId, 896, 927, injectingErrors);
 			FAULTDET_testing_injectFault32(dy, executionId, 928, 959, injectingErrors);
 			//#endif
@@ -1025,67 +1086,157 @@ void imgScaling(int executionId) {
 }
 #endif
 
+#endif
 
+#include "perf_timer.h"
 
 //static void prvImgAcquireAndScaleTask( void *pvParameters )
 static void prvTaskFour( void *pvParameters )
 {
-#ifdef testingCampaign
 	xPortSchedulerDisableIntr(); //if uncommented, task will execute continuously
 	printf("start\n");
 
 	random_set_seed(1);
-
-	//	for (int i=0; i<1000; i++) {
-	//		injectingErrors=0x0;
-
-	int executions=100;
-	int trainIter=1000;
-
-	for (int executionId=-trainIter-1 ;executionId<-1/*960*/; executionId++) {
+	//	float a;
+	//	float b;
+	//	float c;
+	//
+	//	for (int i=0; i<50000; i++) {
+	//
+	//		a=random_get();
+	//		b=random_get();
+	//		c=random_get();
+	//
+	//		FAULTDET_trainPoint(
+	//				1,
+	//				0,  //checkId
+	//				3,
+	//				&a, &b, &c);
+	//	}
+	//
+	//	for (int i=0; i<10000; i++) {
+	//		a=random_get();
+	//		b=random_get();
+	//		c=random_get();
+	//
+	//		FAULTDET_testPoint(
+	//#ifndef FAULTDETECTOR_EXECINSW
+	//				NULL,
+	//#endif
+	//				1, //uniId
+	//				0, //checkId
+	//				0, //BLOCKING OR NON BLOCKING, non blocking
+	//#ifdef testingCampaign
+	//				injectingErrors,
+	//				1,
+	//				1,
+	//				roundId,
+	//				executionId,
+	//#endif
+	//				3, //SIZE OF THIS SPECIFIC AOV (<=FAULTDETECTOR_MAX_AOV_DIM , unused elements will be initialised to 0)
+	//				&a, &b, &c);
+	//#ifndef FAULTDETECTOR_EXECINSW
+	//		FAULTDET_resetFault();
+	//#endif
+	//	}
+	//	printf("clk train mean: %u clk test mean: %u", getMeanTrainClock(), getMeanTestClock());
+	for (int i=0; i<25000; i++) {
 		r1=random_get();
 		r2=random_get();
 		r3=random_get();
 		r4=random_get();
-		latnav(0, executionId);
+		latnav(0, -5);
 	}
-
-	for (int i=0; i<executions; i++) {
-		FAULTDET_testing_resetGoldens();
-		injectingErrors=0x0;
+	for (int i=0; i<50000; i++) {
 		r1=random_get();
 		r2=random_get();
 		r3=random_get();
 		r4=random_get();
-		for (int executionId=-1 ;executionId<1312/*1503*//*960*/; executionId++) {
-			latnav(i, executionId);
-		}
-		//		}
-		//#ifdef trainMode
-		//		printf("Training done. ");
-		//		FAULTDET_dumpRegions();
-		//		while(1) {
-		//			//printf("done train");
-		//
-		//		}
-		//#endif
-		//			FAULTDET_hotUpdateRegions(trainedRegions, n_regions);
+		latnav(0, -1);
+//		injectingErrors=0x0;
+//		FAULTDET_testing_resetGoldens();
 	}
-	printf("], ");
-	printf("\"total_pos\": %d, ", FAULTDET_testing_getTotal_golden());
-	printf("\"true_pos\": %d, ", FAULTDET_testing_getOk_golden());
-	printf("\"false_pos\": %d, ", FAULTDET_testing_getFalsePositives_golden());
+	unsigned int benchtime=clk_count_bench_total/clk_count_bench_total_times;
+	printf("bench time %u", benchtime);
+//	printf("\"total_pos\": %d, ", FAULTDET_testing_getTotal_golden());
+//	printf("\"true_pos\": %d, ", FAULTDET_testing_getOk_golden());
+//	printf("\"false_pos\": %d, ", FAULTDET_testing_getFalsePositives_golden());
+}
 
-	printf("\"total_bitflips\":%d, ", FAULTDET_testing_getTotal());
-	printf("\"true_neg\": %d, ", FAULTDET_testing_getOk());
-	printf("\"false_neg\":%d, ", FAULTDET_testing_getFalseNegatives());
-	//	printf("%d|", FAULTDET_testing_getOk_wtolerance());
-	//	printf("%d|", FAULTDET_testing_getFalseNegatives_wtolerance());
-	printf("\"no_effect_bitflips\": %d", FAULTDET_testing_getNoEffects());
-	printf("}");
+
+
+#ifdef aaaa
+
+
+//	unsigned long long int ovh_sum=0;
+//	for (int i=0; i<10000; i++) {
+//		perf_reset_and_start_clock();
+//		perf_stop_clock();
+//		ovh_sum+=get_clock_L();
+//	}
+//	unsigned int ovh=ovh_sum/10000;
+//	printf("measure overhead %u", ovh);
+
+perf_reset_and_start_clock();
+perf_stop_clock();
+printf("measure overhead %u", get_clock_L());
+
+random_set_seed(1);
+
+//	for (int i=0; i<1000; i++) {
+//		injectingErrors=0x0;
+
+int executions=1000;
+int trainIter=1000;
+
+for (int executionId=-trainIter-1 ;executionId<-1/*960*/; executionId++) {
+	r1=random_get();
+	r2=random_get();
+	r3=random_get();
+	r4=random_get();
+	latnav(0, executionId);
+}
+
+for (int i=0; i<executions; i++) {
+	FAULTDET_testing_resetGoldens();
+	injectingErrors=0x0;
+	r1=random_get();
+	r2=random_get();
+	r3=random_get();
+	r4=random_get();
+	for (int executionId=-1 ;executionId<1312/*1503*//*960*/; executionId++) {
+		latnav(i, executionId);
+	}
+	//		}
+	//#ifdef trainMode
+	//		printf("Training done. ");
+	//		FAULTDET_dumpRegions();
+	//		while(1) {
+	//			//printf("done train");
+	//
+	//		}
+	//#endif
+	//			FAULTDET_hotUpdateRegions(trainedRegions, n_regions);
+}
+#ifdef testingCampaign
+printf("clk train mean: %u clk test mean: %u", getMeanTrainClock(), getMeanTestClock());
+printf("], ");
+printf("\"total_pos\": %d, ", FAULTDET_testing_getTotal_golden());
+printf("\"true_pos\": %d, ", FAULTDET_testing_getOk_golden());
+printf("\"false_pos\": %d, ", FAULTDET_testing_getFalsePositives_golden());
+
+printf("\"total_bitflips\":%d, ", FAULTDET_testing_getTotal());
+printf("\"true_neg\": %d, ", FAULTDET_testing_getOk());
+printf("\"false_neg\":%d, ", FAULTDET_testing_getFalseNegatives());
+//	printf("%d|", FAULTDET_testing_getOk_wtolerance());
+//	printf("%d|", FAULTDET_testing_getFalseNegatives_wtolerance());
+printf("\"no_effect_bitflips\": %d", FAULTDET_testing_getNoEffects());
+printf("}");
 #endif
 
 }
+#endif
+
 //
 //
 //	static void prvTaskFour( void *pvParameters )
