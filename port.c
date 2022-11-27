@@ -1733,12 +1733,10 @@ void FAULTDET_trainPoint(int uniId, int checkId, int argCount, ...) {
 //		clk_count_train_total_times++;
 //#endif
 
-		fault=FAULTDETECTOR_SW_test(&contr);
-		if (fault) {
-			printf("Train failed, checkId %d, uniId %d", checkId, uniId);
-		}
-		//		 else
-		//			 printf("Train ok, checkId %d, uniId %d", checkId, uniId);
+//		fault=FAULTDETECTOR_SW_test(&contr);
+//		if (fault) {
+//			printf("Train failed, checkId %d, uniId %d", checkId, uniId);
+//		}
 
 	}
 #else
