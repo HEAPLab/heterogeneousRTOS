@@ -15,7 +15,7 @@
 //#include "xil_printf.h"
 
 //#define testingCampaign
-#define FAULTDETECTOR_EXECINSW
+//#define FAULTDETECTOR_EXECINSW
 //#define trainMode
 #define onOutputOnly
 
@@ -129,8 +129,10 @@ int main( void )
 			NULL,
 			tskIDLE_PRIORITY,
 			NULL,
-			999999997, //deadline
-			999999997, //period
+			1000,
+			1000,
+			//999999997, //deadline
+			//999999997, //period
 			999999997); //wcet
 
 	for (int i=0; i<FAULTDETECTOR_MAX_CHECKS; i++) {
@@ -1186,7 +1188,7 @@ void imgScaling(int executionId) {
 	if (executionId>=-1) {
 		printf(" total: %d ", FAULTDET_testing_getTotal());
 		printf(" ok: %d ", FAULTDET_testing_getOk());
-		if (injectingErrors) {
+		if injectingErrors) {
 			printf(" fn: %d\n", FAULTDET_testing_getFalseNegatives());
 		} else {
 			printf(" fp: %d\n", FAULTDET_testing_getFalsePositives());
@@ -1211,6 +1213,8 @@ static void prvTaskFour( void *pvParameters )
 {
 	xPortSchedulerDisableIntr(); //if uncommented, task will execute continuously
 	printf("start\n");
+
+	for(int i=0; i<0x100000; i++)
 
 	random_set_seed(1);
 	//	float a;
