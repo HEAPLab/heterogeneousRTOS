@@ -230,24 +230,22 @@ void FAULTDET_start() PRIVILEGED_FUNCTION;
 void FAULTDET_Train(FAULTDETECTOR_controlStr* contr) PRIVILEGED_FUNCTION;
 void FAULTDET_Test(FAULTDETECTOR_controlStr* contr) PRIVILEGED_FUNCTION;
 void FAULTDET_hotUpdateRegions(FAULTDETECTOR_region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS], u8 n_regions[FAULTDETECTOR_MAX_CHECKS]) PRIVILEGED_FUNCTION;
-void FAULTDET_blockIfFaultDetectedInTask (FAULTDET_ExecutionDescriptor* instance) PRIVILEGED_FUNCTION;
+//void FAULTDET_blockIfFaultDetectedInTask (FAULTDET_ExecutionDescriptor* instance) PRIVILEGED_FUNCTION;
+void FAULTDET_blockIfFaultDetectedInTask (FAULTDETECTOR_controlStr* control) PRIVILEGED_FUNCTION;
 void FAULTDET_getLastTestedPoint(FAULTDETECTOR_testpointDescriptorStr* dest) PRIVILEGED_FUNCTION;
 void FAULTDET_initFaultDetection(FAULTDET_ExecutionDescriptor* instance) PRIVILEGED_FUNCTION;
 //void FAULTDET_endFaultDetection() PRIVILEGED_FUNCTION;
 void FAULTDET_trainPoint(int uniId, int checkId, int argCount, ...) PRIVILEGED_FUNCTION;
 void FAULTDET_testPoint(
-#ifndef FAULTDETECTOR_EXECINSW
-		FAULTDET_ExecutionDescriptor* instance,
-#endif
-		int uniId, int checkId, char blocking,
+		FAULTDETECTOR_controlStr* control
 #ifdef testingCampaign
-		u8 injectingErrors,
+		, u8 injectingErrors,
 		int goldenLobound,
 		int goldenUpbound,
 		int roundId,
 		int testingExecutionId,
 #endif
-		int argCount, ...) PRIVILEGED_FUNCTION;
+) PRIVILEGED_FUNCTION;
 //char FAULTDET_hasFault()  PRIVILEGED_FUNCTION;
 void FAULTDET_resetFault() PRIVILEGED_FUNCTION;
 

@@ -829,7 +829,7 @@ int prvInitSd(XSdPs* SD_InstancePtr)
 
 	Status = XSdPs_CardInitialize(SD_InstancePtr);
 	if (Status != XST_SUCCESS) {
-//		printf("\nSD CARD INIT FAILED. CHECK AN SD CARD IS IN THE SLOT. TRAINED DATA DUMP DISABLED UNTIL RESET\n");
+		//		printf("\nSD CARD INIT FAILED. CHECK AN SD CARD IS IN THE SLOT. TRAINED DATA DUMP DISABLED UNTIL RESET\n");
 		return XST_FAILURE;
 	}
 
@@ -845,9 +845,9 @@ trainedData dumpedDataSdBuf __attribute__ ((aligned(32)));
 
 int prvRestoreTrainedData(
 #ifndef FAULTDETECTOR_EXECINSW
-XFaultdetector* FaultDet_InstancePtr,
+		XFaultdetector* FaultDet_InstancePtr,
 #endif
-XSdPs* SD_InstancePtr) {
+		XSdPs* SD_InstancePtr) {
 	/*
 	 * Read data from SD/eMMC.
 	 */
@@ -871,9 +871,9 @@ void FAULTDET_StopRunMode();
 
 int prvDumpTrainedData(
 #ifndef FAULTDETECTOR_EXECINSW
-XFaultdetector* FaultDet_InstancePtr,
+		XFaultdetector* FaultDet_InstancePtr,
 #endif
-XSdPs* SD_InstancePtr) {
+		XSdPs* SD_InstancePtr) {
 #ifdef FAULTDETECTOR_EXECINSW
 	printf("\nSTARTING TO DUMP DATA\n");
 	FAULTDETECTOR_SW_dumpRegions(dumpedDataSdBuf.trainedRegions, dumpedDataSdBuf.n_regions);
@@ -1224,22 +1224,23 @@ void FAULTDET_initFaultDetection(FAULTDET_ExecutionDescriptor* instance) {
 #endif
 
 #ifndef FAULTDETECTOR_EXECINSW
-void FAULTDET_blockIfFaultDetectedInTask (FAULTDET_ExecutionDescriptor* instance) {
+void FAULTDET_blockIfFaultDetectedInTask (FAULTDETECTOR_controlStr* control) {
 	if ((*pxCurrentTCB_ptr)->reExecutions<configMAX_REEXECUTIONS_SET_IN_HW_SCHEDULER) {
-		if (instance->testedOnce) {
-			u8 taskId=((*pxCurrentTCB_ptr)->uxTaskNumber)-1;
+		//		if (instance->testedOnce) {
+		u8 taskId=((*pxCurrentTCB_ptr)->uxTaskNumber)-1;
 
-			FAULTDETECTOR_testpointShortDescriptorStr out;
-			do {
-				FAULTDETECTOR_getLastTestedPointShort(&FAULTDETECTOR_InstancePtr, taskId, &out);
-			}
-			while(memcmp(&(instance->lastTest), &out, sizeof(FAULTDETECTOR_testpointShortDescriptorStr))!=0);
-
-//			if(FAULTDETECTOR_hasFault(&FAULTDETECTOR_InstancePtr, taskId)) {
-//				while(1) {}
-//			}
+		FAULTDETECTOR_testpointShortDescriptorStr out;
+		do {
+			FAULTDETECTOR_getLastTestedPointShort(&FAULTDETECTOR_InstancePtr, taskId, &out);
 		}
+		while(*((u32*)(control))!=(*((u32*)(&out))));
+		//			while(memcmp(control, &out, sizeof(FAULTDETECTOR_testpointShortDescriptorStr))!=0);
+
+		//			if(FAULTDETECTOR_hasFault(&FAULTDETECTOR_InstancePtr, taskId)) {
+		//				while(1) {}
+		//			}
 	}
+	//	}
 }
 #endif
 
@@ -1462,91 +1463,257 @@ void FAULTDET_testing_resetStats() {
 
 
 #endif
+//
+////warning: uniId must start from 1!
+//void FAULTDET_testPoint(
+//#ifndef FAULTDETECTOR_EXECINSW
+//		FAULTDET_ExecutionDescriptor* instance,
+//#endif
+//		int uniId, int checkId, char blocking,
+//#ifdef testingCampaign
+//		u8 injectingErrors,
+//		int goldenLobound,
+//		int goldenUpbound,
+//		int roundId,
+//		int testingExecutionId,
+//#endif
+//		int argCount, ...) {
+//
+//
+////	perf_reset_and_start_clock();
+//
+//
+//
+//	va_list ap;
+//	va_start(ap, argCount);
+//	//#ifdef timingM
+//	//		perf_reset_and_start_clock();
+//	//#endif
+//
+//
+//	if (argCount>FAULTDETECTOR_MAX_AOV_DIM) //MAX_AOV_DIM
+//		return; //error
+//
+//	FAULTDETECTOR_controlStr contr;
+//	TCB_t* tcbPtr=*pxCurrentTCB_ptr;
+//
+//
+//	contr.uniId=uniId;
+//	contr.checkId=checkId;
+//	contr.taskId=tcbPtr->uxTaskNumber-1;
+//	contr.executionId=tcbPtr->executionId;
+//
+////	for (int i=0; i<argCount; i++) {
+////		contr.AOV[i]=*va_arg(ap, float*);
+////	}
+////	for (int i=argCount; i<FAULTDETECTOR_MAX_AOV_DIM; i++) {
+////		contr.AOV[i]=0.0;
+////	}
+//
+//
+//
+//	u16 lastErrorUniId=tcbPtr->lastError.uniId;
+//	u8 lastErrorCheckId=tcbPtr->lastError.checkId;
+//
+//	if (tcbPtr->executionMode==EXECMODE_FAULT && tcbPtr->lastError.uniId==uniId && tcbPtr->lastError.checkId==checkId) {
+//		tcbPtr->lastError.uniId=0xFFFF;
+//	}
+//
+//	if (tcbPtr->executionMode==EXECMODE_FAULT &&
+//			lastErrorUniId==uniId &&
+//			lastErrorCheckId==checkId &&
+//			memcmp(tcbPtr->lastError.AOV, contr.AOV, sizeof(contr.AOV))==0) {
+//#ifdef FAULTDETECTOR_EXECINSW
+//		//		printf(" SW FAULT DETECTOR: train");
+//		FAULTDETECTOR_SW_train(&contr);
+//#else //!FAULTDETECTOR_EXECINSW
+//		FAULTDET_Train(&contr);
+//#endif //FAULTDETECTOR_EXECINSW
+//	} else if (tcbPtr->reExecutions<configMAX_REEXECUTIONS_SET_IN_HW_SCHEDULER) {
+//#ifdef FAULTDETECTOR_EXECINSW
+//		char fault=FAULTDETECTOR_SW_test(&contr);
+//		if (fault) {
+//			tcbPtr->lastError.uniId=contr.uniId;
+//			tcbPtr->lastError.checkId=contr.checkId;
+//			tcbPtr->lastError.executionId=contr.executionId;
+//			memcpy(&(tcbPtr->lastError.AOV), &(contr.AOV), sizeof(contr.AOV));
+//#ifdef testingCampaign
+//		}
+//
+//		if (injectingErrors==0) {
+//			if (FAULTDET_testing_goldenResults_size<GOLDEN_RESULT_SIZE) {
+//				if (fault) {
+//					FAULTDET_testing_temp_faultdetected=0xFF;
+//#ifdef csvOut
+//					printf("%d.%d.%d.%d.1.0.0.0;",roundId, testingExecutionId, checkId, uniId);
+//				} else {
+//					printf("%d.%d.%d.%d.0.0.0.0;",roundId, testingExecutionId, checkId, uniId);
+//#endif
+//				}
+//
+//				FAULTDET_testing_goldenResults[FAULTDET_testing_goldenResults_size].uniId=contr.uniId;
+//				FAULTDET_testing_goldenResults[FAULTDET_testing_goldenResults_size].executionId=contr.executionId;
+//				FAULTDET_testing_goldenResults[FAULTDET_testing_goldenResults_size].checkId=contr.checkId;
+//				memcpy(&(FAULTDET_testing_goldenResults[FAULTDET_testing_goldenResults_size].AOV), &(contr.AOV), sizeof(contr.AOV));
+//
+//				FAULTDET_testing_goldenResults_size++;
+//			} else {
+//				printf("ERROR: reached max number golden result size. Not saved.");
+//			}
+//		} else {
+//			FAULTDETECTOR_testpointDescriptorStr curr;
+//
+//			curr.uniId=contr.uniId;
+//			curr.executionId=contr.executionId;
+//			curr.checkId=contr.checkId;
+//			memcpy(&(curr.AOV), &(contr.AOV), sizeof(contr.AOV));
+//
+//			FAULTDETECTOR_testpointDescriptorStr* golden=FAULTDET_testing_findGolden(&curr);
+//
+//			if (FAULTDET_testing_isAovEqual(golden, &curr, goldenLobound, goldenUpbound)==0) {
+//				if (fault) {
+//					//				FAULTDETECTOR_resetFault(&FAULTDETECTOR_InstancePtr, contr.taskId);
+//					FAULTDET_testing_temp_faultdetected=0xFF;
+//#ifdef csvOut
+//					printf("%d.%d.%d.%d.1.",roundId, testingExecutionId, checkId, uniId);
+//
+//
+//				} else {
+//					printf("%d.%d.%d.%d.0.",roundId, testingExecutionId, checkId, uniId);
+//#endif
+//				}
+//			}
+//		}
+//
+//#else //!testingCampaign
+//		//		SCHEDULER_restartFaultyJob((void*) SCHEDULER_BASEADDR, tcbPtr->uxTaskNumber, contr.executionId);
+//		//		while(1) {}
+//	}
+//#endif //testingCampaign
+//
+//#else //!FAULTDETECTOR_EXECINSW
+//
+//	instance->testedOnce=0xFF;
+//	instance->lastTest.checkId=checkId;
+//	instance->lastTest.executionId=tcbPtr->executionId;
+//	instance->lastTest.uniId=uniId;
+//
+////	perf_stop_clock();
+////	printf("%u\n", get_clock_L());
+////	if (get_clock_U()!=0)
+////		printf("err up not 0");
+//	FAULTDET_Test(&contr);
+//	//		FAULTDET_testing_blockUntilProcessed(instance);
+//	//#ifdef testingCampaign
+//	////		perf_stop_clock();
+//	////		clk_count_test_total+=get_clock_L();
+//	////		clk_count_test_total_times++;
+//	//#endif
+//
+//#ifdef testingCampaign
+//
+//	if (injectingErrors==0) {
+//		if (FAULTDET_testing_goldenResults_size<GOLDEN_RESULT_SIZE) {
+//			FAULTDET_testing_blockUntilProcessed(instance);
+//			if (FAULTDETECTOR_hasFault(&FAULTDETECTOR_InstancePtr, contr.taskId)) {
+//				FAULTDETECTOR_resetFault(&FAULTDETECTOR_InstancePtr, contr.taskId);
+//				FAULTDET_testing_temp_faultdetected=0xFF;
+//#ifdef csvOut
+//				printf("%d.%d.%d.%d.1.0.0.0;",roundId, testingExecutionId, checkId, uniId);
+//#endif
+//			} else {
+//#ifdef csvOut
+//				printf("%d.%d.%d.%d.0.0.0.0;",roundId, testingExecutionId, checkId, uniId);
+//#endif
+//			}
+//
+//			FAULTDETECTOR_getLastTestedPoint(&FAULTDETECTOR_InstancePtr, contr.taskId, &(FAULTDET_testing_goldenResults[FAULTDET_testing_goldenResults_size]));
+//			FAULTDET_testing_goldenResults_size++;
+//		} else {
+//			printf("ERROR: reached max number golden result size. Not saved.");
+//		}
+//	} else {
+//		FAULTDET_testing_blockUntilProcessed(instance);
+//		FAULTDETECTOR_testpointDescriptorStr curr;
+//		FAULTDETECTOR_getLastTestedPoint(&FAULTDETECTOR_InstancePtr, contr.taskId, &curr);
+//
+//		FAULTDETECTOR_testpointDescriptorStr* golden=FAULTDET_testing_findGolden(&curr);
+//
+//		if (FAULTDET_testing_isAovEqual(golden, &curr, goldenLobound, goldenUpbound)==0) {
+//			char fault=FAULTDETECTOR_hasFault(&FAULTDETECTOR_InstancePtr, contr.taskId);
+//			if (fault) {
+//				FAULTDET_testing_temp_faultdetected=0xFF;
+//				//				FAULTDETECTOR_resetFault(&FAULTDETECTOR_InstancePtr, contr.taskId);
+//#ifdef csvOut
+//				printf("%d.%d.%d.%d.1.",roundId, testingExecutionId, checkId, uniId);
+//
+//
+//			} else {
+//				printf("%d.%d.%d.%d.0.",roundId, testingExecutionId, checkId, uniId);
+//#endif
+//			}
+//		}
+//		FAULTDETECTOR_resetFault(&FAULTDETECTOR_InstancePtr, contr.taskId);
+//
+//		//		FAULTDET_testing_temp_changed = FAULTDET_testing_temp_changed || FAULTDET_testing_isAovEqual(&curr, golden, goldenLobound, goldenUpbound)==0;
+//		//		FAULTDET_testing_temp_faultdetected=FAULTDET_testing_temp_faultdetected || fault;
+//	}
+//
+//#else //!testingCampaign
+//	//	if (blocking) {
+//	//		FAULTDET_blockIfFaultDetectedInTask(instance);
+//	//	}
+//#endif //testingCampaign
+//#endif //FAULTDETECTOR_EXECINSW
+//}
+////#ifdef timingM
+////		perf_stop_clock();
+////		clk_count_test_total+=get_clock_L();
+////		clk_count_test_total_times++;
+////		if (get_clock_U()!=0)
+////			printf("err up not 0");
+////#endif
+//va_end(ap);
+//}
+
+
 
 //warning: uniId must start from 1!
 void FAULTDET_testPoint(
-#ifndef FAULTDETECTOR_EXECINSW
-		FAULTDET_ExecutionDescriptor* instance,
-#endif
-		int uniId, int checkId, char blocking,
+		FAULTDETECTOR_controlStr* control
 #ifdef testingCampaign
-		u8 injectingErrors,
+		,u8 injectingErrors,
 		int goldenLobound,
 		int goldenUpbound,
 		int roundId,
 		int testingExecutionId,
 #endif
-		int argCount, ...) {
+) {
 
 
+	//	perf_reset_and_start_clock();
 
-
-
-	va_list ap;
-	va_start(ap, argCount);
-//#ifdef timingM
-//		perf_reset_and_start_clock();
-//#endif
-
-
-	if (argCount>FAULTDETECTOR_MAX_AOV_DIM) //MAX_AOV_DIM
-		return; //error
-
-	FAULTDETECTOR_controlStr contr;
 	TCB_t* tcbPtr=*pxCurrentTCB_ptr;
+	FAULTDETECTOR_testpointDescriptorStr* lastError=&(tcbPtr->lastError);
+	control->taskId=tcbPtr->uxTaskNumber-1;
+	control->executionId=tcbPtr->executionId;
 
+	char faultyCheckpoint=tcbPtr->executionMode==EXECMODE_FAULT && *((u32*)lastError)==*((u32*)control);
 
-	contr.uniId=uniId;
-	contr.checkId=checkId;
-	contr.taskId=tcbPtr->uxTaskNumber-1;
-	contr.executionId=tcbPtr->executionId;
-
-	for (int i=0; i<argCount; i++) {
-		contr.AOV[i]=*va_arg(ap, float*);
-	}
-	for (int i=argCount; i<FAULTDETECTOR_MAX_AOV_DIM; i++) {
-		contr.AOV[i]=0.0;
-	}
-
-	u16 lastErrorUniId=tcbPtr->lastError.uniId;
-	u8 lastErrorCheckId=tcbPtr->lastError.checkId;
-
-	if (tcbPtr->executionMode==EXECMODE_FAULT && tcbPtr->lastError.uniId==uniId && tcbPtr->lastError.checkId==checkId) {
+	if (faultyCheckpoint) {
 		tcbPtr->lastError.uniId=0xFFFF;
-		tcbPtr->lastError.checkId=0xFF;
 	}
 
-	if (tcbPtr->executionMode==EXECMODE_FAULT &&
-			lastErrorUniId==uniId &&
-			lastErrorCheckId==checkId &&
-			memcmp(tcbPtr->lastError.AOV, contr.AOV, sizeof(contr.AOV))==0) {
+	if (faultyCheckpoint &&	memcmp(lastError->AOV, control->AOV, sizeof(control->AOV))==0) {
 #ifdef FAULTDETECTOR_EXECINSW
 		//		printf(" SW FAULT DETECTOR: train");
-		FAULTDETECTOR_SW_train(&contr);
+		FAULTDETECTOR_SW_train(control);
 #else //!FAULTDETECTOR_EXECINSW
-		FAULTDET_Train(&contr);
-		//						FAULTDET_Test(&controlForFaultDet);
-		//						instance->testedOnce=0xFF;
-		//						instance->lastTest.checkId=checkId;
-		//						instance->lastTest.executionId=tcbPtr->executionId;
-		//						instance->lastTest.uniId=uniId;
-		//
-		//						if (blocking) {
-		//							FAULTDET_blockIfFaultDetectedInTask(instance);
-		//						}
+		control->command=COMMAND_TRAIN;
 #endif //FAULTDETECTOR_EXECINSW
 	} else if (tcbPtr->reExecutions<configMAX_REEXECUTIONS_SET_IN_HW_SCHEDULER) {
 #ifdef FAULTDETECTOR_EXECINSW
-//#ifdef testingCampaign
-//		perf_reset_and_start_clock();
-//#endif
-		char fault=FAULTDETECTOR_SW_test(&contr);
-//#ifdef testingCampaign
-//		perf_stop_clock();
-//		clk_count_test_total+=get_clock_L();
-//		clk_count_test_total_times++;
-//#endif
-		//		printf(" SW FAULT DETECTOR: fault %x", fault);
+		char fault=FAULTDETECTOR_SW_test(control);
 		if (fault) {
 			tcbPtr->lastError.uniId=contr.uniId;
 			tcbPtr->lastError.checkId=contr.checkId;
@@ -1601,28 +1768,14 @@ void FAULTDET_testPoint(
 		}
 
 #else //!testingCampaign
-//		SCHEDULER_restartFaultyJob((void*) SCHEDULER_BASEADDR, tcbPtr->uxTaskNumber, contr.executionId);
-//		while(1) {}
+		//		SCHEDULER_restartFaultyJob((void*) SCHEDULER_BASEADDR, tcbPtr->uxTaskNumber, contr.executionId);
+		//		while(1) {}
 	}
 #endif //testingCampaign
 
 #else //!FAULTDETECTOR_EXECINSW
 
-	instance->testedOnce=0xFF;
-	instance->lastTest.checkId=checkId;
-	instance->lastTest.executionId=tcbPtr->executionId;
-	instance->lastTest.uniId=uniId;
-
-//#ifdef testingCampaign
-//		perf_reset_and_start_clock();
-//#endif
-		FAULTDET_Test(&contr);
-//		FAULTDET_testing_blockUntilProcessed(instance);
-//#ifdef testingCampaign
-////		perf_stop_clock();
-////		clk_count_test_total+=get_clock_L();
-////		clk_count_test_total_times++;
-//#endif
+	control->command=COMMAND_TEST;
 
 #ifdef testingCampaign
 
@@ -1673,21 +1826,14 @@ void FAULTDET_testPoint(
 		//		FAULTDET_testing_temp_faultdetected=FAULTDET_testing_temp_faultdetected || fault;
 	}
 
-#else //!testingCampaign
-//	if (blocking) {
-//		FAULTDET_blockIfFaultDetectedInTask(instance);
-//	}
 #endif //testingCampaign
 #endif //FAULTDETECTOR_EXECINSW
 }
-//#ifdef timingM
-//		perf_stop_clock();
-//		clk_count_test_total+=get_clock_L();
-//		clk_count_test_total_times++;
-//		if (get_clock_U()!=0)
-//			printf("err up not 0");
-//#endif
-va_end(ap);
+
+while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {}
+
+controlForFaultDet=*control;
+FAULTDETECTOR_startCopy(&FAULTDETECTOR_InstancePtr);
 }
 
 void FAULTDET_trainPoint(int uniId, int checkId, int argCount, ...) {
@@ -1716,20 +1862,20 @@ void FAULTDET_trainPoint(int uniId, int checkId, int argCount, ...) {
 
 	char fault=FAULTDETECTOR_SW_test(&contr);
 	if (fault) {
-//#ifdef testingCampaign
-//		perf_reset_and_start_clock();
-//#endif
+		//#ifdef testingCampaign
+		//		perf_reset_and_start_clock();
+		//#endif
 		FAULTDETECTOR_SW_train(&contr);
-//#ifdef testingCampaign
-//		perf_stop_clock();
-//		clk_count_train_total+=get_clock_L();
-//		clk_count_train_total_times++;
-//#endif
+		//#ifdef testingCampaign
+		//		perf_stop_clock();
+		//		clk_count_train_total+=get_clock_L();
+		//		clk_count_train_total_times++;
+		//#endif
 
-//		fault=FAULTDETECTOR_SW_test(&contr);
-//		if (fault) {
-//			printf("Train failed, checkId %d, uniId %d", checkId, uniId);
-//		}
+		//		fault=FAULTDETECTOR_SW_test(&contr);
+		//		if (fault) {
+		//			printf("Train failed, checkId %d, uniId %d", checkId, uniId);
+		//		}
 
 	}
 #else
