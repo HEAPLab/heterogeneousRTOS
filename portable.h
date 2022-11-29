@@ -214,11 +214,10 @@ void newTaskHandler(void *HandlerRef) PRIVILEGED_FUNCTION;
 #include "faultdetector_sw.h"
 #else
 #include "xfaultdetector.h"
+XFaultdetector FAULTDET_getInstancePtr() PRIVILEGED_FUNCTION;
 #endif
 
-unsigned int getMeanTrainClock() PRIVILEGED_FUNCTION;
-unsigned int getMeanTestClock() PRIVILEGED_FUNCTION;
-
+FAULTDETECTOR_controlStr* FAULTDET_getControlForFaultDet() PRIVILEGED_FUNCTION;
 
 typedef struct {
 	FAULTDETECTOR_testpointDescriptorStr lastTest;

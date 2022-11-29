@@ -829,7 +829,7 @@ int prvInitSd(XSdPs* SD_InstancePtr)
 
 	Status = XSdPs_CardInitialize(SD_InstancePtr);
 	if (Status != XST_SUCCESS) {
-		printf("\nSD CARD INIT FAILED. CHECK AN SD CARD IS IN THE SLOT. TRAINED DATA DUMP DISABLED UNTIL RESET\n");
+//		printf("\nSD CARD INIT FAILED. CHECK AN SD CARD IS IN THE SLOT. TRAINED DATA DUMP DISABLED UNTIL RESET\n");
 		return XST_FAILURE;
 	}
 
@@ -1082,8 +1082,14 @@ TCB_t** pxCurrentTCB_ptr;
 
 #ifndef FAULTDETECTOR_EXECINSW
 XFaultdetector FAULTDETECTOR_InstancePtr;
+XFaultdetector FAULTDET_getInstancePtr() {
+	return FAULTDETECTOR_InstancePtr;
+}
 #endif
 FAULTDETECTOR_controlStr controlForFaultDet __attribute__((aligned(4096)));
+FAULTDETECTOR_controlStr* FAULTDET_getControlForFaultDet() {
+	return &controlForFaultDet;
+}
 
 //#include "xaxidma.h"
 //XAxiDma AxiDma;
@@ -1457,22 +1463,6 @@ void FAULTDET_testing_resetStats() {
 
 #endif
 
-//TIMING
-
-//volatile unsigned long long int clk_count_train_total=0;
-//volatile unsigned int clk_count_train_total_times=0;
-//
-//volatile unsigned long long int clk_count_test_total=0;
-//volatile unsigned int clk_count_test_total_times=0;
-//
-//unsigned int getMeanTrainClock() {
-//	return clk_count_train_total/clk_count_train_total_times;
-//}
-//
-//unsigned int getMeanTestClock() {
-//	return clk_count_test_total/clk_count_test_total_times;
-//}
-
 //warning: uniId must start from 1!
 void FAULTDET_testPoint(
 #ifndef FAULTDETECTOR_EXECINSW
@@ -1526,7 +1516,10 @@ void FAULTDET_testPoint(
 		tcbPtr->lastError.checkId=0xFF;
 	}
 
-	if (tcbPtr->executionMode==EXECMODE_FAULT && lastErrorUniId==uniId && lastErrorCheckId==checkId && memcmp(tcbPtr->lastError.AOV, contr.AOV, sizeof(contr.AOV))==0) {
+	if (tcbPtr->executionMode==EXECMODE_FAULT &&
+			lastErrorUniId==uniId &&
+			lastErrorCheckId==checkId &&
+			memcmp(tcbPtr->lastError.AOV, contr.AOV, sizeof(contr.AOV))==0) {
 #ifdef FAULTDETECTOR_EXECINSW
 		//		printf(" SW FAULT DETECTOR: train");
 		FAULTDETECTOR_SW_train(&contr);
