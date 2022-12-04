@@ -1681,13 +1681,6 @@ void FAULTDET_testing_resetStats() {
 //warning: uniId must start from 1!
 void FAULTDET_testPoint(
 		FAULTDETECTOR_controlStr* control
-#ifdef testingCampaign
-		,u8 injectingErrors,
-		int goldenLobound,
-		int goldenUpbound,
-		int roundId,
-		int testingExecutionId,
-#endif
 ) {
 
 
@@ -1780,13 +1773,13 @@ void FAULTDET_trainPoint(int uniId, int checkId, int argCount, ...) {
 #else
 	FAULTDET_Test(&contr);
 
-	FAULTDET_ExecutionDescriptor instance;
-	instance.testedOnce=0xFF;
-	instance.lastTest.checkId=checkId;
-	instance.lastTest.executionId=tcbPtr->executionId;
-	instance.lastTest.uniId=uniId;
+//	FAULTDET_ExecutionDescriptor instance;
+//	instance.testedOnce=0xFF;
+//	instance.lastTest.checkId=checkId;
+//	instance.lastTest.executionId=tcbPtr->executionId;
+//	instance.lastTest.uniId=uniId;
 
-	FAULTDET_testing_blockUntilProcessed(&instance);
+	FAULTDET_testing_blockUntilProcessed(&contr);
 	if (FAULTDETECTOR_hasFault(&FAULTDETECTOR_InstancePtr, contr.taskId)) {
 		FAULTDETECTOR_resetFault(&FAULTDETECTOR_InstancePtr, contr.taskId);
 		FAULTDET_Train(&contr);
