@@ -1715,125 +1715,24 @@ void FAULTDET_testPoint(
 #ifdef FAULTDETECTOR_EXECINSW
 		char fault=FAULTDETECTOR_SW_test(control);
 		if (fault) {
-			tcbPtr->lastError.uniId=contr.uniId;
-			tcbPtr->lastError.checkId=contr.checkId;
-			tcbPtr->lastError.executionId=contr.executionId;
-			memcpy(&(tcbPtr->lastError.AOV), &(contr.AOV), sizeof(contr.AOV));
-#ifdef testingCampaign
+			tcbPtr->lastError.uniId=control->uniId;
+			tcbPtr->lastError.checkId=control->checkId;
+			tcbPtr->lastError.executionId=control->executionId;
+			memcpy(&(tcbPtr->lastError.AOV), &(control->AOV), sizeof(control->AOV));
+
+			//		SCHEDULER_restartFaultyJob((void*) SCHEDULER_BASEADDR, tcbPtr->uxTaskNumber, contr.executionId);
+			//		while(1) {}
 		}
-
-		if (injectingErrors==0) {
-			if (FAULTDET_testing_goldenResults_size<GOLDEN_RESULT_SIZE) {
-				if (fault) {
-					FAULTDET_testing_temp_faultdetected=0xFF;
-#ifdef csvOut
-					printf("%d.%d.%d.%d.1.0.0.0;",roundId, testingExecutionId, checkId, uniId);
-				} else {
-					printf("%d.%d.%d.%d.0.0.0.0;",roundId, testingExecutionId, checkId, uniId);
-#endif
-				}
-
-				FAULTDET_testing_goldenResults[FAULTDET_testing_goldenResults_size].uniId=contr.uniId;
-				FAULTDET_testing_goldenResults[FAULTDET_testing_goldenResults_size].executionId=contr.executionId;
-				FAULTDET_testing_goldenResults[FAULTDET_testing_goldenResults_size].checkId=contr.checkId;
-				memcpy(&(FAULTDET_testing_goldenResults[FAULTDET_testing_goldenResults_size].AOV), &(contr.AOV), sizeof(contr.AOV));
-
-				FAULTDET_testing_goldenResults_size++;
-			} else {
-				printf("ERROR: reached max number golden result size. Not saved.");
-			}
-		} else {
-			FAULTDETECTOR_testpointDescriptorStr curr;
-
-			curr.uniId=contr.uniId;
-			curr.executionId=contr.executionId;
-			curr.checkId=contr.checkId;
-			memcpy(&(curr.AOV), &(contr.AOV), sizeof(contr.AOV));
-
-			FAULTDETECTOR_testpointDescriptorStr* golden=FAULTDET_testing_findGolden(&curr);
-
-			if (FAULTDET_testing_isAovEqual(golden, &curr, goldenLobound, goldenUpbound)==0) {
-				if (fault) {
-					//				FAULTDETECTOR_resetFault(&FAULTDETECTOR_InstancePtr, contr.taskId);
-					FAULTDET_testing_temp_faultdetected=0xFF;
-#ifdef csvOut
-					printf("%d.%d.%d.%d.1.",roundId, testingExecutionId, checkId, uniId);
-
-
-				} else {
-					printf("%d.%d.%d.%d.0.",roundId, testingExecutionId, checkId, uniId);
-#endif
-				}
-			}
-		}
-
-#else //!testingCampaign
-		//		SCHEDULER_restartFaultyJob((void*) SCHEDULER_BASEADDR, tcbPtr->uxTaskNumber, contr.executionId);
-		//		while(1) {}
-	}
-#endif //testingCampaign
 
 #else //!FAULTDETECTOR_EXECINSW
+		control->command=COMMAND_TEST;
+		while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {}
 
-	control->command=COMMAND_TEST;
+		controlForFaultDet=*control;
+		FAULTDETECTOR_startCopy(&FAULTDETECTOR_InstancePtr);
 
-#ifdef testingCampaign
-
-	if (injectingErrors==0) {
-		if (FAULTDET_testing_goldenResults_size<GOLDEN_RESULT_SIZE) {
-			FAULTDET_testing_blockUntilProcessed(instance);
-			if (FAULTDETECTOR_hasFault(&FAULTDETECTOR_InstancePtr, contr.taskId)) {
-				FAULTDETECTOR_resetFault(&FAULTDETECTOR_InstancePtr, contr.taskId);
-				FAULTDET_testing_temp_faultdetected=0xFF;
-#ifdef csvOut
-				printf("%d.%d.%d.%d.1.0.0.0;",roundId, testingExecutionId, checkId, uniId);
-#endif
-			} else {
-#ifdef csvOut
-				printf("%d.%d.%d.%d.0.0.0.0;",roundId, testingExecutionId, checkId, uniId);
-#endif
-			}
-
-			FAULTDETECTOR_getLastTestedPoint(&FAULTDETECTOR_InstancePtr, contr.taskId, &(FAULTDET_testing_goldenResults[FAULTDET_testing_goldenResults_size]));
-			FAULTDET_testing_goldenResults_size++;
-		} else {
-			printf("ERROR: reached max number golden result size. Not saved.");
-		}
-	} else {
-		FAULTDET_testing_blockUntilProcessed(instance);
-		FAULTDETECTOR_testpointDescriptorStr curr;
-		FAULTDETECTOR_getLastTestedPoint(&FAULTDETECTOR_InstancePtr, contr.taskId, &curr);
-
-		FAULTDETECTOR_testpointDescriptorStr* golden=FAULTDET_testing_findGolden(&curr);
-
-		if (FAULTDET_testing_isAovEqual(golden, &curr, goldenLobound, goldenUpbound)==0) {
-			char fault=FAULTDETECTOR_hasFault(&FAULTDETECTOR_InstancePtr, contr.taskId);
-			if (fault) {
-				FAULTDET_testing_temp_faultdetected=0xFF;
-				//				FAULTDETECTOR_resetFault(&FAULTDETECTOR_InstancePtr, contr.taskId);
-#ifdef csvOut
-				printf("%d.%d.%d.%d.1.",roundId, testingExecutionId, checkId, uniId);
-
-
-			} else {
-				printf("%d.%d.%d.%d.0.",roundId, testingExecutionId, checkId, uniId);
-#endif
-			}
-		}
-		FAULTDETECTOR_resetFault(&FAULTDETECTOR_InstancePtr, contr.taskId);
-
-		//		FAULTDET_testing_temp_changed = FAULTDET_testing_temp_changed || FAULTDET_testing_isAovEqual(&curr, golden, goldenLobound, goldenUpbound)==0;
-		//		FAULTDET_testing_temp_faultdetected=FAULTDET_testing_temp_faultdetected || fault;
-	}
-
-#endif //testingCampaign
 #endif //FAULTDETECTOR_EXECINSW
-}
-
-while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {}
-
-controlForFaultDet=*control;
-FAULTDETECTOR_startCopy(&FAULTDETECTOR_InstancePtr);
+	}
 }
 
 void FAULTDET_trainPoint(int uniId, int checkId, int argCount, ...) {
