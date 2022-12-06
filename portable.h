@@ -1,5 +1,6 @@
-//#define FAULTDETECTOR_EXECINSW
-
+#define FAULTDETECTOR_EXECINSW
+#define testingCampaign
+//#define detectionPerformanceMeasurement
 
 /*
  * FreeRTOS Kernel V10.4.3
@@ -238,18 +239,11 @@ void FAULTDET_initFaultDetection(FAULTDET_ExecutionDescriptor* instance) PRIVILE
 void FAULTDET_trainPoint(int uniId, int checkId, int argCount, ...) PRIVILEGED_FUNCTION;
 void FAULTDET_testPoint(
 		FAULTDETECTOR_controlStr* control
-#ifdef testingCampaign
-		, u8 injectingErrors,
-		int goldenLobound,
-		int goldenUpbound,
-		int roundId,
-		int testingExecutionId,
-#endif
 ) PRIVILEGED_FUNCTION;
 //char FAULTDET_hasFault()  PRIVILEGED_FUNCTION;
 void FAULTDET_resetFault() PRIVILEGED_FUNCTION;
 
-#ifdef testingCampaign
+#ifdef detectionPerformanceMeasurement
 void FAULTDET_testing_resetGoldens () PRIVILEGED_FUNCTION;
 int FAULTDET_testing_getTotal() PRIVILEGED_FUNCTION;
 int FAULTDET_testing_getOk() PRIVILEGED_FUNCTION;

@@ -1,6 +1,3 @@
-//#define testingCampaign
-//#define timingM
-
 //#define verboseScheduler
 
 /*
@@ -1260,7 +1257,7 @@ void FAULTDET_testing_blockUntilProcessed (FAULTDET_ExecutionDescriptor* instanc
 	}
 }
 #endif
-#ifdef testingCampaign
+#ifdef detectionPerformanceMeasurement
 
 #define GOLDEN_RESULT_SIZE 64
 int FAULTDET_testing_goldenResults_size=0;
@@ -1400,7 +1397,6 @@ FAULTDETECTOR_testpointDescriptorStr* FAULTDET_testing_findGolden (FAULTDETECTOR
 	return 0x0;
 }
 #include <math.h>
-#define GOLDENCOMPARE_THRESH_CONSTANT (1e-10f)
 
 u8 FAULTDET_testing_isAovEqual(FAULTDETECTOR_testpointDescriptorStr* golden, FAULTDETECTOR_testpointDescriptorStr* toTest, int lobound, int upbound) {
 	//	return memcmp(&(desc1->AOV), &(desc2->AOV), sizeof(desc1->AOV))==0;
@@ -1470,25 +1466,20 @@ void FAULTDET_testing_resetStats() {
 //		FAULTDET_ExecutionDescriptor* instance,
 //#endif
 //		int uniId, int checkId, char blocking,
-//#ifdef testingCampaign
+//#ifdef detectionPerformanceMeasurement
 //		u8 injectingErrors,
 //		int goldenLobound,
 //		int goldenUpbound,
-//		int roundId,
 //		int testingExecutionId,
 //#endif
 //		int argCount, ...) {
 //
 //
-////	perf_reset_and_start_clock();
 //
 //
 //
 //	va_list ap;
 //	va_start(ap, argCount);
-//	//#ifdef timingM
-//	//		perf_reset_and_start_clock();
-//	//#endif
 //
 //
 //	if (argCount>FAULTDETECTOR_MAX_AOV_DIM) //MAX_AOV_DIM
@@ -1537,7 +1528,7 @@ void FAULTDET_testing_resetStats() {
 //			tcbPtr->lastError.checkId=contr.checkId;
 //			tcbPtr->lastError.executionId=contr.executionId;
 //			memcpy(&(tcbPtr->lastError.AOV), &(contr.AOV), sizeof(contr.AOV));
-//#ifdef testingCampaign
+//#ifdef detectionPerformanceMeasurement
 //		}
 //
 //		if (injectingErrors==0) {
@@ -1585,11 +1576,11 @@ void FAULTDET_testing_resetStats() {
 //			}
 //		}
 //
-//#else //!testingCampaign
+//#else //!detectionPerformanceMeasurement
 //		//		SCHEDULER_restartFaultyJob((void*) SCHEDULER_BASEADDR, tcbPtr->uxTaskNumber, contr.executionId);
 //		//		while(1) {}
 //	}
-//#endif //testingCampaign
+//#endif //detectionPerformanceMeasurement
 //
 //#else //!FAULTDETECTOR_EXECINSW
 //
@@ -1598,19 +1589,11 @@ void FAULTDET_testing_resetStats() {
 //	instance->lastTest.executionId=tcbPtr->executionId;
 //	instance->lastTest.uniId=uniId;
 //
-////	perf_stop_clock();
-////	printf("%u\n", get_clock_L());
-////	if (get_clock_U()!=0)
-////		printf("err up not 0");
+
 //	FAULTDET_Test(&contr);
 //	//		FAULTDET_testing_blockUntilProcessed(instance);
-//	//#ifdef testingCampaign
-//	////		perf_stop_clock();
-//	////		clk_count_test_total+=get_clock_L();
-//	////		clk_count_test_total_times++;
-//	//#endif
 //
-//#ifdef testingCampaign
+//#ifdef detectionPerformanceMeasurement
 //
 //	if (injectingErrors==0) {
 //		if (FAULTDET_testing_goldenResults_size<GOLDEN_RESULT_SIZE) {
@@ -1659,32 +1642,21 @@ void FAULTDET_testing_resetStats() {
 //		//		FAULTDET_testing_temp_faultdetected=FAULTDET_testing_temp_faultdetected || fault;
 //	}
 //
-//#else //!testingCampaign
+//#else //!detectionPerformanceMeasurement
 //	//	if (blocking) {
 //	//		FAULTDET_blockIfFaultDetectedInTask(instance);
 //	//	}
-//#endif //testingCampaign
+//#endif //detectionPerformanceMeasurement
 //#endif //FAULTDETECTOR_EXECINSW
 //}
-////#ifdef timingM
-////		perf_stop_clock();
-////		clk_count_test_total+=get_clock_L();
-////		clk_count_test_total_times++;
-////		if (get_clock_U()!=0)
-////			printf("err up not 0");
-////#endif
+
 //va_end(ap);
 //}
-
-
 
 //warning: uniId must start from 1!
 void FAULTDET_testPoint(
 		FAULTDETECTOR_controlStr* control
 ) {
-
-
-	//	perf_reset_and_start_clock();
 
 	TCB_t* tcbPtr=*pxCurrentTCB_ptr;
 	FAULTDETECTOR_testpointDescriptorStr* lastError=&(tcbPtr->lastError);
@@ -1713,8 +1685,10 @@ void FAULTDET_testPoint(
 			tcbPtr->lastError.executionId=control->executionId;
 			memcpy(&(tcbPtr->lastError.AOV), &(control->AOV), sizeof(control->AOV));
 
-			//		SCHEDULER_restartFaultyJob((void*) SCHEDULER_BASEADDR, tcbPtr->uxTaskNumber, contr.executionId);
-			//		while(1) {}
+#ifndef testingCampaign
+			SCHEDULER_restartFaultyJob((void*) SCHEDULER_BASEADDR, tcbPtr->uxTaskNumber, control->executionId);
+			while(1) {}
+#endif
 		}
 
 #else //!FAULTDETECTOR_EXECINSW
@@ -1754,30 +1728,15 @@ void FAULTDET_trainPoint(int uniId, int checkId, int argCount, ...) {
 
 	char fault=FAULTDETECTOR_SW_test(&contr);
 	if (fault) {
-		//#ifdef testingCampaign
-		//		perf_reset_and_start_clock();
-		//#endif
 		FAULTDETECTOR_SW_train(&contr);
-		//#ifdef testingCampaign
-		//		perf_stop_clock();
-		//		clk_count_train_total+=get_clock_L();
-		//		clk_count_train_total_times++;
-		//#endif
-
-		//		fault=FAULTDETECTOR_SW_test(&contr);
-		//		if (fault) {
-		//			printf("Train failed, checkId %d, uniId %d", checkId, uniId);
-		//		}
+		fault=FAULTDETECTOR_SW_test(&contr);
+		if (fault) {
+			printf("Train failed, checkId %d, uniId %d", checkId, uniId);
+		}
 
 	}
 #else
 	FAULTDET_Test(&contr);
-
-//	FAULTDET_ExecutionDescriptor instance;
-//	instance.testedOnce=0xFF;
-//	instance.lastTest.checkId=checkId;
-//	instance.lastTest.executionId=tcbPtr->executionId;
-//	instance.lastTest.uniId=uniId;
 
 	FAULTDET_testing_blockUntilProcessed(&contr);
 	if (FAULTDETECTOR_hasFault(&FAULTDETECTOR_InstancePtr, contr.taskId)) {
