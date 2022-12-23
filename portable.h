@@ -1,4 +1,4 @@
-#define FAULTDETECTOR_EXECINSW
+//#define FAULTDETECTOR_EXECINSW
 #define testingCampaign
 //#define detectionPerformanceMeasurement
 
@@ -236,7 +236,8 @@ void FAULTDET_blockIfFaultDetectedInTask (FAULTDETECTOR_controlStr* control) PRI
 void FAULTDET_getLastTestedPoint(FAULTDETECTOR_testpointDescriptorStr* dest) PRIVILEGED_FUNCTION;
 void FAULTDET_initFaultDetection(FAULTDET_ExecutionDescriptor* instance) PRIVILEGED_FUNCTION;
 //void FAULTDET_endFaultDetection() PRIVILEGED_FUNCTION;
-void FAULTDET_trainPoint(int uniId, int checkId, int argCount, ...) PRIVILEGED_FUNCTION;
+void FAULTDET_trainPoint(FAULTDETECTOR_controlStr* control) PRIVILEGED_FUNCTION;
+//void FAULTDET_trainPoint(int uniId, int checkId, int argCount, ...) PRIVILEGED_FUNCTION;
 void FAULTDET_testPoint(
 		FAULTDETECTOR_controlStr* control
 ) PRIVILEGED_FUNCTION;

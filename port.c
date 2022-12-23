@@ -1,4 +1,5 @@
 //#define verboseScheduler
+#include <stdarg.h>
 
 /*
  * FreeRTOS Kernel V10.4.3
@@ -1241,22 +1242,22 @@ void FAULTDET_blockIfFaultDetectedInTask (FAULTDETECTOR_controlStr* control) {
 }
 #endif
 
-#ifndef FAULTDETECTOR_EXECINSW
-
-void FAULTDET_testing_blockUntilProcessed (FAULTDET_ExecutionDescriptor* instance) {
-	if ((*pxCurrentTCB_ptr)->reExecutions<configMAX_REEXECUTIONS_SET_IN_HW_SCHEDULER) {
-		if (instance->testedOnce) {
-			u8 taskId=((*pxCurrentTCB_ptr)->uxTaskNumber)-1;
-
-			FAULTDETECTOR_testpointShortDescriptorStr out;
-			do {
-				FAULTDETECTOR_getLastTestedPointShort(&FAULTDETECTOR_InstancePtr, taskId, &out);
-			}
-			while(memcmp(&(instance->lastTest), &out, sizeof(FAULTDETECTOR_testpointShortDescriptorStr))!=0);
-		}
-	}
-}
-#endif
+//#ifndef FAULTDETECTOR_EXECINSW
+//
+//void FAULTDET_testing_blockUntilProcessed (FAULTDET_ExecutionDescriptor* instance) {
+//	if ((*pxCurrentTCB_ptr)->reExecutions<configMAX_REEXECUTIONS_SET_IN_HW_SCHEDULER) {
+//		if (instance->testedOnce) {
+//			u8 taskId=((*pxCurrentTCB_ptr)->uxTaskNumber)-1;
+//
+//			FAULTDETECTOR_testpointShortDescriptorStr out;
+//			do {
+//				FAULTDETECTOR_getLastTestedPointShort(&FAULTDETECTOR_InstancePtr, taskId, &out);
+//			}
+//			while(memcmp(&(instance->lastTest), &out, sizeof(FAULTDETECTOR_testpointShortDescriptorStr))!=0);
+//		}
+//	}
+//}
+//#endif
 #ifdef detectionPerformanceMeasurement
 
 #define GOLDEN_RESULT_SIZE 64
@@ -1702,49 +1703,61 @@ void FAULTDET_testPoint(
 	}
 }
 
-void FAULTDET_trainPoint(int uniId, int checkId, int argCount, ...) {
-	va_list ap;
-	va_start(ap, argCount);
-	if (argCount>FAULTDETECTOR_MAX_AOV_DIM) //MAX_AOV_DIM
-		return; //error
+void FAULTDET_trainPoint(
+		FAULTDETECTOR_controlStr* control
+/*int uniId, int checkId, int argCount, ...*/) {
+	//	va_list ap;
+	//	va_start(ap, argCount);
+	//	if (argCount>FAULTDETECTOR_MAX_AOV_DIM) //MAX_AOV_DIM
+	//		return; //error
 
-	FAULTDETECTOR_controlStr contr;
+	//	FAULTDETECTOR_controlStr contr;
 	TCB_t* tcbPtr=*pxCurrentTCB_ptr;
 
+	//	contr.uniId=uniId;
+	//	contr.checkId=checkId;
+	control->taskId=tcbPtr->uxTaskNumber-1;
+	control->executionId=tcbPtr->executionId;
 
-	contr.uniId=uniId;
-	contr.checkId=checkId;
-	contr.taskId=tcbPtr->uxTaskNumber-1;
-	contr.executionId=tcbPtr->executionId;
-
-	for (int i=0; i<argCount; i++) {
-		contr.AOV[i]=*va_arg(ap, float*);
-	}
-	for (int i=argCount; i<FAULTDETECTOR_MAX_AOV_DIM; i++) {
-		contr.AOV[i]=0.0;
-	}
+	//	for (int i=0; i<argCount; i++) {
+	//		contr.AOV[i]=*(a_arg(ap, (float*)));
+	//	}
+	//	for (int i=argCount; i<FAULTDETECTOR_MAX_AOV_DIM; i++) {
+	//		contr.AOV[i]=0.0;
+	//	}
 
 #ifdef FAULTDETECTOR_EXECINSW
 
-	char fault=FAULTDETECTOR_SW_test(&contr);
+	char fault=FAULTDETECTOR_SW_test(&control);
 	if (fault) {
-		FAULTDETECTOR_SW_train(&contr);
-		fault=FAULTDETECTOR_SW_test(&contr);
+		FAULTDETECTOR_SW_train(&control);
+		fault=FAULTDETECTOR_SW_test(&control);
 		if (fault) {
 			printf("Train failed, checkId %d, uniId %d", checkId, uniId);
 		}
 
 	}
 #else
-	FAULTDET_Test(&contr);
+	control->command=COMMAND_TEST;
+	while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {}
 
-	FAULTDET_testing_blockUntilProcessed(&contr);
-	if (FAULTDETECTOR_hasFault(&FAULTDETECTOR_InstancePtr, contr.taskId)) {
-		FAULTDETECTOR_resetFault(&FAULTDETECTOR_InstancePtr, contr.taskId);
-		FAULTDET_Train(&contr);
+	controlForFaultDet=*control;
+	FAULTDETECTOR_startCopy(&FAULTDETECTOR_InstancePtr);
+
+	//	FAULTDET_Test(&contr);
+
+	FAULTDET_blockIfFaultDetectedInTask(control);
+	if (FAULTDETECTOR_hasFault(&FAULTDETECTOR_InstancePtr, control->taskId)) {
+		FAULTDETECTOR_resetFault(&FAULTDETECTOR_InstancePtr, control->taskId);
+		//		FAULTDET_Train(&contr);
+		control->command=COMMAND_TRAIN;
+		while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {}
+
+		controlForFaultDet=*control;
+		FAULTDETECTOR_startCopy(&FAULTDETECTOR_InstancePtr);
 	}
 #endif
-	va_end(ap);
+	//	va_end(ap);
 }
 
 
