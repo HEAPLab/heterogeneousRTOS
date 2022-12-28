@@ -1731,11 +1731,10 @@ void FAULTDET_trainPoint(
 	char fault=FAULTDETECTOR_SW_test(&control);
 	if (fault) {
 		FAULTDETECTOR_SW_train(&control);
-		fault=FAULTDETECTOR_SW_test(&control);
-		if (fault) {
-			printf("Train failed, checkId %d, uniId %d", checkId, uniId);
-		}
-
+//		fault=FAULTDETECTOR_SW_test(&control);
+//		if (fault) {
+//			printf("Train failed, checkId %d, uniId %d", checkId, uniId);
+//		}
 	}
 #else
 	control->command=COMMAND_TEST;
