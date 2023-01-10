@@ -1728,9 +1728,9 @@ void FAULTDET_trainPoint(
 
 #ifdef FAULTDETECTOR_EXECINSW
 
-	char fault=FAULTDETECTOR_SW_test(&control);
+	char fault=FAULTDETECTOR_SW_test(control);
 	if (fault) {
-		FAULTDETECTOR_SW_train(&control);
+		FAULTDETECTOR_SW_train(control);
 //		fault=FAULTDETECTOR_SW_test(&control);
 //		if (fault) {
 //			printf("Train failed, checkId %d, uniId %d", checkId, uniId);
