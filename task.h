@@ -194,8 +194,9 @@ typedef struct __attribute__((__packed__)) RealTimeTask_t {
 	//	u32 uxTaskNumber;
 	TCB_t* taskTCB;
 	u32 pxPeriod;
-	u32 pxWcet;
+	u32 pxWcet[configCRITICALITY_LEVELS];
 	u32	pxDeadline;
+	u32 pxCriticalityLevel
 } RTTask_t;
 
 //______________________________________________________
@@ -477,7 +478,7 @@ BaseType_t xRTTaskCreate( TaskFunction_t pxTaskCode,
 		//RTTask_t ** const pxRTTaskOut,
 		UBaseType_t const pxDeadline,
 		UBaseType_t const pxPeriod,
-		UBaseType_t const pxWcet
+		UBaseType_t pxCriticalityLevel, ...
 ) PRIVILEGED_FUNCTION;
 #endif
 
@@ -613,7 +614,7 @@ TaskHandle_t xRTTaskCreateStatic( TaskFunction_t pxTaskCode,
 		//RTTask_t ** const pxRTTaskOut,
 		UBaseType_t const pxDeadline,
 		UBaseType_t const pxPeriod,
-		UBaseType_t const pxWcet
+		UBaseType_t pxCriticalityLevel, ...
 ) PRIVILEGED_FUNCTION;
 #endif /* configSUPPORT_STATIC_ALLOCATION */
 
@@ -702,7 +703,7 @@ BaseType_t xRTTaskCreateRestricted( const TaskParameters_t * const pxTaskDefinit
 		//RTTask_t ** const pxRTTaskOut,
 		UBaseType_t const pxDeadline,
 		UBaseType_t const pxPeriod,
-		UBaseType_t const pxWcet
+		UBaseType_t pxCriticalityLevel, ...	)
 ) PRIVILEGED_FUNCTION;
 #endif
 
@@ -802,7 +803,7 @@ BaseType_t xRTTaskCreateRestrictedStatic( const TaskParameters_t * const pxTaskD
 		//RTTask_t ** const pxRTTaskOut,
 		UBaseType_t const pxDeadline,
 		UBaseType_t const pxPeriod,
-		UBaseType_t const pxWcet
+		UBaseType_t pxCriticalityLevel, ...	)
 ) PRIVILEGED_FUNCTION;
 #endif
 
@@ -1419,13 +1420,6 @@ BaseType_t xTaskResumeFromISR( TaskHandle_t xTaskToResume ) PRIVILEGED_FUNCTION;
  * \defgroup vTaskStartScheduler vTaskStartScheduler
  * \ingroup SchedulerControl
  */
-
-void prvSplitRTTasksList(RTTask_t prvRTTasksList[], u8 numberOfTasks,
-		u8 maxTasks,
-		u32 tasksTCBPtrs[],
-		u32 tasksWCETs[],
-		u32 tasksDeadlines[],
-		u32 tasksPeriods[]) PRIVILEGED_FUNCTION;
 
 void vTaskStartFaultDetector(u8 restoreTrainDataFromSd, FAULTDETECTOR_region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS], u8 n_regions[FAULTDETECTOR_MAX_CHECKS]) PRIVILEGED_FUNCTION;
 

@@ -27,6 +27,8 @@
 /* Standard includes. */
 #include <stdlib.h>
 #include <string.h>
+//fedit add
+#include <stdarg.h>
 
 /* Defining MPU_WRAPPERS_INCLUDED_FROM_API_FILE prevents task.h from redefining
  * all the API functions to use the MPU wrappers.  That should only be done when
@@ -594,7 +596,7 @@ u8 xTaskGetExecutionId() {
 			//RTTask_t ** const pxRTTaskOut,
 			UBaseType_t const pxDeadline,
 			UBaseType_t const pxPeriod,
-			UBaseType_t const pxWcet
+			UBaseType_t pxCriticalityLevel, ...
 	)
 	{
 		//RTTask_t* pxNewRTTask = ( RTTask_t * ) pvPortMalloc( sizeof( RTTask_t ) );
@@ -604,7 +606,13 @@ u8 xTaskGetExecutionId() {
 
 		pxNewRTTask.pxDeadline=pxDeadline;
 		pxNewRTTask.pxPeriod=pxPeriod;
-		pxNewRTTask.pxWcet=pxWcet;
+		pxNewRTTask.pxCriticalityLevel=pxCriticalityLevel;
+
+	    va_list varptr;
+	    va_start(varptr, pxCriticalityLevel);
+	    for (UBaseType_t i = 0; i <= pxCriticalityLevel; i++)
+	    	pxNewRTTask.pxWcet[i]=va_arg(varptr, UBaseType_t);
+	    va_end(varptr);
 
 		if (xReturn!=NULL) {
 			//*pxRTTaskOut=pxNewRTTask;
@@ -671,8 +679,7 @@ u8 xTaskGetExecutionId() {
 			//RTTask_t ** const pxRTTaskOut,
 			UBaseType_t const pxDeadline,
 			UBaseType_t const pxPeriod,
-			UBaseType_t const pxWcet
-	)
+			UBaseType_t pxCriticalityLevel, ...	)
 	{
 		//RTTask_t* pxNewRTTask = ( RTTask_t * ) pvPortMalloc( sizeof( RTTask_t ) );
 		RTTask_t pxNewRTTask;
@@ -680,7 +687,13 @@ u8 xTaskGetExecutionId() {
 
 		pxNewRTTask.pxDeadline=pxDeadline;
 		pxNewRTTask.pxPeriod=pxPeriod;
-		pxNewRTTask.pxWcet=pxWcet;
+		pxNewRTTask.pxCriticalityLevel=pxCriticalityLevel;
+
+	    va_list varptr;
+	    va_start(varptr, pxCriticalityLevel+1);
+	    for (UBaseType_t i = 0; i <= pxCriticalityLevel; i++)
+	    	pxNewRTTask.pxWcet[i]=va_arg(varptr, UBaseType_t);
+	    va_end(varptr);
 
 		if (xReturn==pdPASS) {
 			//*pxRTTaskOut=pxNewRTTask;
@@ -750,8 +763,7 @@ u8 xTaskGetExecutionId() {
 			//RTTask_t ** const pxRTTaskOut,
 			UBaseType_t const pxDeadline,
 			UBaseType_t const pxPeriod,
-			UBaseType_t const pxWcet
-	)
+			UBaseType_t pxCriticalityLevel, ...	)
 	{
 		//RTTask_t* pxNewRTTask = ( RTTask_t * ) pvPortMalloc( sizeof( RTTask_t ) );
 		RTTask_t pxNewRTTask;
@@ -760,7 +772,13 @@ u8 xTaskGetExecutionId() {
 
 		pxNewRTTask.pxDeadline=pxDeadline;
 		pxNewRTTask.pxPeriod=pxPeriod;
-		pxNewRTTask.pxWcet=pxWcet;
+		pxNewRTTask.pxCriticalityLevel=pxCriticalityLevel;
+
+	    va_list varptr;
+	    va_start(varptr, pxCriticalityLevel+1);
+	    for (UBaseType_t i = 0; i <= pxCriticalityLevel; i++)
+	    	pxNewRTTask.pxWcet[i]=va_arg(varptr, UBaseType_t);
+	    va_end(varptr);
 
 		if (xReturn==pdPASS) {
 			//*pxRTTaskOut=pxNewRTTask;
@@ -863,7 +881,7 @@ u8 xTaskGetExecutionId() {
 			TaskHandle_t * const pxCreatedTask, //fedit add
 			//RTTask_t ** const pxRTTaskOut,
 			UBaseType_t const pxDeadline, UBaseType_t const pxPeriod,
-			UBaseType_t const pxWcet) {
+			UBaseType_t pxCriticalityLevel, ...) {
 		//RTTask_t* pxNewRTTask = ( RTTask_t * ) pvPortMalloc( sizeof( RTTask_t ) );
 		RTTask_t pxNewRTTask;
 
@@ -872,8 +890,13 @@ u8 xTaskGetExecutionId() {
 
 		pxNewRTTask.pxDeadline = pxDeadline;
 		pxNewRTTask.pxPeriod = pxPeriod;
-		pxNewRTTask.pxWcet = pxWcet;
+		pxNewRTTask.pxCriticalityLevel=pxCriticalityLevel;
 
+	    va_list varptr;
+	    va_start(varptr, pxCriticalityLevel+1);
+	    for (UBaseType_t i = 0; i <= pxCriticalityLevel; i++)
+	    	pxNewRTTask.pxWcet[i]=va_arg(varptr, UBaseType_t);
+	    va_end(varptr);
 		if (xReturn == pdPASS) {
 			//*pxRTTaskOut=pxNewRTTask;
 			return prvAddNewTaskToRTTasksList(pxNewRTTask);
@@ -2140,16 +2163,18 @@ u8 xTaskGetExecutionId() {
 #endif /* ( ( INCLUDE_xTaskResumeFromISR == 1 ) && ( INCLUDE_vTaskSuspend == 1 ) ) */
 	/*-----------------------------------------------------------*/
 
-	void prvSplitRTTasksList(RTTask_t prvRTTasksList[], u8 numberOfTasks,
+	void prvSplitRTTasksList(RTTask_t prvRTTasksList[configMAX_RT_TASKS], u8 numberOfTasks,
 			u8 maxTasks,
-			u32 tasksTCBPtrs[],
-			u32 tasksWCETs[],
-			u32 tasksDeadlines[],
-			u32 tasksPeriods[]) {
+			u32 tasksTCBPtrs[configMAX_RT_TASKS],
+			u32 tasksWCETs[configMAX_RT_TASKS][configCRITICALITY_LEVELS],
+			u32 tasksDeadlines[configMAX_RT_TASKS],
+			u32 tasksPeriods[configMAX_RT_TASKS]) {
 
 		for (int i = 0; i < numberOfTasks; i++) {
 			tasksTCBPtrs[i]=prvRTTasksList[i].taskTCB;
-			tasksWCETs[i]=prvRTTasksList[i].pxWcet;
+			for (int j=0; j<configCRITICALITY_LEVELS; j++) {
+				tasksWCETs[j][i]=prvRTTasksList[i].pxWcet[j];
+			}
 			tasksDeadlines[i]=prvRTTasksList[i].pxDeadline;
 			tasksPeriods[i]=prvRTTasksList[i].pxPeriod;
 		}
@@ -2157,7 +2182,9 @@ u8 xTaskGetExecutionId() {
 
 		for (int i=numberOfTasks; i < maxTasks; i++) {
 			tasksTCBPtrs[i]=0x0;
-			tasksWCETs[i]=0xFFFFFFFF;
+			for (int j=0; j<configCRITICALITY_LEVELS; j++) {
+				tasksWCETs[i][j]=0xFFFFFFFF;
+			}
 			tasksDeadlines[i]=0xFFFFFFFF;
 			tasksPeriods[i]=0xFFFFFFFF;
 		}
@@ -2174,7 +2201,7 @@ u8 xTaskGetExecutionId() {
 		BaseType_t xReturn;
 
 		u32 tasksTCBPtrs[ configMAX_RT_TASKS ];
-		u32 tasksWCETs[ configMAX_RT_TASKS ];
+		u32 tasksWCETs[ configMAX_RT_TASKS ][ configCRITICALITY_LEVELS ];
 		u32 tasksDeadlines[ configMAX_RT_TASKS ];
 		u32 tasksPeriods[ configMAX_RT_TASKS ];
 
