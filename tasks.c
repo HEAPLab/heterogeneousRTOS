@@ -2168,7 +2168,8 @@ u8 xTaskGetExecutionId() {
 			u32 tasksTCBPtrs[configMAX_RT_TASKS],
 			u32 tasksWCETs[configMAX_RT_TASKS][configCRITICALITY_LEVELS],
 			u32 tasksDeadlines[configMAX_RT_TASKS],
-			u32 tasksPeriods[configMAX_RT_TASKS]) {
+			u32 tasksPeriods[configMAX_RT_TASKS],
+			u32 criticalityLevels[configMAX_RT_TASKS]) {
 
 		for (int i = 0; i < numberOfTasks; i++) {
 			tasksTCBPtrs[i]=prvRTTasksList[i].taskTCB;
@@ -2177,6 +2178,7 @@ u8 xTaskGetExecutionId() {
 			}
 			tasksDeadlines[i]=prvRTTasksList[i].pxDeadline;
 			tasksPeriods[i]=prvRTTasksList[i].pxPeriod;
+			criticalityLevels[i]=prvRTTasksList[i].pxCriticalityLevel;
 		}
 
 
@@ -2187,6 +2189,7 @@ u8 xTaskGetExecutionId() {
 			}
 			tasksDeadlines[i]=0xFFFFFFFF;
 			tasksPeriods[i]=0xFFFFFFFF;
+			criticalityLevels[i]=0xFFFFFFFF;
 		}
 	}
 
@@ -2204,13 +2207,15 @@ u8 xTaskGetExecutionId() {
 		u32 tasksWCETs[ configMAX_RT_TASKS ][ configCRITICALITY_LEVELS ];
 		u32 tasksDeadlines[ configMAX_RT_TASKS ];
 		u32 tasksPeriods[ configMAX_RT_TASKS ];
+		u32 tasksCriticalityLevels[ configMAX_RT_TASKS ];
 
 		prvSplitRTTasksList(pxRTTasksList, uxTaskNumber,
 				configMAX_RT_TASKS,
 				tasksTCBPtrs,
 				tasksWCETs,
 				tasksDeadlines,
-				tasksPeriods
+				tasksPeriods,
+				tasksCriticalityLevels
 		);
 
 
@@ -2219,6 +2224,7 @@ u8 xTaskGetExecutionId() {
 				(void *) tasksWCETs,
 				(void *) tasksDeadlines,
 				(void *) tasksPeriods,
+				(void *) tasksCriticalityLevels,
 				(u32*) &pxCurrentTCB) == pdPASS) {
 			/* Add the idle task at the lowest priority. */
 #if ( configSUPPORT_STATIC_ALLOCATION == 1 )

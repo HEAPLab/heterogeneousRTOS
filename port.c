@@ -1877,6 +1877,7 @@ BaseType_t xPortInitScheduler( u32 numberOfTasks,
 		void* tasksWCETs,
 		void* tasksDeadlines,
 		void* tasksPeriods,
+		void* tasksCriticalityLevels,
 		u32* pxCurrentTCBPtr )
 {
 	pxCurrentTCB_ptr=(TCB_t **)pxCurrentTCBPtr;
@@ -1890,6 +1891,7 @@ BaseType_t xPortInitScheduler( u32 numberOfTasks,
 	SCHEDULER_copyWCETs((void*) SCHEDULER_BASEADDR, tasksWCETs);
 	SCHEDULER_copyDeadlines((void*) SCHEDULER_BASEADDR, tasksDeadlines);
 	SCHEDULER_copyPeriods((void*) SCHEDULER_BASEADDR, tasksPeriods);
+	SCHEDULER_copyCriticalityLevels((void*) SCHEDULER_BASEADDR, tasksCriticalityLevels);
 
 	/*
 	 * Enable interrupts in the Processor.
