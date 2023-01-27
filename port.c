@@ -1,4 +1,4 @@
-//#define verboseScheduler
+#define verboseScheduler
 #include <stdarg.h>
 
 /*
@@ -1767,7 +1767,9 @@ void xPortScheduleNewTask(void)
 	*pxCurrentTCB_ptr = newtaskdesc->pxNextTcb;
 
 	TCB_t* pxNewTCB=*(pxCurrentTCB_ptr);
-	//printf("| NEW, %X ", *pxCurrentTCB_ptr);
+#ifdef verboseScheduler
+	xil_printf("| NEW, %X ", *pxCurrentTCB_ptr);
+#endif
 	if (newtaskdesc->executionMode==EXECMODE_NORMAL_NEWJOB) {
 		pxNewTCB->jobEnded=0;
 	}
@@ -1775,7 +1777,7 @@ void xPortScheduleNewTask(void)
 	pxNewTCB->executionId=newtaskdesc->executionId;
 	pxNewTCB->reExecutions=newtaskdesc->reExecutions;
 #ifdef verboseScheduler
-	printf("exec mode SCH %x, exec id %d, reExecutions %d", newtaskdesc->executionMode, pxNewTCB->executionId, pxNewTCB->reExecutions);
+	xil_printf("exec mode SCH %x, exec id %d, reExecutions %d", newtaskdesc->executionMode, pxNewTCB->executionId, pxNewTCB->reExecutions);
 #endif
 	if (newtaskdesc->executionMode!=EXECMODE_NORMAL && newtaskdesc->executionMode!=EXECMODE_NORMAL_NEWJOB) {
 		//RESET TO BEGIN
