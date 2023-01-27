@@ -1304,7 +1304,7 @@ u8 xTaskGetExecutionId() {
 
 		//blockIfFaultDetectedInTask();
 
-		printf(" end ");
+//		printf(" end ");
 		pxCurrentTCB->executionMode=EXECMODE_NORMAL;
 		pxCurrentTCB->jobEnded=1;
 
