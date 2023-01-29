@@ -2167,7 +2167,7 @@ u8 xTaskGetExecutionId() {
 			u8 maxTasks,
 			u32 tasksTCBPtrs[configMAX_RT_TASKS],
 			u32 tasksWCETs[configMAX_RT_TASKS][configCRITICALITY_LEVELS],
-			u32 tasksDeadlines[configMAX_RT_TASKS],
+			u32 tasksDeadlines[configMAX_RT_TASKS][configCRITICALITY_LEVELS],
 			u32 tasksPeriods[configMAX_RT_TASKS],
 			u32 criticalityLevels[configMAX_RT_TASKS]) {
 
@@ -2175,8 +2175,8 @@ u8 xTaskGetExecutionId() {
 			tasksTCBPtrs[i]=prvRTTasksList[i].taskTCB;
 			for (int j=0; j<configCRITICALITY_LEVELS; j++) {
 				tasksWCETs[j][i]=prvRTTasksList[i].pxWcet[j];
+				tasksDeadlines[i]=prvRTTasksList[i].pxDeadline[j];
 			}
-			tasksDeadlines[i]=prvRTTasksList[i].pxDeadline;
 			tasksPeriods[i]=prvRTTasksList[i].pxPeriod;
 			criticalityLevels[i]=prvRTTasksList[i].pxCriticalityLevel;
 		}
@@ -2186,8 +2186,8 @@ u8 xTaskGetExecutionId() {
 			tasksTCBPtrs[i]=0x0;
 			for (int j=0; j<configCRITICALITY_LEVELS; j++) {
 				tasksWCETs[i][j]=0xFFFFFFFF;
+				tasksDeadlines[i][j]=0xFFFFFFFF;
 			}
-			tasksDeadlines[i]=0xFFFFFFFF;
 			tasksPeriods[i]=0xFFFFFFFF;
 			criticalityLevels[i]=0xFFFFFFFF;
 		}
@@ -2205,7 +2205,7 @@ u8 xTaskGetExecutionId() {
 
 		u32 tasksTCBPtrs[ configMAX_RT_TASKS ];
 		u32 tasksWCETs[ configMAX_RT_TASKS ][ configCRITICALITY_LEVELS ];
-		u32 tasksDeadlines[ configMAX_RT_TASKS ];
+		u32 tasksDeadlines[ configMAX_RT_TASKS ][ configMAX_RT_TASKS ];
 		u32 tasksPeriods[ configMAX_RT_TASKS ];
 		u32 tasksCriticalityLevels[ configMAX_RT_TASKS ];
 
