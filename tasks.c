@@ -111,7 +111,7 @@ int calculate_x(RTTask_t tasks[], u8 numberOfTasks, int k) {
 
 void generate_deadlines(u32 tasksDeadlines[], RTTask_t task, u32 x, u32 k) {
 	u32 cumulated=0;
-	for (int i=0; i<task.pxCriticalityLevel; i++) {
+	for (int i=0; i<=task.pxCriticalityLevel; i++) {
 		u32 currDeadline;
 		if (task.pxCriticalityLevel<=k) //|| k==-2)
 			currDeadline=task.pxDeadline;
@@ -122,7 +122,7 @@ void generate_deadlines(u32 tasksDeadlines[], RTTask_t task, u32 x, u32 k) {
 		//				tasksDeadlines[i]=currDeadline;
 		//			else
 		tasksDeadlines[i]=currDeadline-cumulated; //save increment wrt base deadline
-		cumulated+=currDeadline;
+		cumulated=currDeadline;
 	}
 }
 
