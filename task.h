@@ -196,7 +196,7 @@ typedef struct __attribute__((__packed__)) RealTimeTask_t {
 	u32 pxPeriod;
 	u32 pxWcet[configCRITICALITY_LEVELS];
 	u32	pxDeadline;
-	u32 pxCriticalityLevel
+	u32 pxCriticalityLevel;
 } RTTask_t;
 
 //______________________________________________________

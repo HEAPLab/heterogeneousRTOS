@@ -29,6 +29,7 @@
 #include <string.h>
 //fedit add
 #include <stdarg.h>
+#include <math.h>
 
 /* Defining MPU_WRAPPERS_INCLUDED_FROM_API_FILE prevents task.h from redefining
  * all the API functions to use the MPU wrappers.  That should only be done when
@@ -443,9 +444,9 @@
 
 #endif
 
-u8 xTaskGetExecutionId() {
-	return pxCurrentTCB->executionId;
-}
+	u8 xTaskGetExecutionId() {
+		return pxCurrentTCB->executionId;
+	}
 
 	/*
 	 * When a task is created, the stack of the task is filled with a known value.
@@ -608,11 +609,11 @@ u8 xTaskGetExecutionId() {
 		pxNewRTTask.pxPeriod=pxPeriod;
 		pxNewRTTask.pxCriticalityLevel=pxCriticalityLevel;
 
-	    va_list varptr;
-	    va_start(varptr, pxCriticalityLevel);
-	    for (UBaseType_t i = 0; i <= pxCriticalityLevel; i++)
-	    	pxNewRTTask.pxWcet[i]=va_arg(varptr, UBaseType_t);
-	    va_end(varptr);
+		va_list varptr;
+		va_start(varptr, pxCriticalityLevel);
+		for (UBaseType_t i = 0; i <= pxCriticalityLevel; i++)
+			pxNewRTTask.pxWcet[i]=va_arg(varptr, UBaseType_t);
+		va_end(varptr);
 
 		if (xReturn!=NULL) {
 			//*pxRTTaskOut=pxNewRTTask;
@@ -689,11 +690,11 @@ u8 xTaskGetExecutionId() {
 		pxNewRTTask.pxPeriod=pxPeriod;
 		pxNewRTTask.pxCriticalityLevel=pxCriticalityLevel;
 
-	    va_list varptr;
-	    va_start(varptr, pxCriticalityLevel+1);
-	    for (UBaseType_t i = 0; i <= pxCriticalityLevel; i++)
-	    	pxNewRTTask.pxWcet[i]=va_arg(varptr, UBaseType_t);
-	    va_end(varptr);
+		va_list varptr;
+		va_start(varptr, pxCriticalityLevel+1);
+		for (UBaseType_t i = 0; i <= pxCriticalityLevel; i++)
+			pxNewRTTask.pxWcet[i]=va_arg(varptr, UBaseType_t);
+		va_end(varptr);
 
 		if (xReturn==pdPASS) {
 			//*pxRTTaskOut=pxNewRTTask;
@@ -774,11 +775,11 @@ u8 xTaskGetExecutionId() {
 		pxNewRTTask.pxPeriod=pxPeriod;
 		pxNewRTTask.pxCriticalityLevel=pxCriticalityLevel;
 
-	    va_list varptr;
-	    va_start(varptr, pxCriticalityLevel+1);
-	    for (UBaseType_t i = 0; i <= pxCriticalityLevel; i++)
-	    	pxNewRTTask.pxWcet[i]=va_arg(varptr, UBaseType_t);
-	    va_end(varptr);
+		va_list varptr;
+		va_start(varptr, pxCriticalityLevel+1);
+		for (UBaseType_t i = 0; i <= pxCriticalityLevel; i++)
+			pxNewRTTask.pxWcet[i]=va_arg(varptr, UBaseType_t);
+		va_end(varptr);
 
 		if (xReturn==pdPASS) {
 			//*pxRTTaskOut=pxNewRTTask;
@@ -892,11 +893,11 @@ u8 xTaskGetExecutionId() {
 		pxNewRTTask.pxPeriod = pxPeriod;
 		pxNewRTTask.pxCriticalityLevel=pxCriticalityLevel;
 
-	    va_list varptr;
-	    va_start(varptr, pxCriticalityLevel+1);
-	    for (UBaseType_t i = 0; i <= pxCriticalityLevel; i++)
-	    	pxNewRTTask.pxWcet[i]=va_arg(varptr, UBaseType_t);
-	    va_end(varptr);
+		va_list varptr;
+		va_start(varptr, pxCriticalityLevel+1);
+		for (UBaseType_t i = 0; i <= pxCriticalityLevel; i++)
+			pxNewRTTask.pxWcet[i]=va_arg(varptr, UBaseType_t);
+		va_end(varptr);
 		if (xReturn == pdPASS) {
 			//*pxRTTaskOut=pxNewRTTask;
 			return prvAddNewTaskToRTTasksList(pxNewRTTask);
@@ -1239,7 +1240,7 @@ u8 xTaskGetExecutionId() {
 			/* Ensure interrupts don't access the task lists while the lists are being
 			 * updated. */
 			taskENTER_CRITICAL()
-														;
+																		;
 			{
 				uxCurrentNumberOfTasks++;
 
@@ -1304,7 +1305,7 @@ u8 xTaskGetExecutionId() {
 
 		//blockIfFaultDetectedInTask();
 
-//		printf(" end ");
+		//		printf(" end ");
 		pxCurrentTCB->executionMode=EXECMODE_NORMAL;
 		pxCurrentTCB->jobEnded=1;
 
@@ -1573,7 +1574,7 @@ u8 xTaskGetExecutionId() {
 		 * have put ourselves to sleep. */
 		if (xAlreadyYielded == pdFALSE) {
 			portYIELD_WITHIN_API()
-														;
+																		;
 		} else {
 			mtCOVERAGE_TEST_MARKER();
 		}
@@ -1614,7 +1615,7 @@ u8 xTaskGetExecutionId() {
 		 * have put ourselves to sleep. */
 		if (xAlreadyYielded == pdFALSE) {
 			portYIELD_WITHIN_API()
-														;
+																		;
 		} else {
 			mtCOVERAGE_TEST_MARKER();
 		}
@@ -1637,7 +1638,7 @@ u8 xTaskGetExecutionId() {
 			eReturn = eRunning;
 		} else {
 			taskENTER_CRITICAL()
-														;
+																		;
 			{
 				pxStateList = listLIST_ITEM_CONTAINER(&(pxTCB->xStateListItem));
 				pxDelayedList = pxDelayedTaskList;
@@ -1900,7 +1901,7 @@ u8 xTaskGetExecutionId() {
 
 				if (xYieldRequired != pdFALSE) {
 					taskYIELD_IF_USING_PREEMPTION()
-																;
+																				;
 				} else {
 					mtCOVERAGE_TEST_MARKER();
 				}
@@ -1969,7 +1970,7 @@ u8 xTaskGetExecutionId() {
 			/* Reset the next expected unblock time in case it referred to the
 			 * task that is now in the Suspended state. */
 			taskENTER_CRITICAL()
-														;
+																		;
 			{
 				prvResetNextTaskUnblockTime();
 			}
@@ -2061,7 +2062,7 @@ u8 xTaskGetExecutionId() {
 		 * currently executing task. */
 		if ((pxTCB != pxCurrentTCB) && (pxTCB != NULL)) {
 			taskENTER_CRITICAL()
-														;
+																		;
 			{
 				if (prvTaskIsTaskSuspended(pxTCB) != pdFALSE) {
 					traceTASK_RESUME( pxTCB );
@@ -2077,7 +2078,7 @@ u8 xTaskGetExecutionId() {
 						 * but will leave the lists in the correct state for the
 						 * next yield. */
 						taskYIELD_IF_USING_PREEMPTION()
-																	;
+																					;
 					} else {
 						mtCOVERAGE_TEST_MARKER();
 					}
@@ -2163,7 +2164,86 @@ u8 xTaskGetExecutionId() {
 #endif /* ( ( INCLUDE_xTaskResumeFromISR == 1 ) && ( INCLUDE_vTaskSuspend == 1 ) ) */
 	/*-----------------------------------------------------------*/
 
-	void prvSplitRTTasksList(RTTask_t prvRTTasksList[configMAX_RT_TASKS], u8 numberOfTasks,
+	float compute_utilisation(RTTask_t tasks[], u8 number_of_tasks, u32 systemCriticalityLevel, u32 taskCriticalityLevel) {
+		float val=0;
+		for (int i=0; i<number_of_tasks; i++) {
+			if (tasks[i].pxCriticalityLevel==taskCriticalityLevel && systemCriticalityLevel>=tasks[i].pxCriticalityLevel)
+				val+=tasks[i].pxWcet[systemCriticalityLevel]/tasks[i].pxPeriod;
+		}
+		return val;
+	}
+
+	int find_k(RTTask_t tasks[], u8 number_of_tasks) {
+		float u=0;
+		for (int l=0; l<configCRITICALITY_LEVELS; l++)
+			u+=compute_utilisation(tasks, number_of_tasks, l, l);
+		if (u<=1)
+			return -2;
+
+		for (int k=0; k<configCRITICALITY_LEVELS-1; k++) {
+			float first=0;
+			for (int l=k+1; l<configCRITICALITY_LEVELS; l++)
+				first+=compute_utilisation(tasks, number_of_tasks, k, l);
+
+			float v1=0;
+			for (int l=0; l<=k; l++)
+				v1+=compute_utilisation(tasks, number_of_tasks, l, l);
+
+			first=first/(1-v1);
+
+			float second=0;
+			float v2=0;
+			for (int l=k+1; l<configCRITICALITY_LEVELS; l++)
+				v2+=compute_utilisation(tasks, number_of_tasks, l, l);
+
+			second=1-v2;
+			second=second/v1;
+
+			if (first<=second && (1-v1)>0) {
+				return k; //schedulable
+			}
+		}
+		return -1;
+	}
+
+//	int compute_schedulability(RTTask_t prvRTTasksList[configMAX_RT_TASKS], u8 numberOfTasks) {
+//		float util=0;
+//		for (int i=0; i<configMAX_RT_TASKS; i++) {
+//			util+=compute_utilisation(tasks, number_of_tasks, l, l);
+//		}
+//		if (util<=1)
+//
+//
+//		return
+//	}
+	int calculate_x(RTTask_t tasks[], u8 numberOfTasks, int k) {
+		float v1=0;
+		for (int l=k+1; l<configCRITICALITY_LEVELS; l++) {
+			v1+=compute_utilisation(tasks, numberOfTasks, l, l);
+		}
+		float val=1-v1;
+		float v2=0;
+		for (int l=0; l<=k; l++) {
+			v2+=compute_utilisation(tasks, numberOfTasks, l, l);
+		}
+		val=val/v2;
+		return floor(val);
+	}
+
+	void generate_deadlines(u32 tasksDeadlines[], RTTask_t task, u32 x, u32 k) {
+		for (int i=0; i<task.pxCriticalityLevel; i++) {
+			int currDeadline;
+			if (task.pxCriticalityLevel<=k) //|| k==-2)
+				currDeadline=task.pxDeadline;
+			else
+				currDeadline=tasksDeadlines[i]=task.pxDeadline*x;
+
+			if (i>0)
+				tasksDeadlines[i]=currDeadline-tasksDeadlines[i-1]; //save increment wrt base deadline
+		}
+	}
+
+	int prvSplitRTTasksList(RTTask_t prvRTTasksList[configMAX_RT_TASKS], u8 numberOfTasks,
 			u8 maxTasks,
 			u32 tasksTCBPtrs[configMAX_RT_TASKS],
 			u32 tasksWCETs[configMAX_RT_TASKS][configCRITICALITY_LEVELS],
@@ -2171,12 +2251,25 @@ u8 xTaskGetExecutionId() {
 			u32 tasksPeriods[configMAX_RT_TASKS],
 			u32 criticalityLevels[configMAX_RT_TASKS]) {
 
+		int k=find_k(prvRTTasksList, numberOfTasks);
+		if (k==-1) {
+			printf("task set not schedulable");
+			return -1;
+		}
+
+		int x;
+		if (k==-2) {
+			x=1;
+		} else {
+			x=calculate_x(prvRTTasksList, numberOfTasks, k);
+		}
+
 		for (int i = 0; i < numberOfTasks; i++) {
 			tasksTCBPtrs[i]=prvRTTasksList[i].taskTCB;
 			for (int j=0; j<configCRITICALITY_LEVELS; j++) {
 				tasksWCETs[j][i]=prvRTTasksList[i].pxWcet[j];
-				tasksDeadlines[i]=prvRTTasksList[i].pxDeadline[j];
 			}
+			generate_deadlines(tasksDeadlines[i], prvRTTasksList[i], x, k),
 			tasksPeriods[i]=prvRTTasksList[i].pxPeriod;
 			criticalityLevels[i]=prvRTTasksList[i].pxCriticalityLevel;
 		}
@@ -2191,6 +2284,7 @@ u8 xTaskGetExecutionId() {
 			tasksPeriods[i]=0xFFFFFFFF;
 			criticalityLevels[i]=0xFFFFFFFF;
 		}
+		return 0;
 	}
 
 	void vTaskStartFaultDetector(u8 restoreTrainDataFromSd, FAULTDETECTOR_region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS], u8 n_regions[FAULTDETECTOR_MAX_CHECKS]) {
@@ -2199,6 +2293,7 @@ u8 xTaskGetExecutionId() {
 		FAULTDET_start();
 #endif
 	}
+
 
 	void vTaskStartScheduler() {
 		BaseType_t xReturn;
@@ -2209,15 +2304,17 @@ u8 xTaskGetExecutionId() {
 		u32 tasksPeriods[ configMAX_RT_TASKS ];
 		u32 tasksCriticalityLevels[ configMAX_RT_TASKS ];
 
-		prvSplitRTTasksList(pxRTTasksList, uxTaskNumber,
+		if (prvSplitRTTasksList(pxRTTasksList, uxTaskNumber,
 				configMAX_RT_TASKS,
 				tasksTCBPtrs,
 				tasksWCETs,
 				tasksDeadlines,
 				tasksPeriods,
 				tasksCriticalityLevels
-		);
-
+		)!=0) {
+			printf("error, cannot generate schedule");
+			return;
+		}
 
 		if (xPortInitScheduler( (u32) uxTaskNumber,
 				(void *) tasksTCBPtrs,
@@ -3876,7 +3973,7 @@ void SchedulerNewTaskIntrHandl(void)
 			 * being called too often in the idle task. */
 			while (uxDeletedTasksWaitingCleanUp > (UBaseType_t) 0U) {
 				taskENTER_CRITICAL()
-															;
+																			;
 				{
 					pxTCB = listGET_OWNER_OF_HEAD_ENTRY(
 							(&xTasksWaitingTermination)); /*lint !e9079 void * is used as this macro is used with timers and co-routines too.  Alignment is known to be fine as the type of the pointer stored and retrieved is the same. */
@@ -5048,7 +5145,7 @@ void SchedulerNewTaskIntrHandl(void)
 					/* The notified task has a priority above the currently
 					 * executing task so a yield is required. */
 					taskYIELD_IF_USING_PREEMPTION()
-																;
+																				;
 				} else {
 					mtCOVERAGE_TEST_MARKER();
 				}
