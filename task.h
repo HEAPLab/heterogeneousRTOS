@@ -184,6 +184,7 @@ typedef struct tskTaskControlBlock       /* The old naming convention is used to
 /* The old tskTCB name is maintained above then typedefed to the new TCB_t name
  * below to enable the use of older kernel aware debuggers. */
 typedef tskTCB TCB_t;
+
 //______________________________________________________
 
 //fedit add
@@ -199,7 +200,17 @@ typedef struct __attribute__((__packed__)) RealTimeTask_t {
 	u32 pxCriticalityLevel;
 } RTTask_t;
 
-//______________________________________________________
+void generate_deadlines(u32 tasksDeadlines[], RTTask_t task, u32 x, u32 k);
+int calculate_x(RTTask_t tasks[], u8 numberOfTasks, int k);
+int find_k(RTTask_t tasks[], u8 number_of_tasks);
+float compute_utilisation(RTTask_t tasks[], u8 number_of_tasks, u32 systemCriticalityLevel, u32 taskCriticalityLevel);
+int prvSplitRTTasksList(RTTask_t prvRTTasksList[configMAX_RT_TASKS], u8 numberOfTasks,
+		u8 maxTasks,
+		u32 tasksTCBPtrs[configMAX_RT_TASKS],
+		u32 tasksWCETs[configMAX_RT_TASKS][configCRITICALITY_LEVELS],
+		u32 tasksDeadlines[configMAX_RT_TASKS][configCRITICALITY_LEVELS],
+		u32 tasksPeriods[configMAX_RT_TASKS],
+		u32 criticalityLevels[configMAX_RT_TASKS]);//______________________________________________________
 
 /*
  * Defines the prototype to which the application task hook function must
