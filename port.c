@@ -1880,6 +1880,7 @@ void xPortSchedulerSignalTaskEnded(u16 uxTaskNumber)
 BaseType_t xPortInitScheduler( u32 numberOfTasks,
 		void* tasksTCBPtrs,
 		void* tasksWCETs,
+		void* tasksDeadlinesDerivative,
 		void* tasksDeadlines,
 		void* tasksPeriods,
 		void* tasksCriticalityLevels,
@@ -1894,6 +1895,7 @@ BaseType_t xPortInitScheduler( u32 numberOfTasks,
 
 	SCHEDULER_copyTCBPtrs((void*) SCHEDULER_BASEADDR, tasksTCBPtrs);
 	SCHEDULER_copyWCETs((void*) SCHEDULER_BASEADDR, tasksWCETs);
+	SCHEDULER_copyDeadlinesDerivative((void*) SCHEDULER_BASEADDR, tasksDeadlinesDerivative);
 	SCHEDULER_copyDeadlines((void*) SCHEDULER_BASEADDR, tasksDeadlines);
 	SCHEDULER_copyPeriods((void*) SCHEDULER_BASEADDR, tasksPeriods);
 	SCHEDULER_copyCriticalityLevels((void*) SCHEDULER_BASEADDR, tasksCriticalityLevels);

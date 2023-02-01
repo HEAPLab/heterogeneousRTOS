@@ -109,19 +109,20 @@ int calculate_x(RTTask_t tasks[], u8 numberOfTasks, int k) {
 	return (int)val;
 }
 
-void generate_deadlines(u32 tasksDeadlines[], RTTask_t task, u32 x, u32 k) {
+void generate_deadlines(u32 tasksDerivativesDeadlines[configCRITICALITY_LEVELS][configMAX_RT_TASKS], u32 tasksDeadlines[configCRITICALITY_LEVELS][configMAX_RT_TASKS], RTTask_t task, int taskIndex, u32 x, u32 k) {
 	u32 cumulated=0;
 	for (int i=0; i<=task.pxCriticalityLevel; i++) {
 		u32 currDeadline;
 		if (task.pxCriticalityLevel<=k) //|| k==-2)
 			currDeadline=task.pxDeadline;
 		else
-			currDeadline=tasksDeadlines[i]=task.pxDeadline*x;
+			currDeadline=task.pxDeadline*x;
 
 		//			if (i==0)
 		//				tasksDeadlines[i]=currDeadline;
 		//			else
-		tasksDeadlines[i]=currDeadline-cumulated; //save increment wrt base deadline
+		tasksDeadlines[i][taskIndex]=currDeadline;
+		tasksDerivativesDeadlines[i][taskIndex]=currDeadline-cumulated; //save increment wrt base deadline
 		cumulated=currDeadline;
 	}
 }
@@ -129,8 +130,9 @@ void generate_deadlines(u32 tasksDeadlines[], RTTask_t task, u32 x, u32 k) {
 int prvSplitRTTasksList(RTTask_t prvRTTasksList[configMAX_RT_TASKS], u8 numberOfTasks,
 		u8 maxTasks,
 		u32 tasksTCBPtrs[configMAX_RT_TASKS],
-		u32 tasksWCETs[configMAX_RT_TASKS][configCRITICALITY_LEVELS],
-		u32 tasksDeadlines[configMAX_RT_TASKS][configCRITICALITY_LEVELS],
+		u32 tasksWCETs[configCRITICALITY_LEVELS][configMAX_RT_TASKS],
+		u32 tasksDerivativesDeadlines[configCRITICALITY_LEVELS][configMAX_RT_TASKS],
+		u32 tasksDeadlines[configCRITICALITY_LEVELS][configMAX_RT_TASKS],
 		u32 tasksPeriods[configMAX_RT_TASKS],
 		u32 criticalityLevels[configMAX_RT_TASKS]) {
 
@@ -152,8 +154,8 @@ int prvSplitRTTasksList(RTTask_t prvRTTasksList[configMAX_RT_TASKS], u8 numberOf
 		for (int j=0; j<configCRITICALITY_LEVELS; j++) {
 			tasksWCETs[j][i]=prvRTTasksList[i].pxWcet[j];
 		}
-		generate_deadlines(tasksDeadlines[i], prvRTTasksList[i], x, k),
-				tasksPeriods[i]=prvRTTasksList[i].pxPeriod;
+		generate_deadlines(tasksDerivativesDeadlines, tasksDeadlines, prvRTTasksList[i], i, x, k),
+		tasksPeriods[i]=prvRTTasksList[i].pxPeriod;
 		criticalityLevels[i]=prvRTTasksList[i].pxCriticalityLevel;
 	}
 
@@ -2305,8 +2307,9 @@ int prvSplitRTTasksList(RTTask_t prvRTTasksList[configMAX_RT_TASKS], u8 numberOf
 			BaseType_t xReturn;
 
 			u32 tasksTCBPtrs[ configMAX_RT_TASKS ];
-			u32 tasksWCETs[ configMAX_RT_TASKS ][ configCRITICALITY_LEVELS ];
-			u32 tasksDeadlines[ configMAX_RT_TASKS ][ configMAX_RT_TASKS ];
+			u32 tasksWCETs[ configCRITICALITY_LEVELS ][ configMAX_RT_TASKS ];
+			u32 tasksDerivativeDeadlines[ configCRITICALITY_LEVELS ][ configMAX_RT_TASKS ];
+			u32 tasksDeadlines[ configCRITICALITY_LEVELS ][ configMAX_RT_TASKS ];
 			u32 tasksPeriods[ configMAX_RT_TASKS ];
 			u32 tasksCriticalityLevels[ configMAX_RT_TASKS ];
 
@@ -2314,6 +2317,7 @@ int prvSplitRTTasksList(RTTask_t prvRTTasksList[configMAX_RT_TASKS], u8 numberOf
 					configMAX_RT_TASKS,
 					tasksTCBPtrs,
 					tasksWCETs,
+					tasksDerivativeDeadlines,
 					tasksDeadlines,
 					tasksPeriods,
 					tasksCriticalityLevels
@@ -2325,6 +2329,7 @@ int prvSplitRTTasksList(RTTask_t prvRTTasksList[configMAX_RT_TASKS], u8 numberOf
 			if (xPortInitScheduler( (u32) uxTaskNumber,
 					(void *) tasksTCBPtrs,
 					(void *) tasksWCETs,
+					(void *) tasksDerivativeDeadlines,
 					(void *) tasksDeadlines,
 					(void *) tasksPeriods,
 					(void *) tasksCriticalityLevels,

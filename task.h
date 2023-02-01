@@ -200,15 +200,16 @@ typedef struct __attribute__((__packed__)) RealTimeTask_t {
 	u32 pxCriticalityLevel;
 } RTTask_t;
 
-void generate_deadlines(u32 tasksDeadlines[], RTTask_t task, u32 x, u32 k);
+void generate_deadlines(u32 tasksDerivativesDeadlines[configCRITICALITY_LEVELS][configMAX_RT_TASKS], u32 tasksDeadlines[configCRITICALITY_LEVELS][configMAX_RT_TASKS], RTTask_t task, int taskIndex, u32 x, u32 k);
 int calculate_x(RTTask_t tasks[], u8 numberOfTasks, int k);
 int find_k(RTTask_t tasks[], u8 number_of_tasks);
 float compute_utilisation(RTTask_t tasks[], u8 number_of_tasks, u32 systemCriticalityLevel, u32 taskCriticalityLevel);
 int prvSplitRTTasksList(RTTask_t prvRTTasksList[configMAX_RT_TASKS], u8 numberOfTasks,
 		u8 maxTasks,
 		u32 tasksTCBPtrs[configMAX_RT_TASKS],
-		u32 tasksWCETs[configMAX_RT_TASKS][configCRITICALITY_LEVELS],
-		u32 tasksDeadlines[configMAX_RT_TASKS][configCRITICALITY_LEVELS],
+		u32 tasksWCETs[configCRITICALITY_LEVELS][configMAX_RT_TASKS],
+		u32 tasksDerivativesDeadlines[configCRITICALITY_LEVELS][configMAX_RT_TASKS],
+		u32 tasksDeadlines[configCRITICALITY_LEVELS][configMAX_RT_TASKS],
 		u32 tasksPeriods[configMAX_RT_TASKS],
 		u32 criticalityLevels[configMAX_RT_TASKS]);//______________________________________________________
 

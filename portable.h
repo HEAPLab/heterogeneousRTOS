@@ -205,6 +205,7 @@ void xPortSchedulerSignalTaskEnded(u16 uxTaskNumber) PRIVILEGED_FUNCTION;
 BaseType_t xPortInitScheduler( u32 numberOfTasks,
 		void* tasksTCBPtrs,
 		void* tasksWCETs,
+		void* tasksDeadlinesDerivative,
 		void* tasksDeadlines,
 		void* tasksPeriods,
 		void* tasksCriticalityLevels,
