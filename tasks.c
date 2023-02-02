@@ -743,12 +743,16 @@ int prvSplitRTTasksList(RTTask_t prvRTTasksList[configMAX_RT_TASKS], u8 numberOf
 			for (UBaseType_t i = 0; i <= pxCriticalityLevel; i++)
 				pxNewRTTask.pxWcet[i]=va_arg(varptr, UBaseType_t);
 			va_end(varptr);
+			for (UBaseType_t i = pxCriticalityLevel+1; i < configCRITICALITY_LEVELS; i++) {
+				pxNewRTTask.pxWcet[i]=0;
+			}
 
 			if (xReturn!=NULL) {
 				//*pxRTTaskOut=pxNewRTTask;
 				if (prvAddNewTaskToRTTasksList(pxNewRTTask) != pdPass)
 					return NULL;
 			}
+
 			return xReturn;
 		}
 
@@ -824,6 +828,9 @@ int prvSplitRTTasksList(RTTask_t prvRTTasksList[configMAX_RT_TASKS], u8 numberOf
 			for (UBaseType_t i = 0; i <= pxCriticalityLevel; i++)
 				pxNewRTTask.pxWcet[i]=va_arg(varptr, UBaseType_t);
 			va_end(varptr);
+			for (UBaseType_t i = pxCriticalityLevel+1; i < configCRITICALITY_LEVELS; i++) {
+				pxNewRTTask.pxWcet[i]=0;
+			}
 
 			if (xReturn==pdPASS) {
 				//*pxRTTaskOut=pxNewRTTask;
@@ -909,6 +916,9 @@ int prvSplitRTTasksList(RTTask_t prvRTTasksList[configMAX_RT_TASKS], u8 numberOf
 			for (UBaseType_t i = 0; i <= pxCriticalityLevel; i++)
 				pxNewRTTask.pxWcet[i]=va_arg(varptr, UBaseType_t);
 			va_end(varptr);
+			for (UBaseType_t i = pxCriticalityLevel+1; i < configCRITICALITY_LEVELS; i++) {
+				pxNewRTTask.pxWcet[i]=0;
+			}
 
 			if (xReturn==pdPASS) {
 				//*pxRTTaskOut=pxNewRTTask;
@@ -1027,6 +1037,10 @@ int prvSplitRTTasksList(RTTask_t prvRTTasksList[configMAX_RT_TASKS], u8 numberOf
 			for (UBaseType_t i = 0; i <= pxCriticalityLevel; i++)
 				pxNewRTTask.pxWcet[i]=va_arg(varptr, UBaseType_t);
 			va_end(varptr);
+			for (UBaseType_t i = pxCriticalityLevel+1; i < configCRITICALITY_LEVELS; i++) {
+				pxNewRTTask.pxWcet[i]=0;
+			}
+
 			if (xReturn == pdPASS) {
 				//*pxRTTaskOut=pxNewRTTask;
 				return prvAddNewTaskToRTTasksList(pxNewRTTask);
@@ -2312,6 +2326,13 @@ int prvSplitRTTasksList(RTTask_t prvRTTasksList[configMAX_RT_TASKS], u8 numberOf
 			u32 tasksDeadlines[ configCRITICALITY_LEVELS ][ configMAX_RT_TASKS ];
 			u32 tasksPeriods[ configMAX_RT_TASKS ];
 			u32 tasksCriticalityLevels[ configMAX_RT_TASKS ];
+
+			memset(tasksTCBPtrs, 0, sizeof(tasksTCBPtrs));
+			memset(tasksWCETs, 0, sizeof(tasksWCETs));
+			memset(tasksDerivativeDeadlines, 0, sizeof(tasksDerivativeDeadlines));
+			memset(tasksDeadlines, 0, sizeof(tasksDeadlines));
+			memset(tasksPeriods, 0, sizeof(tasksPeriods));
+			memset(tasksCriticalityLevels, 0, sizeof(tasksCriticalityLevels));
 
 			if (prvSplitRTTasksList(pxRTTasksList, uxTaskNumber,
 					configMAX_RT_TASKS,
