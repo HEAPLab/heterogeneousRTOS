@@ -163,8 +163,8 @@ int prvSplitRTTasksList(RTTask_t prvRTTasksList[configMAX_RT_TASKS], u8 numberOf
 	for (int i=numberOfTasks; i < maxTasks; i++) {
 		tasksTCBPtrs[i]=0x0;
 		for (int j=0; j<configCRITICALITY_LEVELS; j++) {
-			tasksWCETs[i][j]=0xFFFFFFFF;
-			tasksDeadlines[i][j]=0xFFFFFFFF;
+			tasksWCETs[j][i]=0xFFFFFFFF;
+			tasksDeadlines[j][i]=0xFFFFFFFF;
 		}
 		tasksPeriods[i]=0xFFFFFFFF;
 		criticalityLevels[i]=0xFFFFFFFF;
