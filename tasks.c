@@ -121,6 +121,7 @@ void generate_deadlines(u32 tasksDerivativesDeadlines[configCRITICALITY_LEVELS][
 		//			if (i==0)
 		//				tasksDeadlines[i]=currDeadline;
 		//			else
+		currDeadline-=1;
 		tasksDeadlines[i][taskIndex]=currDeadline;
 		tasksDerivativesDeadlines[i][taskIndex]=currDeadline-cumulated; //save increment wrt base deadline
 		cumulated=currDeadline;
@@ -152,10 +153,10 @@ int prvSplitRTTasksList(RTTask_t prvRTTasksList[configMAX_RT_TASKS], u8 numberOf
 	for (int i = 0; i < numberOfTasks; i++) {
 		tasksTCBPtrs[i]=prvRTTasksList[i].taskTCB;
 		for (int j=0; j<configCRITICALITY_LEVELS; j++) {
-			tasksWCETs[j][i]=prvRTTasksList[i].pxWcet[j];
+			tasksWCETs[j][i]=prvRTTasksList[i].pxWcet[j]-1;
 		}
 		generate_deadlines(tasksDerivativesDeadlines, tasksDeadlines, prvRTTasksList[i], i, x, k),
-		tasksPeriods[i]=prvRTTasksList[i].pxPeriod;
+		tasksPeriods[i]=prvRTTasksList[i].pxPeriod-1;
 		criticalityLevels[i]=prvRTTasksList[i].pxCriticalityLevel;
 	}
 
