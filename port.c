@@ -1047,9 +1047,9 @@ int GpioSetupIntrSystem(INTC *IntcInstancePtr, XGpio *InstancePtr,
 typedef struct __attribute__((__packed__)) {
 	TCB_t * pxNextTcb;
 	u8 executionMode; //normal, reexecution due to fault, reexecution due to timing fail
-	u8 reExecutions;
+	u8 requiresFaultDetection;
 	u8 executionId;
-	char padding;
+	u8 padding;
 } newTaskDescrStr;
 //#define PXNEXTTCB 0x10000000
 #define NEWTASKDESCRPTR 0x10000000
@@ -1212,18 +1212,21 @@ void FAULTDET_getLastTestedPoint(FAULTDETECTOR_testpointDescriptorStr* dest) {
 void FAULTDET_resetFault() {
 	FAULTDETECTOR_resetFault(&FAULTDETECTOR_InstancePtr, ((*pxCurrentTCB_ptr)->uxTaskNumber)-1);
 }
-void FAULTDET_initFaultDetection(FAULTDET_ExecutionDescriptor* instance) {
+void FAULTDET_initFaultDetection() {
 	//FAULTDET_resetFault(); //not needed, automatically done by the faultdetector when a command from the same check but with different UniId is received
+#ifndef disableOnlineTrain
 	if ((*pxCurrentTCB_ptr)->executionMode==EXECMODE_FAULT) {
-		FAULTDET_getLastTestedPoint(&((*pxCurrentTCB_ptr)->lastError));
+		FAULTDET_getLastTestedPoint(&((*pxCurrentTCB_ptr)->lastFault));
 	}
-	instance->testedOnce=0x0;
+#endif
 }
 #endif
 
 #ifndef FAULTDETECTOR_EXECINSW
-void FAULTDET_blockIfFaultDetectedInTask (FAULTDETECTOR_controlStr* control) {
-	if ((*pxCurrentTCB_ptr)->reExecutions<configMAX_REEXECUTIONS_SET_IN_HW_SCHEDULER) {
+u32 lastRequestedTest[configMAX_RT_TASKS];
+
+void FAULTDET_blockIfFaultDetectedInTask () {
+	if ((*pxCurrentTCB_ptr)->requiresFaultDetection) {
 		//		if (instance->testedOnce) {
 		u8 taskId=((*pxCurrentTCB_ptr)->uxTaskNumber)-1;
 
@@ -1231,7 +1234,7 @@ void FAULTDET_blockIfFaultDetectedInTask (FAULTDETECTOR_controlStr* control) {
 		do {
 			FAULTDETECTOR_getLastTestedPointShort(&FAULTDETECTOR_InstancePtr, taskId, &out);
 		}
-		while(*((u32*)(control))!=(*((u32*)(&out))));
+		while(lastRequestedTest[taskId]!=(*((u32*)(&out))));
 		//			while(memcmp(control, &out, sizeof(FAULTDETECTOR_testpointShortDescriptorStr))!=0);
 
 		//			if(FAULTDETECTOR_hasFault(&FAULTDETECTOR_InstancePtr, taskId)) {
@@ -1655,52 +1658,57 @@ void FAULTDET_testing_resetStats() {
 //}
 
 //warning: uniId must start from 1!
+
+
 void FAULTDET_testPoint(
 		FAULTDETECTOR_controlStr* control
 ) {
 
 	TCB_t* tcbPtr=*pxCurrentTCB_ptr;
-	FAULTDETECTOR_testpointDescriptorStr* lastError=&(tcbPtr->lastError);
-	control->taskId=tcbPtr->uxTaskNumber-1;
+	u8 taskId=tcbPtr->uxTaskNumber-1;
+	control->taskId=taskId;
 	control->executionId=tcbPtr->executionId;
 
-	char faultyCheckpoint=tcbPtr->executionMode==EXECMODE_FAULT && *((u32*)lastError)==*((u32*)control);
+#ifndef disableOnlineTrain
+	FAULTDETECTOR_testpointDescriptorStr* lastFault=&(tcbPtr->lastFault);
+	char faultyCheckpoint=tcbPtr->executionMode==EXECMODE_FAULT && *((u32*)lastFault)==*((u32*)control);
 
-	if (faultyCheckpoint) {
-		tcbPtr->lastError.uniId=0xFFFF;
-	}
-
-	if (faultyCheckpoint &&	memcmp(lastError->AOV, control->AOV, sizeof(control->AOV))==0) {
+	if (faultyCheckpoint &&	memcmp(lastFault->AOV, control->AOV, sizeof(control->AOV))==0) {
 #ifdef FAULTDETECTOR_EXECINSW
 		//		printf(" SW FAULT DETECTOR: train");
 		FAULTDETECTOR_SW_train(control);
 #else //!FAULTDETECTOR_EXECINSW
 		control->command=COMMAND_TRAIN;
-#endif //FAULTDETECTOR_EXECINSW
-	} else if (tcbPtr->reExecutions<configMAX_REEXECUTIONS_SET_IN_HW_SCHEDULER) {
-#ifdef FAULTDETECTOR_EXECINSW
-		char fault=FAULTDETECTOR_SW_test(control);
-		if (fault) {
-			tcbPtr->lastError.uniId=control->uniId;
-			tcbPtr->lastError.checkId=control->checkId;
-			tcbPtr->lastError.executionId=control->executionId;
-			memcpy(&(tcbPtr->lastError.AOV), &(control->AOV), sizeof(control->AOV));
-
-#ifndef testingCampaign
-			SCHEDULER_restartFaultyJob((void*) SCHEDULER_BASEADDR, tcbPtr->uxTaskNumber, control->executionId);
-			while(1) {}
-#endif
-		}
-
-#else //!FAULTDETECTOR_EXECINSW
-		control->command=COMMAND_TEST;
 		while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {}
 
 		controlForFaultDet=*control;
 		FAULTDETECTOR_startCopy(&FAULTDETECTOR_InstancePtr);
-
 #endif //FAULTDETECTOR_EXECINSW
-	}
+	} else
+#endif
+		if (tcbPtr->requiresFaultDetection) {
+			lastRequestedTest[taskId]=*((u32*)control);
+#ifdef FAULTDETECTOR_EXECINSW
+			char fault=FAULTDETECTOR_SW_test(control);
+			if (fault) {
+				tcbPtr->lastFault.uniId=control->uniId;
+				tcbPtr->lastFault.checkId=control->checkId;
+				tcbPtr->lastFault.executionId=control->executionId;
+				memcpy(&(tcbPtr->lastFault.AOV), &(control->AOV), sizeof(control->AOV));
+
+#ifndef testingCampaign
+				SCHEDULER_restartFaultyJob((void*) SCHEDULER_BASEADDR, tcbPtr->uxTaskNumber, control->executionId);
+				while(1) {}
+#endif
+			}
+#else //!FAULTDETECTOR_EXECINSW
+			control->command=COMMAND_TEST;
+			while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {}
+
+			controlForFaultDet=*control;
+			FAULTDETECTOR_startCopy(&FAULTDETECTOR_InstancePtr);
+#endif //FAULTDETECTOR_EXECINSW
+		}
 }
 
 void FAULTDET_trainPoint(
@@ -1731,10 +1739,10 @@ void FAULTDET_trainPoint(
 	char fault=FAULTDETECTOR_SW_test(control);
 	if (fault) {
 		FAULTDETECTOR_SW_train(control);
-//		fault=FAULTDETECTOR_SW_test(&control);
-//		if (fault) {
-//			printf("Train failed, checkId %d, uniId %d", checkId, uniId);
-//		}
+		//		fault=FAULTDETECTOR_SW_test(&control);
+		//		if (fault) {
+		//			printf("Train failed, checkId %d, uniId %d", checkId, uniId);
+		//		}
 	}
 #else
 	control->command=COMMAND_TEST;
@@ -1774,13 +1782,13 @@ void xPortScheduleNewTask(void)
 	}
 
 	pxNewTCB->executionId=newtaskdesc->executionId;
-	pxNewTCB->reExecutions=newtaskdesc->reExecutions;
+	pxNewTCB->requiresFaultDetection=newtaskdesc->requiresFaultDetection;
 	pxNewTCB->executionMode=newtaskdesc->executionMode;
 
 #ifdef verboseScheduler
-	printf("exec mode SCH %x, exec id %d, reExecutions %d\n", newtaskdesc->executionMode, newtaskdesc->executionId, newtaskdesc->reExecutions);
+	printf("exec mode SCH %x, exec id %d, requiresFaultDetection %d\n", newtaskdesc->executionMode, newtaskdesc->executionId, newtaskdesc->requiresFaultDetection);
 #endif
-//	fflush(stdout);
+	//	fflush(stdout);
 
 
 	if (newtaskdesc->executionMode!=EXECMODE_NORMAL && newtaskdesc->executionMode!=EXECMODE_NORMAL_NEWJOB) {
@@ -1846,19 +1854,19 @@ void xPortScheduleNewTask(void)
 
 		pxNewTCB->pxTopOfStack=pxNewTCB->pxInitTopOfStack;
 		pxNewTCB->pxTopOfStack = pxPortInitialiseStack(pxNewTCB->pxInitTopOfStack,
-		pxNewTCB->pxInitTaskCode, (void*) pxNewTCB->pxInitParameters);
+				pxNewTCB->pxInitTaskCode, (void*) pxNewTCB->pxInitParameters);
 
 	}
-//
-//
-//	//	printf("exec mode TASK %x", pxNewTCB->executionMode);
+	//
+	//
+	//	//	printf("exec mode TASK %x", pxNewTCB->executionMode);
 	*pxCurrentTCB_ptr = pxNewTCB;
 	SCHEDULER_ACKInterrupt((void *) SCHEDULER_BASEADDR);
-//
-//	/*	printf(" initial SP: %X ", ((*pxCurrentTCB_ptr)->pxStack));
-//		printf(" SP: %X ", ((*pxCurrentTCB_ptr)->pxTopOfStack));
-//		printf(" PC address: %X ", ((*pxCurrentTCB_ptr)->pxTopOfStack + 13));
-//		printf(" PC instr: %X |", *((*pxCurrentTCB_ptr)->pxTopOfStack + 13));*/
+	//
+	//	/*	printf(" initial SP: %X ", ((*pxCurrentTCB_ptr)->pxStack));
+	//		printf(" SP: %X ", ((*pxCurrentTCB_ptr)->pxTopOfStack));
+	//		printf(" PC address: %X ", ((*pxCurrentTCB_ptr)->pxTopOfStack + 13));
+	//		printf(" PC instr: %X |", *((*pxCurrentTCB_ptr)->pxTopOfStack + 13));*/
 }
 
 void xPortSchedulerResumeTask(u16 uxTaskNumber) {

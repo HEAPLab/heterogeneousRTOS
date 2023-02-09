@@ -79,7 +79,7 @@
 
 #define configCRITICALITY_LEVELS (3)
 //________
-#define configMAX_REEXECUTIONS_SET_IN_HW_SCHEDULER (2)
+//#define configMAX_REEXECUTIONS_SET_IN_HW_SCHEDULER (2)
 
 #define configMAX_CO_ROUTINE_PRIORITIES 2
 

@@ -1,4 +1,4 @@
-#define FAULTDETECTOR_EXECINSW
+//#define FAULTDETECTOR_EXECINSW
 #define testingCampaign
 //#define detectionPerformanceMeasurement
 
@@ -221,11 +221,6 @@ XFaultdetector FAULTDET_getInstancePtr() PRIVILEGED_FUNCTION;
 #endif
 
 FAULTDETECTOR_controlStr* FAULTDET_getControlForFaultDet() PRIVILEGED_FUNCTION;
-
-typedef struct {
-	FAULTDETECTOR_testpointDescriptorStr lastTest;
-	char testedOnce;
-} FAULTDET_ExecutionDescriptor;
 void FAULTDET_dumpRegions() PRIVILEGED_FUNCTION;
 void FAULTDET_init(u8 restoreTrainDataFromSd, FAULTDETECTOR_region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS], u8 n_regions[FAULTDETECTOR_MAX_CHECKS]) PRIVILEGED_FUNCTION;
 void FAULTDET_start() PRIVILEGED_FUNCTION;
@@ -233,10 +228,9 @@ void FAULTDET_start() PRIVILEGED_FUNCTION;
 void FAULTDET_Train(FAULTDETECTOR_controlStr* contr) PRIVILEGED_FUNCTION;
 void FAULTDET_Test(FAULTDETECTOR_controlStr* contr) PRIVILEGED_FUNCTION;
 void FAULTDET_hotUpdateRegions(FAULTDETECTOR_region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS], u8 n_regions[FAULTDETECTOR_MAX_CHECKS]) PRIVILEGED_FUNCTION;
-//void FAULTDET_blockIfFaultDetectedInTask (FAULTDET_ExecutionDescriptor* instance) PRIVILEGED_FUNCTION;
-void FAULTDET_blockIfFaultDetectedInTask (FAULTDETECTOR_controlStr* control) PRIVILEGED_FUNCTION;
+void FAULTDET_blockIfFaultDetectedInTask () PRIVILEGED_FUNCTION;
 void FAULTDET_getLastTestedPoint(FAULTDETECTOR_testpointDescriptorStr* dest) PRIVILEGED_FUNCTION;
-void FAULTDET_initFaultDetection(FAULTDET_ExecutionDescriptor* instance) PRIVILEGED_FUNCTION;
+void FAULTDET_initFaultDetection() PRIVILEGED_FUNCTION;
 //void FAULTDET_endFaultDetection() PRIVILEGED_FUNCTION;
 void FAULTDET_trainPoint(FAULTDETECTOR_controlStr* control) PRIVILEGED_FUNCTION;
 //void FAULTDET_trainPoint(int uniId, int checkId, int argCount, ...) PRIVILEGED_FUNCTION;
