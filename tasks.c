@@ -153,7 +153,7 @@ int prvSplitRTTasksList(RTTask_t prvRTTasksList[configMAX_RT_TASKS], u8 numberOf
 	for (int i = 0; i < numberOfTasks; i++) {
 		tasksTCBPtrs[i]=prvRTTasksList[i].taskTCB;
 		for (int j=0; j<configCRITICALITY_LEVELS; j++) {
-			tasksWCETs[j][i]=prvRTTasksList[i].pxWcet[j]-1;
+			tasksWCETs[j][i]=prvRTTasksList[i].pxWcet[j];
 		}
 		generate_deadlines(tasksDerivativesDeadlines, tasksDeadlines, prvRTTasksList[i], i, x, k),
 		tasksPeriods[i]=prvRTTasksList[i].pxPeriod-1;
