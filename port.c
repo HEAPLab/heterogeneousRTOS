@@ -1084,7 +1084,7 @@ XFaultdetector FAULTDET_getInstancePtr() {
 	return FAULTDETECTOR_InstancePtr;
 }
 #endif
-FAULTDETECTOR_controlStr controlForFaultDet __attribute__((aligned(4096)));
+FAULTDETECTOR_controlStr controlForFaultDet [configMAX_RT_TASKS] __attribute__((aligned(4096)));
 FAULTDETECTOR_controlStr* FAULTDET_getControlForFaultDet() {
 	return &controlForFaultDet;
 }
@@ -1180,30 +1180,30 @@ void FAULTDET_hotUpdateRegions(FAULTDETECTOR_region_t trainedRegions[FAULTDETECT
 #ifndef FAULTDETECTOR_EXECINSW
 
 
-void FAULTDET_Train(FAULTDETECTOR_controlStr* contr) {
-	contr->command=COMMAND_TRAIN;
-
-	while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {}
-
-	controlForFaultDet=*contr;
-	FAULTDETECTOR_startCopy(&FAULTDETECTOR_InstancePtr);
-}
+//void FAULTDET_Train(FAULTDETECTOR_controlStr* contr) {
+//	contr->command=COMMAND_TRAIN;
+//
+//	while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {}
+//
+//	controlForFaultDet=*contr;
+//	FAULTDETECTOR_startCopy(&FAULTDETECTOR_InstancePtr);
+//}
 void FAULTDET_StopRunMode() {
 	FAULTDETECTOR_controlStr contr;
 	contr.command=1;
-	controlForFaultDet=contr;
+	controlForFaultDet[0]=contr;
 	FAULTDETECTOR_startCopy(&FAULTDETECTOR_InstancePtr);
 	while (!XFaultdetector_IsIdle(&FAULTDETECTOR_InstancePtr)) {};
 }
 
-void FAULTDET_Test(FAULTDETECTOR_controlStr* contr) {
-	contr->command=COMMAND_TEST;
-
-	while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {}
-
-	controlForFaultDet=*contr;
-	FAULTDETECTOR_startCopy(&FAULTDETECTOR_InstancePtr);
-}
+//void FAULTDET_Test(FAULTDETECTOR_controlStr* contr) {
+//	contr->command=COMMAND_TEST;
+//
+//	while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {}
+//
+//	controlForFaultDet=*contr;
+//	FAULTDETECTOR_startCopy(&FAULTDETECTOR_InstancePtr);
+//}
 
 void FAULTDET_getLastTestedPoint(FAULTDETECTOR_testpointDescriptorStr* dest) {
 	FAULTDETECTOR_getLastTestedPoint(&FAULTDETECTOR_InstancePtr, ((*pxCurrentTCB_ptr)->uxTaskNumber)-1, dest);
@@ -1658,14 +1658,16 @@ void FAULTDET_testing_resetStats() {
 //}
 
 //warning: uniId must start from 1!
-
+FAULTDETECTOR_controlStr* FAULTDET_getControl() {
+	return &(controlForFaultDet[(*pxCurrentTCB_ptr)->uxTaskNumber-1]);
+}
 
 void FAULTDET_testPoint(
-		FAULTDETECTOR_controlStr* control
 ) {
 
 	TCB_t* tcbPtr=*pxCurrentTCB_ptr;
 	u8 taskId=tcbPtr->uxTaskNumber-1;
+	FAULTDETECTOR_controlStr* control=&(controlForFaultDet[taskId]);
 	control->taskId=taskId;
 	control->executionId=tcbPtr->executionId;
 
@@ -1681,7 +1683,7 @@ void FAULTDET_testPoint(
 		control->command=COMMAND_TRAIN;
 		while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {}
 
-		controlForFaultDet=*control;
+//		controlForFaultDet[taskId]=*control;
 		FAULTDETECTOR_startCopy(&FAULTDETECTOR_InstancePtr);
 #endif //FAULTDETECTOR_EXECINSW
 	} else
@@ -1705,14 +1707,14 @@ void FAULTDET_testPoint(
 			control->command=COMMAND_TEST;
 			while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {}
 
-			controlForFaultDet=*control;
+//			controlForFaultDet=*control;
 			FAULTDETECTOR_startCopy(&FAULTDETECTOR_InstancePtr);
 #endif //FAULTDETECTOR_EXECINSW
 		}
 }
 
 void FAULTDET_trainPoint(
-		FAULTDETECTOR_controlStr* control
+//		FAULTDETECTOR_controlStr* control
 /*int uniId, int checkId, int argCount, ...*/) {
 	//	va_list ap;
 	//	va_start(ap, argCount);
@@ -1720,11 +1722,15 @@ void FAULTDET_trainPoint(
 	//		return; //error
 
 	//	FAULTDETECTOR_controlStr contr;
+
 	TCB_t* tcbPtr=*pxCurrentTCB_ptr;
 
 	//	contr.uniId=uniId;
 	//	contr.checkId=checkId;
-	control->taskId=tcbPtr->uxTaskNumber-1;
+	u8 taskId=tcbPtr->uxTaskNumber-1;
+
+	FAULTDETECTOR_controlStr* control=&(controlForFaultDet[taskId]);
+	control->taskId=taskId;
 	control->executionId=tcbPtr->executionId;
 
 	//	for (int i=0; i<argCount; i++) {
@@ -1748,7 +1754,7 @@ void FAULTDET_trainPoint(
 	control->command=COMMAND_TEST;
 	while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {}
 
-	controlForFaultDet=*control;
+	controlForFaultDet[taskId]=*control;
 	FAULTDETECTOR_startCopy(&FAULTDETECTOR_InstancePtr);
 
 	//	FAULTDET_Test(&contr);
@@ -1760,7 +1766,7 @@ void FAULTDET_trainPoint(
 		control->command=COMMAND_TRAIN;
 		while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {}
 
-		controlForFaultDet=*control;
+		controlForFaultDet[taskId]=*control;
 		FAULTDETECTOR_startCopy(&FAULTDETECTOR_InstancePtr);
 	}
 #endif
