@@ -1192,7 +1192,7 @@ void FAULTDET_StopRunMode() {
 	FAULTDETECTOR_controlStr contr;
 	contr.command=1;
 	controlForFaultDet[0]=contr;
-	FAULTDETECTOR_startCopy(&FAULTDETECTOR_InstancePtr);
+	FAULTDETECTOR_startCopy(&FAULTDETECTOR_InstancePtr, 0);
 	while (!XFaultdetector_IsIdle(&FAULTDETECTOR_InstancePtr)) {};
 }
 
@@ -1684,7 +1684,7 @@ void FAULTDET_testPoint(
 		while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {}
 
 //		controlForFaultDet[taskId]=*control;
-		FAULTDETECTOR_startCopy(&FAULTDETECTOR_InstancePtr);
+		FAULTDETECTOR_startCopy(&FAULTDETECTOR_InstancePtr, taskId);
 #endif //FAULTDETECTOR_EXECINSW
 	} else
 #endif
@@ -1708,7 +1708,7 @@ void FAULTDET_testPoint(
 			while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {}
 
 //			controlForFaultDet=*control;
-			FAULTDETECTOR_startCopy(&FAULTDETECTOR_InstancePtr);
+			FAULTDETECTOR_startCopy(&FAULTDETECTOR_InstancePtr, taskId);
 #endif //FAULTDETECTOR_EXECINSW
 		}
 }
@@ -1755,7 +1755,7 @@ void FAULTDET_trainPoint(
 	while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {}
 
 	controlForFaultDet[taskId]=*control;
-	FAULTDETECTOR_startCopy(&FAULTDETECTOR_InstancePtr);
+	FAULTDETECTOR_startCopy(&FAULTDETECTOR_InstancePtr, taskId);
 
 	//	FAULTDET_Test(&contr);
 
@@ -1766,8 +1766,8 @@ void FAULTDET_trainPoint(
 		control->command=COMMAND_TRAIN;
 		while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {}
 
-		controlForFaultDet[taskId]=*control;
-		FAULTDETECTOR_startCopy(&FAULTDETECTOR_InstancePtr);
+//		controlForFaultDet[taskId]=*control;
+		FAULTDETECTOR_startCopy(&FAULTDETECTOR_InstancePtr, taskId);
 	}
 #endif
 	//	va_end(ap);
