@@ -206,7 +206,7 @@ void generate_deadlines(u32 tasksDerivativesDeadlines[configCRITICALITY_LEVELS][
 int calculate_x(RTTask_t tasks[], u8 numberOfTasks, int k);
 int find_k(RTTask_t tasks[], u8 number_of_tasks);
 float compute_utilisation(RTTask_t tasks[], u8 number_of_tasks, u32 systemCriticalityLevel, u32 taskCriticalityLevel);
-int prvSplitRTTasksList(RTTask_t prvRTTasksList[configMAX_RT_TASKS], u8 numberOfTasks,
+int prvGenerateSchedulerDataFromTaskSet(RTTask_t prvRTTasksList[configMAX_RT_TASKS], u8 numberOfTasks,
 		u8 maxTasks,
 		u32 tasksTCBPtrs[configMAX_RT_TASKS],
 		u32 tasksWCETs[configCRITICALITY_LEVELS][configMAX_RT_TASKS],

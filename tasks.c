@@ -42,137 +42,6 @@
 #include "timers.h"
 #include "stack_macros.h"
 
-
-float compute_utilisation(RTTask_t tasks[], u8 number_of_tasks, u32 systemCriticalityLevel, u32 taskCriticalityLevel) {
-	float val=0;
-	for (int i=0; i<number_of_tasks; i++) {
-		if (tasks[i].pxCriticalityLevel==taskCriticalityLevel && systemCriticalityLevel>=tasks[i].pxCriticalityLevel)
-			val+=tasks[i].pxWcet[systemCriticalityLevel]/tasks[i].pxPeriod;
-	}
-	return val;
-}
-
-int find_k(RTTask_t tasks[], u8 number_of_tasks) {
-	float u=0;
-	for (int l=0; l<configCRITICALITY_LEVELS; l++)
-		u+=compute_utilisation(tasks, number_of_tasks, l, l);
-	if (u<=1)
-		return -2;
-
-	for (int k=0; k<configCRITICALITY_LEVELS-1; k++) {
-		float first=0;
-		for (int l=k+1; l<configCRITICALITY_LEVELS; l++)
-			first+=compute_utilisation(tasks, number_of_tasks, k, l);
-
-		float v1=0;
-		for (int l=0; l<=k; l++)
-			v1+=compute_utilisation(tasks, number_of_tasks, l, l);
-
-		first=first/(1-v1);
-
-		float second=0;
-		float v2=0;
-		for (int l=k+1; l<configCRITICALITY_LEVELS; l++)
-			v2+=compute_utilisation(tasks, number_of_tasks, l, l);
-
-		second=1-v2;
-		second=second/v1;
-
-		if (first<=second && (1-v1)>0) {
-			return k; //schedulable
-		}
-	}
-	return -1;
-}
-
-//	int compute_schedulability(RTTask_t prvRTTasksList[configMAX_RT_TASKS], u8 numberOfTasks) {
-//		float util=0;
-//		for (int i=0; i<configMAX_RT_TASKS; i++) {
-//			util+=compute_utilisation(tasks, number_of_tasks, l, l);
-//		}
-//		if (util<=1)
-//
-//
-//		return
-//	}
-int calculate_x(RTTask_t tasks[], u8 numberOfTasks, int k) {
-	float v1=0;
-	for (int l=k+1; l<configCRITICALITY_LEVELS; l++) {
-		v1+=compute_utilisation(tasks, numberOfTasks, l, l);
-	}
-	float val=1-v1;
-	float v2=0;
-	for (int l=0; l<=k; l++) {
-		v2+=compute_utilisation(tasks, numberOfTasks, l, l);
-	}
-	val=val/v2;
-	return (int)val;
-}
-
-void generate_deadlines(u32 tasksDerivativesDeadlines[configCRITICALITY_LEVELS][configMAX_RT_TASKS], u32 tasksDeadlines[configCRITICALITY_LEVELS][configMAX_RT_TASKS], RTTask_t task, int taskIndex, u32 x, u32 k) {
-	u32 cumulated=0;
-	for (int i=0; i<=task.pxCriticalityLevel; i++) {
-		u32 currDeadline;
-		if (task.pxCriticalityLevel<=k) //|| k==-2)
-			currDeadline=task.pxDeadline;
-		else
-			currDeadline=task.pxDeadline*x;
-
-		//			if (i==0)
-		//				tasksDeadlines[i]=currDeadline;
-		//			else
-		currDeadline-=1;
-		tasksDeadlines[i][taskIndex]=currDeadline;
-		tasksDerivativesDeadlines[i][taskIndex]=currDeadline-cumulated; //save increment wrt base deadline
-		cumulated=currDeadline;
-	}
-}
-
-int prvSplitRTTasksList(RTTask_t prvRTTasksList[configMAX_RT_TASKS], u8 numberOfTasks,
-		u8 maxTasks,
-		u32 tasksTCBPtrs[configMAX_RT_TASKS],
-		u32 tasksWCETs[configCRITICALITY_LEVELS][configMAX_RT_TASKS],
-		u32 tasksDerivativesDeadlines[configCRITICALITY_LEVELS][configMAX_RT_TASKS],
-		u32 tasksDeadlines[configCRITICALITY_LEVELS][configMAX_RT_TASKS],
-		u32 tasksPeriods[configMAX_RT_TASKS],
-		u32 criticalityLevels[configMAX_RT_TASKS]) {
-
-	int k=find_k(prvRTTasksList, numberOfTasks);
-	if (k==-1) {
-		printf("task set not schedulable");
-		return -1;
-	}
-
-	int x;
-	if (k==-2) {
-		x=1;
-	} else {
-		x=calculate_x(prvRTTasksList, numberOfTasks, k);
-	}
-
-	for (int i = 0; i < numberOfTasks; i++) {
-		tasksTCBPtrs[i]=prvRTTasksList[i].taskTCB;
-		for (int j=0; j<configCRITICALITY_LEVELS; j++) {
-			tasksWCETs[j][i]=prvRTTasksList[i].pxWcet[j];
-		}
-		generate_deadlines(tasksDerivativesDeadlines, tasksDeadlines, prvRTTasksList[i], i, x, k),
-		tasksPeriods[i]=prvRTTasksList[i].pxPeriod-1;
-		criticalityLevels[i]=prvRTTasksList[i].pxCriticalityLevel;
-	}
-
-
-	for (int i=numberOfTasks; i < maxTasks; i++) {
-		tasksTCBPtrs[i]=0x0;
-		for (int j=0; j<configCRITICALITY_LEVELS; j++) {
-			tasksWCETs[j][i]=0xFFFFFFFF;
-			tasksDeadlines[j][i]=0xFFFFFFFF;
-		}
-		tasksPeriods[i]=0xFFFFFFFF;
-		criticalityLevels[i]=0xFFFFFFFF;
-	}
-	return 0;
-}
-
 /* Lint e9021, e961 and e750 are suppressed as a MISRA exception justified
  * because the MPU ports require MPU_WRAPPERS_INCLUDED_FROM_API_FILE to be defined
  * for the header files above, but not in this file, in order to generate the
@@ -395,7 +264,7 @@ int prvSplitRTTasksList(RTTask_t prvRTTasksList[configMAX_RT_TASKS], u8 numberOf
 		 * which static variables must be declared volatile. */
 		PRIVILEGED_DATA TCB_t * volatile pxCurrentTCB = NULL;
 
-		//fmod add
+		//contains the idle task descriptor pointer, could be used for future work
 		PRIVILEGED_DATA TCB_t * volatile pxIdleTCB = NULL;
 
 		/* Lists for ready and blocked tasks. --------------------
@@ -405,17 +274,8 @@ int prvSplitRTTasksList(RTTask_t prvRTTasksList[configMAX_RT_TASKS], u8 numberOf
 		PRIVILEGED_DATA static List_t pxReadyTasksLists[configMAX_PRIORITIES]; /*< Prioritised ready tasks. */
 
 		//fedit add
-		//PRIVILEGED_DATA static RTTask_t* pxRTTasksList[ configMAX_RT_TASKS ]; /*< Created tasks. */
-		//pxRTTasksList array will be located at address indicated by prvDmaSourceAddr. This address must match hardware (on Vivado) DMA source address.
-
-		//______________data structures which will be passed to hardware scheduler (FPGA)___________________
+		//contains Real Time Tasks task set
 		PRIVILEGED_DATA static RTTask_t pxRTTasksList [configMAX_RT_TASKS]; /*< Created tasks. */ //size is configMAX_RT_TASKS
-		//PRIVILEGED_DATA static u32 orderedDeadlineQTaskNums [configMAX_RT_TASKS]; //tasks nums ordered by deadlines ASC
-		//PRIVILEGED_DATA static u32 orderedActivationQTaskNums [configMAX_RT_TASKS]; //tasks nums ordered by activation times ASC
-		//PRIVILEGED_DATA static u32 orderedDeadlineQPayload [configMAX_RT_TASKS]; //tasks deadlines ordered ASC
-		//PRIVILEGED_DATA static u32 orderedActivationQPayload [configMAX_RT_TASKS]; //activation times ordered ASC
-		//PRIVILEGED_DATA static u32 orderedReverseDeadlineQTaskNums [configMAX_RT_TASKS];
-		//PRIVILEGED_DATA static u32 orderedReverseActivationQTaskNums [configMAX_RT_TASKS];
 		//______________________________________________________________________
 		PRIVILEGED_DATA static List_t xDelayedTaskList1; /*< Delayed tasks. */
 		PRIVILEGED_DATA static List_t xDelayedTaskList2; /*< Delayed tasks (two lists are used - one for delays that have overflowed the current tick count. */
@@ -455,7 +315,6 @@ int prvSplitRTTasksList(RTTask_t prvRTTasksList[configMAX_RT_TASKS], u8 numberOf
 		PRIVILEGED_DATA static volatile BaseType_t xYieldPending = pdFALSE;
 		PRIVILEGED_DATA static volatile BaseType_t xNumOfOverflows = (BaseType_t) 0;
 		PRIVILEGED_DATA static UBaseType_t uxTaskNumber = (UBaseType_t) 0U;
-		//PRIVILEGED_DATA static UBaseType_t uxRTTaskNumber = (UBaseType_t) 0U;
 		PRIVILEGED_DATA static volatile TickType_t xNextTaskUnblockTime =
 				(TickType_t) 0U; /* Initialised to portMAX_DELAY before the scheduler starts. */
 		PRIVILEGED_DATA static TaskHandle_t xIdleTaskHandle = NULL; /*< Holds the handle of the idle task.  The idle task is created automatically when the scheduler is started. */
@@ -716,7 +575,7 @@ int prvSplitRTTasksList(RTTask_t prvRTTasksList[configMAX_RT_TASKS], u8 numberOf
 
 			return xReturn;
 		}
-
+		//function for creating real time tasks, internally calls original FreeRTOS xTaskCreate*
 		TaskHandle_t xRTTaskCreateStatic( TaskFunction_t pxTaskCode,
 				const char * const pcName, /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
 				const uint32_t ulStackDepth,
@@ -724,13 +583,11 @@ int prvSplitRTTasksList(RTTask_t prvRTTasksList[configMAX_RT_TASKS], u8 numberOf
 				UBaseType_t uxPriority,
 				StackType_t * const puxStackBuffer,
 				StaticTask_t * const pxTaskBuffer,  //fedit add
-				//RTTask_t ** const pxRTTaskOut,
 				UBaseType_t const pxDeadline,
 				UBaseType_t const pxPeriod,
 				UBaseType_t pxCriticalityLevel, ...
 		)
 		{
-			//RTTask_t* pxNewRTTask = ( RTTask_t * ) pvPortMalloc( sizeof( RTTask_t ) );
 			RTTask_t* pxNewRTTask
 
 			TaskHandle_t xReturn=xTaskCreateStatic(pxTaskCode, pcName, ulStackDepth, pvParameters, uxPriority, puxStackBuffer, pxTaskBuffer, &( pxNewRTTask.taskTCB ) );
@@ -749,7 +606,6 @@ int prvSplitRTTasksList(RTTask_t prvRTTasksList[configMAX_RT_TASKS], u8 numberOf
 			}
 
 			if (xReturn!=NULL) {
-				//*pxRTTaskOut=pxNewRTTask;
 				if (prvAddNewTaskToRTTasksList(pxNewRTTask) != pdPass)
 					return NULL;
 			}
@@ -808,15 +664,13 @@ int prvSplitRTTasksList(RTTask_t prvRTTasksList[configMAX_RT_TASKS], u8 numberOf
 
 			return xReturn;
 		}
-
+		//function for creating real time tasks, internally calls original FreeRTOS xTaskCreate*
 		BaseType_t xRTTaskCreateRestrictedStatic( const TaskParameters_t * const pxTaskDefinition,
-				TaskHandle_t * pxCreatedTask, //fedit add
-				//RTTask_t ** const pxRTTaskOut,
+				TaskHandle_t * pxCreatedTask,
 				UBaseType_t const pxDeadline,
 				UBaseType_t const pxPeriod,
 				UBaseType_t pxCriticalityLevel, ...	)
 		{
-			//RTTask_t* pxNewRTTask = ( RTTask_t * ) pvPortMalloc( sizeof( RTTask_t ) );
 			RTTask_t pxNewRTTask;
 			BaseType_t xReturn=xRTTaskCreateRestrictedStatic(pxTaskDefinition, pxCreatedTask, &( pxNewRTTask.taskTCB ) );
 
@@ -834,7 +688,6 @@ int prvSplitRTTasksList(RTTask_t prvRTTasksList[configMAX_RT_TASKS], u8 numberOf
 			}
 
 			if (xReturn==pdPASS) {
-				//*pxRTTaskOut=pxNewRTTask;
 				return prvAddNewTaskToRTTasksList(pxNewRTTask);
 			}
 
@@ -896,14 +749,13 @@ int prvSplitRTTasksList(RTTask_t prvRTTasksList[configMAX_RT_TASKS], u8 numberOf
 			return xReturn;
 		}
 
+		//function for creating real time tasks, internally calls original FreeRTOS xTaskCreate*
 		BaseType_t xRTTaskCreateRestricted( const TaskParameters_t * const pxTaskDefinition,
-				TaskHandle_t * pxCreatedTask, //fedit add
-				//RTTask_t ** const pxRTTaskOut,
+				TaskHandle_t * pxCreatedTask,
 				UBaseType_t const pxDeadline,
 				UBaseType_t const pxPeriod,
 				UBaseType_t pxCriticalityLevel, ...	)
 		{
-			//RTTask_t* pxNewRTTask = ( RTTask_t * ) pvPortMalloc( sizeof( RTTask_t ) );
 			RTTask_t pxNewRTTask;
 
 			BaseType_t xReturn=xTaskCreateRestricted(pxTaskDefinition, pxCreatedTask, &( pxNewRTTask.taskTCB ) );
@@ -922,7 +774,6 @@ int prvSplitRTTasksList(RTTask_t prvRTTasksList[configMAX_RT_TASKS], u8 numberOf
 			}
 
 			if (xReturn==pdPASS) {
-				//*pxRTTaskOut=pxNewRTTask;
 				return prvAddNewTaskToRTTasksList(pxNewRTTask);
 			}
 
@@ -1015,15 +866,13 @@ int prvSplitRTTasksList(RTTask_t prvRTTasksList[configMAX_RT_TASKS], u8 numberOf
 
 			return xReturn;
 		}
-
+		//function for creating real time tasks, internally calls original FreeRTOS xTaskCreate*
 		BaseType_t xRTTaskCreate(TaskFunction_t pxTaskCode, const char * const pcName, /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
 				const configSTACK_DEPTH_TYPE usStackDepth, void * const pvParameters,
 				UBaseType_t uxPriority,
-				TaskHandle_t * const pxCreatedTask, //fedit add
-				//RTTask_t ** const pxRTTaskOut,
+				TaskHandle_t * const pxCreatedTask,
 				UBaseType_t const pxDeadline, UBaseType_t const pxPeriod,
 				UBaseType_t pxCriticalityLevel, ...) {
-			//RTTask_t* pxNewRTTask = ( RTTask_t * ) pvPortMalloc( sizeof( RTTask_t ) );
 			RTTask_t pxNewRTTask;
 
 			BaseType_t xReturn = xTaskCreate(pxTaskCode, pcName, usStackDepth,
@@ -1043,7 +892,6 @@ int prvSplitRTTasksList(RTTask_t prvRTTasksList[configMAX_RT_TASKS], u8 numberOf
 			}
 
 			if (xReturn == pdPASS) {
-				//*pxRTTaskOut=pxNewRTTask;
 				return prvAddNewTaskToRTTasksList(pxNewRTTask);
 			}
 
@@ -1378,6 +1226,130 @@ int prvSplitRTTasksList(RTTask_t prvRTTasksList[configMAX_RT_TASKS], u8 numberOf
 		/*-----------------------------------------------------------*/
 
 		//fedit add
+		//functions used for EDF-VD schedule pre-processing
+		float compute_utilisation(RTTask_t tasks[], u8 number_of_tasks, u32 systemCriticalityLevel, u32 taskCriticalityLevel) {
+			float val=0;
+			for (int i=0; i<number_of_tasks; i++) {
+				if (tasks[i].pxCriticalityLevel==taskCriticalityLevel && systemCriticalityLevel>=tasks[i].pxCriticalityLevel)
+					val+=tasks[i].pxWcet[systemCriticalityLevel]/tasks[i].pxPeriod;
+			}
+			return val;
+		}
+
+		int find_k(RTTask_t tasks[], u8 number_of_tasks) {
+			float u=0;
+			for (int l=0; l<configCRITICALITY_LEVELS; l++)
+				u+=compute_utilisation(tasks, number_of_tasks, l, l);
+			if (u<=1)
+				return -2;
+
+			for (int k=0; k<configCRITICALITY_LEVELS-1; k++) {
+				float first=0;
+				for (int l=k+1; l<configCRITICALITY_LEVELS; l++)
+					first+=compute_utilisation(tasks, number_of_tasks, k, l);
+
+				float v1=0;
+				for (int l=0; l<=k; l++)
+					v1+=compute_utilisation(tasks, number_of_tasks, l, l);
+
+				first=first/(1-v1);
+
+				float second=0;
+				float v2=0;
+				for (int l=k+1; l<configCRITICALITY_LEVELS; l++)
+					v2+=compute_utilisation(tasks, number_of_tasks, l, l);
+
+				second=1-v2;
+				second=second/v1;
+
+				if (first<=second && (1-v1)>0) {
+					return k; //schedulable
+				}
+			}
+			return -1;
+		}
+
+		int calculate_x(RTTask_t tasks[], u8 numberOfTasks, int k) {
+			float v1=0;
+			for (int l=k+1; l<configCRITICALITY_LEVELS; l++) {
+				v1+=compute_utilisation(tasks, numberOfTasks, l, l);
+			}
+			float val=1-v1;
+			float v2=0;
+			for (int l=0; l<=k; l++) {
+				v2+=compute_utilisation(tasks, numberOfTasks, l, l);
+			}
+			val=val/v2;
+			return (int)val;
+		}
+
+		void generate_deadlines(u32 tasksDerivativesDeadlines[configCRITICALITY_LEVELS][configMAX_RT_TASKS], u32 tasksDeadlines[configCRITICALITY_LEVELS][configMAX_RT_TASKS], RTTask_t task, int taskIndex, u32 x, u32 k) {
+			u32 cumulated=0;
+			for (int i=0; i<=task.pxCriticalityLevel; i++) {
+				u32 currDeadline;
+				if (task.pxCriticalityLevel<=k) //|| k==-2)
+					currDeadline=task.pxDeadline;
+				else
+					currDeadline=task.pxDeadline*x;
+
+				//			if (i==0)
+				//				tasksDeadlines[i]=currDeadline;
+				//			else
+				currDeadline-=1;
+				tasksDeadlines[i][taskIndex]=currDeadline;
+				tasksDerivativesDeadlines[i][taskIndex]=currDeadline-cumulated; //save increment wrt base deadline
+				cumulated=currDeadline;
+			}
+		}
+		//______________________________________
+
+		//generates the data structures to be passed to the hardware scheduler starting from the task set
+		int prvGenerateSchedulerDataFromTaskSet(RTTask_t prvRTTasksList[configMAX_RT_TASKS], u8 numberOfTasks,
+				u8 maxTasks,
+				u32 tasksTCBPtrs[configMAX_RT_TASKS],
+				u32 tasksWCETs[configCRITICALITY_LEVELS][configMAX_RT_TASKS],
+				u32 tasksDerivativesDeadlines[configCRITICALITY_LEVELS][configMAX_RT_TASKS],
+				u32 tasksDeadlines[configCRITICALITY_LEVELS][configMAX_RT_TASKS],
+				u32 tasksPeriods[configMAX_RT_TASKS],
+				u32 criticalityLevels[configMAX_RT_TASKS]) {
+
+			int k=find_k(prvRTTasksList, numberOfTasks);
+			if (k==-1) {
+				printf("task set not schedulable");
+				return -1;
+			}
+
+			int x;
+			if (k==-2) {
+				x=1;
+			} else {
+				x=calculate_x(prvRTTasksList, numberOfTasks, k);
+			}
+
+			for (int i = 0; i < numberOfTasks; i++) {
+				tasksTCBPtrs[i]=prvRTTasksList[i].taskTCB;
+				for (int j=0; j<configCRITICALITY_LEVELS; j++) {
+					tasksWCETs[j][i]=prvRTTasksList[i].pxWcet[j];
+				}
+				generate_deadlines(tasksDerivativesDeadlines, tasksDeadlines, prvRTTasksList[i], i, x, k),
+				tasksPeriods[i]=prvRTTasksList[i].pxPeriod-1;
+				criticalityLevels[i]=prvRTTasksList[i].pxCriticalityLevel;
+			}
+
+
+			for (int i=numberOfTasks; i < maxTasks; i++) {
+				tasksTCBPtrs[i]=0x0;
+				for (int j=0; j<configCRITICALITY_LEVELS; j++) {
+					tasksWCETs[j][i]=0xFFFFFFFF;
+					tasksDeadlines[j][i]=0xFFFFFFFF;
+				}
+				tasksPeriods[i]=0xFFFFFFFF;
+				criticalityLevels[i]=0xFFFFFFFF;
+			}
+			return 0;
+		}
+
+
 		static BaseType_t prvAddNewTaskToRTTasksList(RTTask_t pxNewRTTask) {
 			TCB_t* pxNewTCB = pxNewRTTask.taskTCB;
 			if (xSchedulerRunning == pdFALSE) {
@@ -1414,14 +1386,9 @@ int prvSplitRTTasksList(RTTask_t prvRTTasksList[configMAX_RT_TASKS], u8 numberOf
 					traceTASK_CREATE( pxNewTCB );
 
 					//fedit add
-					//pxNewRTTask.uxTaskNumber = uxTaskNumber;
 					pxNewTCB->uxTaskNumber = uxTaskNumber;
 
-					//TODO STATIC INSTEAD OF POINTER!
-					//memcpy(pxRTTasksList+sizeof(*pxNewRTTask)*(uxTaskNumber-1), pxNewRTTask, sizeof(*pxNewRTTask));
-
 					pxRTTasksList[uxTaskNumber-1] = pxNewRTTask;
-					//uxRTTaskNumber++;
 
 					portSETUP_TCB(pxNewTCB);
 				}
@@ -2309,7 +2276,7 @@ int prvSplitRTTasksList(RTTask_t prvRTTasksList[configMAX_RT_TASKS], u8 numberOf
 		/*-----------------------------------------------------------*/
 
 
-
+//initialises and starts the fault detector in FPGA
 		void vTaskStartFaultDetector(u8 restoreTrainDataFromSd, FAULTDETECTOR_region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS], u8 n_regions[FAULTDETECTOR_MAX_CHECKS]) {
 			FAULTDET_init(restoreTrainDataFromSd, trainedRegions, n_regions);
 #ifndef FAULTDETECTOR_EXECINSW
@@ -2317,7 +2284,7 @@ int prvSplitRTTasksList(RTTask_t prvRTTasksList[configMAX_RT_TASKS], u8 numberOf
 #endif
 		}
 
-
+//original FreeRTOS function adapted to the FPGA scheduler
 		void vTaskStartScheduler() {
 			BaseType_t xReturn;
 
@@ -2335,7 +2302,7 @@ int prvSplitRTTasksList(RTTask_t prvRTTasksList[configMAX_RT_TASKS], u8 numberOf
 			memset(tasksPeriods, 0, sizeof(tasksPeriods));
 			memset(tasksCriticalityLevels, 0, sizeof(tasksCriticalityLevels));
 
-			if (prvSplitRTTasksList(pxRTTasksList, uxTaskNumber,
+			if (prvGenerateSchedulerDataFromTaskSet(pxRTTasksList, uxTaskNumber,
 					configMAX_RT_TASKS,
 					tasksTCBPtrs,
 					tasksWCETs,
@@ -3958,13 +3925,6 @@ void SchedulerNewTaskIntrHandl(void)
 		/*-----------------------------------------------------------*/
 
 		static void prvInitialiseTaskLists(void) {
-			//fedit add
-			//vListInitialise( &pxRTTasksList );
-			/*for (int i=0; i<configMAX_RT_TASKS; i++) {
-	 pxRTTasksList[i]=0;
-	 }*/
-
-			//todo remove other lists init on next steps of project
 			UBaseType_t uxPriority;
 
 			for (uxPriority = (UBaseType_t) 0U;
