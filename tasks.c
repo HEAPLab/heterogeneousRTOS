@@ -2311,7 +2311,7 @@
 					tasksPeriods,
 					tasksCriticalityLevels
 			)!=0) {
-				printf("error, cannot generate schedule");
+				xil_printf("error, cannot generate schedule");
 				return;
 			}
 
@@ -2418,7 +2418,7 @@
 
 					traceTASK_SWITCHED_IN();
 
-					//printf("idle task global pointer in tasks.c: %p", &pxIdleTCB);
+					//xil_printf("idle task global pointer in tasks.c: %p", &pxIdleTCB);
 
 					//fedit add
 					/* now schedule idle task; first -not idle - task will be scheduled on FPGA interrupt */
@@ -3295,7 +3295,7 @@
 void SchedulerNewTaskIntrHandl(void)
 {
 	//portDISABLE_INTERRUPTS();
-	//printf("new task, ptr: %X", *((u32*)0x20018000));
+	//xil_printf("new task, ptr: %X", *((u32*)0x20018000));
 	//Xil_MemCpy(pxCurrentTCB_ptr, (u32*)0x20018000, (u32)4);
 	//portCPU_IRQ_DISABLE();
 	//vPortSaveTaskContext();
@@ -3716,7 +3716,7 @@ void SchedulerNewTaskIntrHandl(void)
 				prvCheckTasksWaitingTermination();
 
 				//fedit add
-				//    	printf("idle task running");
+				//    	xil_printf("idle task running");
 				//fedit remove : removed yelds from IDLE task since tasks to be allocated will be called via an interrupt of the fpga-queue is not available to PS at the moment, idle task will simply run until preempted by someone else
 				//        #if ( configUSE_PREEMPTION == 0 )
 				//            {

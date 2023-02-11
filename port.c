@@ -342,10 +342,10 @@ static void prvTaskExitError( void )
 
 		Artificially force an assert() to be triggered if configASSERT() is
 		defined, then stop here so application writers can catch the error. */
-	printf("Warning: return statement has been called from task %s, deleting it\n",pcTaskGetName(NULL));
+	xil_printf("Warning: return statement has been called from task %s, deleting it\n",pcTaskGetName(NULL));
 	if (uxTaskGetNumberOfTasks() == 2)
 	{
-		printf("Warning: Kernel does not have any task to manage other than idle task\n");
+		xil_printf("Warning: Kernel does not have any task to manage other than idle task\n");
 	}
 	vTaskDelete( NULL );
 }
@@ -491,7 +491,7 @@ int prvInitSd(XSdPs* SD_InstancePtr)
 
 	Status = XSdPs_CardInitialize(SD_InstancePtr);
 	if (Status != XST_SUCCESS) {
-		//		printf("\nSD CARD INIT FAILED. CHECK AN SD CARD IS IN THE SLOT. TRAINED DATA DUMP DISABLED UNTIL RESET\n");
+		//		xil_printf("\nSD CARD INIT FAILED. CHECK AN SD CARD IS IN THE SLOT. TRAINED DATA DUMP DISABLED UNTIL RESET\n");
 		return XST_FAILURE;
 	}
 
@@ -537,13 +537,13 @@ int prvDumpTrainedData(
 #endif
 		XSdPs* SD_InstancePtr) {
 #ifdef FAULTDETECTOR_EXECINSW
-	printf("\nSTARTING TO DUMP DATA\n");
+	xil_printf("\nSTARTING TO DUMP DATA\n");
 	FAULTDETECTOR_SW_dumpRegions(dumpedDataSdBuf.trainedRegions, dumpedDataSdBuf.n_regions);
 
 #else
 	FAULTDET_StopRunMode();
 
-	printf("\nFAULT DETECTOR EXITED RUN MODE. STARTING TO DUMP DATA\n");
+	xil_printf("\nFAULT DETECTOR EXITED RUN MODE. STARTING TO DUMP DATA\n");
 
 	FAULTDETECTOR_dumpRegions(FaultDet_InstancePtr, dumpedDataSdBuf.trainedRegions, dumpedDataSdBuf.n_regions);
 
@@ -552,7 +552,7 @@ int prvDumpTrainedData(
 	 * Write data to SD/eMMC.
 	 */
 
-	printf("\nDUMPED DATA FROM FAULT DETECTOR SUCCESFULLY. WRITING TO SD\n");
+	xil_printf("\nDUMPED DATA FROM FAULT DETECTOR SUCCESFULLY. WRITING TO SD\n");
 	int Status;
 	Status = XSdPs_WritePolled(SD_InstancePtr, Sd_Sector, TRAINEDDATA_BLOCKS_SIZE,
 			(u8*) (&dumpedDataSdBuf));
@@ -746,9 +746,9 @@ void FAULTDET_dumpRegions() {
 			&FAULTDETECTOR_InstancePtr,
 #endif
 			&SdInstance)==XST_SUCCESS) {
-		printf("SUCCESS\n");
+		xil_printf("SUCCESS\n");
 	} else {
-		printf("FAILED\n");
+		xil_printf("FAILED\n");
 	}
 }
 //callback function called when the button connected to the XGpio CHANNEL1 in FPGA is pressed.
@@ -760,15 +760,15 @@ volatile void BtnPressHandler(void *CallbackRef)
 	XGpio *GpioPtr = (XGpio *)CallbackRef;
 	if (XGpio_DiscreteRead(&Gpio0, GPIO_CHANNEL1)!=0) {
 
-		printf("\nBEGIN TRAINED DATA DUMP\n");
+		xil_printf("\nBEGIN TRAINED DATA DUMP\n");
 		if (prvDumpTrainedData(
 #ifndef FAULTDETECTOR_EXECINSW
 				&FAULTDETECTOR_InstancePtr,
 #endif
 				&SdInstance)==XST_SUCCESS) {
-			printf("SUCCESS\n");
+			xil_printf("SUCCESS\n");
 		} else {
-			printf("FAILED\n");
+			xil_printf("FAILED\n");
 		}
 	}
 
@@ -1270,6 +1270,7 @@ void xPortScheduleNewTask(void)
 	}
 	*pxCurrentTCB_ptr = pxNewTCB;
 	SCHEDULER_ACKInterrupt((void *) SCHEDULER_BASEADDR);
+	xPortSchedulerDisableIntr();
 
 }
 
