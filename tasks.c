@@ -228,7 +228,7 @@
 #define prvAddTaskToReadyList( pxTCB )                                                                 \
 		traceMOVED_TASK_TO_READY_STATE( pxTCB );                                                           \
 		taskRECORD_READY_PRIORITY( ( pxTCB )->uxPriority );                                                \
-		xPortSchedulerResumeTask( ( pxTCB )->uxTaskNumber );
+		xPortSchedulerResumeTask( ( pxTCB )->uxTaskNumber, ( pxTCB )->executionId );
 		tracePOST_MOVED_TASK_TO_READY_STATE( pxTCB )
 		/*-----------------------------------------------------------*/
 
@@ -1544,7 +1544,7 @@
 				 * being deleted. */
 				pxTCB = prvGetTCBFromHandle(xTaskToDelete);
 
-				xPortSchedulerSignalTaskEnded(pxTCB->uxTaskNumber);
+				xPortSchedulerSignalTaskEnded(pxTCB->uxTaskNumber, pxTCB->executionId);
 
 				//		/* Remove task from the ready/delayed list. */
 				//		if (uxListRemove(&(pxTCB->xStateListItem)) == (UBaseType_t) 0) {

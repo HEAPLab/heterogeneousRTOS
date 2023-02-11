@@ -188,13 +188,13 @@ size_t xPortGetMinimumEverFreeHeapSize( void ) PRIVILEGED_FUNCTION;
  */
 void xPortScheduleNewTask(void) PRIVILEGED_FUNCTION;
 
-void xPortSchedulerResumeTask(u16 uxTaskNumber) PRIVILEGED_FUNCTION;
+void xPortSchedulerResumeTask(u8 uxTaskNumber, u8 executionId) PRIVILEGED_FUNCTION;
 
-void xPortSchedulerSignalTaskSuspended(u16 uxTaskNumber) PRIVILEGED_FUNCTION;
+void xPortSchedulerSignalTaskSuspended(u8 uxTaskNumber, u8 executionId) PRIVILEGED_FUNCTION;
 
 void xPortSchedulerSignalJobEnded(u8 uxTaskNumber, u8 executionId) PRIVILEGED_FUNCTION;
 
-void xPortSchedulerSignalTaskEnded(u16 uxTaskNumber) PRIVILEGED_FUNCTION;
+void xPortSchedulerSignalTaskEnded(u8 uxTaskNumber, u8 executionId) PRIVILEGED_FUNCTION;
 
 #define EXECMODE_NORMAL 0
 #define EXECMODE_WCETEXCEEDED 1

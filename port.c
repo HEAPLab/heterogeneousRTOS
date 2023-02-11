@@ -1162,7 +1162,7 @@ void FAULTDET_trainPoint() {
 	}
 #else
 	control->command=COMMAND_TEST;
-	while(!FAULTDETECTOR_isReadyForNe0xtControl(&FAULTDETECTOR_InstancePtr)) {}
+	while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {}
 
 	controlForFaultDet[taskId]=*control;
 	FAULTDETECTOR_startCopy(&FAULTDETECTOR_InstancePtr, taskId);
@@ -1273,14 +1273,18 @@ void xPortScheduleNewTask(void)
 
 }
 
-void xPortSchedulerResumeTask(u16 uxTaskNumber) {
+void xPortSchedulerResumeTask(u8 uxTaskNumber, u8 executionId) {
 	//todo
 	//SCHEDULER_resumeTask((void*) SCHEDULER_BASEADDR, uxTaskNumber);
 }
 
-void xPortSchedulerSignalTaskSuspended(u16 uxTaskNumber) {
+void xPortSchedulerSignalTaskSuspended(u8 uxTaskNumber, u8 executionId) {
 	//todo
 	//SCHEDULER_signalTaskSuspended((void*) SCHEDULER_BASEADDR, uxTaskNumber);
+}
+
+void xPortSchedulerSignalTaskEnded(u8 uxTaskNumber, u8 executionId) {
+	//todo
 }
 
 //must be called at the end of each task
