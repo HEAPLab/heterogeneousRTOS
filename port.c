@@ -1270,8 +1270,6 @@ void xPortScheduleNewTask(void)
 	}
 	*pxCurrentTCB_ptr = pxNewTCB;
 	SCHEDULER_ACKInterrupt((void *) SCHEDULER_BASEADDR);
-	xPortSchedulerDisableIntr();
-
 }
 
 void xPortSchedulerResumeTask(u8 uxTaskNumber, u8 executionId) {
