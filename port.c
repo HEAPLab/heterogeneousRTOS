@@ -853,7 +853,7 @@ FAULTDETECTOR_controlStr* FAULTDET_initFaultDetection() {
 	//FAULTDET_resetFault(); //not needed, automatically done by the faultdetector when a command from the same check but with different UniId is received
 #ifndef FAULTDETECTOR_EXECINSW
 #ifndef disableOnlineTrain
-	if ((*pxCurrentTCB_ptr)->executionMode==EXECMODE_FAULT) {
+	if ((*pxCurrentTCB_ptr)->executionMode==EXECMODE_CURRJOB_FAULT) {
 		FAULTDET_getLastTestedPoint(&((*pxCurrentTCB_ptr)->lastFault));
 	}
 #endif
@@ -1102,7 +1102,7 @@ void FAULTDET_testPoint(
 
 #ifndef disableOnlineTrain
 	FAULTDETECTOR_testpointDescriptorStr* lastFault=&(tcbPtr->lastFault);
-	char faultyCheckpoint=tcbPtr->executionMode==EXECMODE_FAULT && *((u32*)lastFault)==*((u32*)control);
+	char faultyCheckpoint=tcbPtr->executionMode==EXECMODE_CURRJOB_FAULT && *((u32*)lastFault)==*((u32*)control);
 
 	if (faultyCheckpoint &&	memcmp(lastFault->AOV, control->AOV, sizeof(control->AOV))==0) {
 #ifdef FAULTDETECTOR_EXECINSW
@@ -1179,7 +1179,6 @@ void FAULTDET_trainPoint() {
 #endif
 }
 
-#include <stdio.h>
 //called by the ASM function executed on FPGA scheduler interrupt
 //it parses the data provided by the FPGA scheduler and prepares the system for the context switch
 void xPortScheduleNewTask(void)
@@ -1202,8 +1201,8 @@ void xPortScheduleNewTask(void)
 	printf("exec mode SCH %x, exec id %d, requiresFaultDetection %d\n", newtaskdesc->executionMode, newtaskdesc->executionId, newtaskdesc->requiresFaultDetection);
 #endif
 
-	if (newtaskdesc->executionMode!=EXECMODE_NORMAL && newtaskdesc->executionMode!=EXECMODE_NORMAL_NEWJOB) {
-		//RESET TO BEGIN
+	if (newtaskdesc->executionMode>EXECMODE_NORMAL_NEWJOB) {
+		//RESTART TASK
 
 #if ( configUSE_MUTEXES == 1 )
 		{

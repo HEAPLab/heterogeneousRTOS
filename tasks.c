@@ -1417,7 +1417,6 @@
 			//blockIfFaultDetectedInTask();
 
 			//		printf(" end ");
-			pxCurrentTCB->executionMode=EXECMODE_NORMAL;
 			pxCurrentTCB->jobEnded=1;
 
 			xPortSchedulerSignalJobEnded(pxCurrentTCB->uxTaskNumber, pxCurrentTCB->executionId);

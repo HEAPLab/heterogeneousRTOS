@@ -36,11 +36,13 @@
 
 #define configUSE_PREEMPTION 1
 
-#define configUSE_MUTEXES 1
+//mutexes not supported yet with custom EDF-VD scheduler on FPGA
+#define configUSE_MUTEXES 0
 
 #define INCLUDE_xSemaphoreGetMutexHolder 1
 
-#define configUSE_RECURSIVE_MUTEXES 1
+//mutexes not supported yet with custom EDF-VD scheduler on FPGA
+#define configUSE_RECURSIVE_MUTEXES 0
 
 #define configUSE_COUNTING_SEMAPHORES 1
 

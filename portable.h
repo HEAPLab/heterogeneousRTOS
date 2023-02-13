@@ -197,10 +197,11 @@ void xPortSchedulerSignalJobEnded(u8 uxTaskNumber, u8 executionId) PRIVILEGED_FU
 void xPortSchedulerSignalTaskEnded(u8 uxTaskNumber, u8 executionId) PRIVILEGED_FUNCTION;
 
 #define EXECMODE_NORMAL 0
-#define EXECMODE_WCETEXCEEDED 1
-#define EXECMODE_FAULT 2
-#define EXECMODE_DEADLINEMISS 3
-#define EXECMODE_NORMAL_NEWJOB 4
+#define EXECMODE_NORMAL_NEWJOB 1
+#define EXECMODE_RESTART 2
+#define EXECMODE_CURRJOB_WCETEXCEEDED 3
+#define EXECMODE_CURRJOB_FAULT 4
+//#define EXECMODE_KILLEDBYMODESWITCH 4
 
 BaseType_t xPortInitScheduler( u32 numberOfTasks,
 		void* tasksTCBPtrs,
