@@ -1315,7 +1315,7 @@
 
 			int k=find_k(prvRTTasksList, numberOfTasks);
 			if (k==-1) {
-				printf("task set not schedulable");
+				xil_printf("task set not schedulable");
 				return -1;
 			}
 
@@ -1394,7 +1394,7 @@
 				}
 				taskEXIT_CRITICAL()
 				;
-				//printf("created tasks array address: %p", pxRTTasksList);
+				//xil_printf("created tasks array address: %p", pxRTTasksList);
 				return pdPASS;
 			} else {
 				/* Error, stasks must be added before scheduler startup */
@@ -1416,11 +1416,11 @@
 
 			//blockIfFaultDetectedInTask();
 
-			//		printf(" end ");
+			//		xil_printf(" end ");
 			pxCurrentTCB->jobEnded=1;
 
 			xPortSchedulerSignalJobEnded(pxCurrentTCB->uxTaskNumber, pxCurrentTCB->executionId);
-			//printf(" JOBEND SENT ");
+			//xil_printf(" JOBEND SENT ");
 
 			//if (pxTCB == pxCurrentTCB) {
 			//		portYIELD_WITHIN_API()

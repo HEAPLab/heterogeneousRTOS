@@ -936,9 +936,9 @@ void FAULTDET_testing_commitTmpStatsAndReset(u8 injectingFault) {
 					else
 						FAULTDET_testing_ok_wtolerance++;
 					//				for (int i=0; i<FAULTDET_testing_relativeErrors_size; i++) {
-					//					printf("%f;", FAULTDET_testing_relativeErrors[i]);
+					//					xil_printf("%f;", FAULTDET_testing_relativeErrors[i]);
 					//				}
-					//					printf("%f;", FAULTDET_testing_relativeErrors[FAULTDET_testing_relativeErrors_size-1]);
+					//					xil_printf("%f;", FAULTDET_testing_relativeErrors[FAULTDET_testing_relativeErrors_size-1]);
 				} else {
 					FAULTDET_testing_ok++;
 					FAULTDET_testing_ok_wtolerance++;
@@ -1023,7 +1023,7 @@ FAULTDETECTOR_testpointDescriptorStr* FAULTDET_testing_findGolden (FAULTDETECTOR
 			FAULTDET_testing_goldenResults_idx_tmp++;
 		}
 	}
-	printf("ERROR: golden not found");
+	xil_printf("ERROR: golden not found");
 	return 0x0;
 }
 #include <math.h>
@@ -1039,13 +1039,13 @@ u8 FAULTDET_testing_isAovEqual(FAULTDETECTOR_testpointDescriptorStr* golden, FAU
 				outEqual=0x0;
 				float relErr=fabs(toTest->AOV[i] - golden->AOV[i])/fabs(golden->AOV[i]);
 #if csvOut
-				printf("0.%f.", relErr);
+				xil_printf("0.%f.", relErr);
 #else
 				if (FAULTDET_testing_relativeErrors_size<=GOLDEN_RESULT_SIZE*FAULTDETECTOR_MAX_AOV_DIM) {
 					FAULTDET_testing_relativeErrors[FAULTDET_testing_relativeErrors_size]=relErr;
 					FAULTDET_testing_relativeErrors_size++;
 				} else {
-					printf("ERROR: max relative errors size exceeded");
+					xil_printf("ERROR: max relative errors size exceeded");
 				}
 #endif
 			}
@@ -1055,16 +1055,16 @@ u8 FAULTDET_testing_isAovEqual(FAULTDETECTOR_testpointDescriptorStr* golden, FAU
 	//	return 0xFF;
 #ifdef csvOut
 	if (outEqual)
-		printf("1.0.");
+		xil_printf("1.0.");
 #else
 	FAULTDET_testing_temp_lastoutputchanged=!outEqual;
 #endif
 
 #ifdef csvOut
 	if (equal)
-		printf("1;");
+		xil_printf("1;");
 	else
-		printf("0;");
+		xil_printf("0;");
 #else
 	if (!equal)
 		FAULTDET_testing_temp_aovchanged=0xFF;
@@ -1106,7 +1106,7 @@ void FAULTDET_testPoint(
 
 	if (faultyCheckpoint &&	memcmp(lastFault->AOV, control->AOV, sizeof(control->AOV))==0) {
 #ifdef FAULTDETECTOR_EXECINSW
-		//		printf(" SW FAULT DETECTOR: train");
+		//		xil_printf(" SW FAULT DETECTOR: train");
 		FAULTDETECTOR_SW_train(control);
 #else //!FAULTDETECTOR_EXECINSW
 		control->command=COMMAND_TRAIN;
@@ -1157,7 +1157,7 @@ void FAULTDET_trainPoint() {
 		FAULTDETECTOR_SW_train(control);
 		//		fault=FAULTDETECTOR_SW_test(&control);
 		//		if (fault) {
-		//			printf("Train failed, checkId %d, uniId %d", checkId, uniId);
+		//			xil_printf("Train failed, checkId %d, uniId %d", checkId, uniId);
 		//		}
 	}
 #else
@@ -1187,7 +1187,7 @@ void xPortScheduleNewTask(void)
 
 	TCB_t* pxNewTCB=newtaskdesc->pxNextTcb;
 #ifdef verboseScheduler
-	printf("| NEW, %X ", pxNewTCB);
+	xil_printf("| NEW, %X ", pxNewTCB);
 #endif
 	if (newtaskdesc->executionMode==EXECMODE_NORMAL_NEWJOB) {
 		pxNewTCB->jobEnded=0;
@@ -1198,7 +1198,7 @@ void xPortScheduleNewTask(void)
 	pxNewTCB->executionMode=newtaskdesc->executionMode;
 
 #ifdef verboseScheduler
-	printf("exec mode SCH %x, exec id %d, requiresFaultDetection %d\n", newtaskdesc->executionMode, newtaskdesc->executionId, newtaskdesc->requiresFaultDetection);
+	xil_printf("exec mode SCH %x, exec id %d, requiresFaultDetection %d\n", newtaskdesc->executionMode, newtaskdesc->executionId, newtaskdesc->requiresFaultDetection);
 #endif
 
 	if (newtaskdesc->executionMode>EXECMODE_NORMAL_NEWJOB) {
