@@ -80,6 +80,8 @@
 #define configMAX_RT_TASKS (4)
 
 #define configCRITICALITY_LEVELS (3)
+
+#define configATOMIC_OVERHEAD_TIME (10)
 //________
 //#define configMAX_REEXECUTIONS_SET_IN_HW_SCHEDULER (2)
 
