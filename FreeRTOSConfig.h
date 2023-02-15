@@ -82,6 +82,9 @@
 #define configCRITICALITY_LEVELS (3)
 
 #define configATOMIC_OVERHEAD_TIME (10)
+
+#define configATOMIC_OVERHEAD_TIME_WITH_REEXECUTION (10)
+
 //________
 //#define configMAX_REEXECUTIONS_SET_IN_HW_SCHEDULER (2)
 
