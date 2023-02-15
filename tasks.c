@@ -29,7 +29,7 @@
 #include <string.h>
 //fedit add
 #include <stdarg.h>
-//#include <math.h>
+#include <math.h>
 
 /* Defining MPU_WRAPPERS_INCLUDED_FROM_API_FILE prevents task.h from redefining
  * all the API functions to use the MPU wrappers.  That should only be done when
@@ -1231,7 +1231,7 @@
 			float val=0;
 			for (int i=0; i<number_of_tasks; i++) {
 				if (tasks[i].pxCriticalityLevel==taskCriticalityLevel && systemCriticalityLevel>=tasks[i].pxCriticalityLevel)
-					val+=tasks[i].pxWcet[systemCriticalityLevel]/tasks[i].pxPeriod;
+					val+=ceil(tasks[i].pxWcet[systemCriticalityLevel]/configATOMIC_OVERHEAD_TIME)/floor(tasks[i].pxPeriod/configATOMIC_OVERHEAD_TIME);
 			}
 			return val;
 		}
