@@ -1231,7 +1231,7 @@
 			float val=0;
 			for (int i=0; i<number_of_tasks; i++) {
 				if (tasks[i].pxCriticalityLevel==taskCriticalityLevel && systemCriticalityLevel>=tasks[i].pxCriticalityLevel)
-					val+=ceil((configATOMIC_OVERHEAD_TIME_WITH_REEXECUTION+tasks[i].pxWcet[systemCriticalityLevel]+configATOMIC_OVERHEAD_TIME)/configATOMIC_OVERHEAD_TIME)/floor(tasks[i].pxPeriod/configATOMIC_OVERHEAD_TIME);
+					val+=ceil((configATOMIC_OVERHEAD_TIME_WITH_REEXECUTION+tasks[i].pxWcet[systemCriticalityLevel]+configATOMIC_OVERHEAD_TIME)/configATOMIC_OVERHEAD_TIME_WITH_REEXECUTION)/floor(tasks[i].pxPeriod/configATOMIC_OVERHEAD_TIME_WITH_REEXECUTION);
 			}
 			return val;
 		}
@@ -1329,7 +1329,7 @@
 			for (int i = 0; i < numberOfTasks; i++) {
 				tasksTCBPtrs[i]=prvRTTasksList[i].taskTCB;
 				for (int j=0; j<configCRITICALITY_LEVELS; j++) {
-					tasksWCETs[j][i]=configATOMIC_OVERHEAD_TIME_WITH_REEXECUTION+prvRTTasksList[i].pxWcet[j]+configATOMIC_OVERHEAD_TIME;
+					tasksWCETs[j][i]=ceil((configATOMIC_OVERHEAD_TIME_WITH_REEXECUTION+prvRTTasksList[i].pxWcet[j]+configATOMIC_OVERHEAD_TIME)/configATOMIC_OVERHEAD_TIME_WITH_REEXECUTION)*configATOMIC_OVERHEAD_TIME_WITH_REEXECUTION;
 				}
 				generate_deadlines(tasksDerivativesDeadlines, tasksDeadlines, prvRTTasksList[i], i, x, k),
 				tasksPeriods[i]=prvRTTasksList[i].pxPeriod-1;
