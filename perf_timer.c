@@ -17,6 +17,8 @@ void perf_start_clock(void)
 	); 
 }
 
+
+
 /* Compute mask for given delay in miliseconds*/
 unsigned int get_number_of_cycles_for_delay(unsigned int delay)
 {

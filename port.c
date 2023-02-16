@@ -1,4 +1,4 @@
-#define verboseScheduler
+//#define verboseScheduler
 #include <stdarg.h>
 #include "xil_printf.h"
 /*
