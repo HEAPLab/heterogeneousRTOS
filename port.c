@@ -1,6 +1,3 @@
-//#define verboseScheduler
-#include <stdarg.h>
-#include "xil_printf.h"
 /*
  * FreeRTOS Kernel V10.4.3
  * Copyright (C) 2020 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
@@ -79,24 +76,24 @@
 #endif
 
 /* Some vendor specific files default configCLEAR_TICK_INTERRUPT() in
-	portmacro.h. */
+portmacro.h. */
 #ifndef configCLEAR_TICK_INTERRUPT
 #define configCLEAR_TICK_INTERRUPT()
 #endif
 
 /* A critical section is exited when the critical section nesting count reaches
-	this value. */
+this value. */
 #define portNO_CRITICAL_NESTING			( ( uint32_t ) 0 )
 
 /* In all GICs 255 can be written to the priority mask register to unmask all
-	(but the lowest) interrupt priority. */
+(but the lowest) interrupt priority. */
 #define portUNMASK_VALUE				( 0xFFUL )
 
 /* Tasks are not created with a floating point context, but can be given a
-	floating point context after they have been created.  A variable is stored as
-	part of the tasks context that holds portNO_FLOATING_POINT_CONTEXT if the task
-	does not have an FPU context, or any other value if the task does have an FPU
-	context. */
+floating point context after they have been created.  A variable is stored as
+part of the tasks context that holds portNO_FLOATING_POINT_CONTEXT if the task
+does not have an FPU context, or any other value if the task does have an FPU
+context. */
 #define portNO_FLOATING_POINT_CONTEXT	( ( StackType_t ) 0 )
 
 /* Constants required to setup the initial task context. */
@@ -106,19 +103,19 @@
 #define portTHUMB_MODE_ADDRESS			( 0x01UL )
 
 /* Used by portASSERT_IF_INTERRUPT_PRIORITY_INVALID() when ensuring the binary
-	point is zero. */
+point is zero. */
 #define portBINARY_POINT_BITS			( ( uint8_t ) 0x03 )
 
 /* Masks all bits in the APSR other than the mode bits. */
 #define portAPSR_MODE_BITS_MASK			( 0x1F )
 
 /* The value of the mode bits in the APSR when the CPU is executing in user
-	mode. */
+mode. */
 #define portAPSR_USER_MODE				( 0x10 )
 
 /* The critical section macros only mask interrupts up to an application
-	determined priority level.  Sometimes it is necessary to turn interrupt off in
-	the CPU itself before modifying certain hardware registers. */
+determined priority level.  Sometimes it is necessary to turn interrupt off in
+the CPU itself before modifying certain hardware registers. */
 #define portCPU_IRQ_DISABLE()										\
 		__asm volatile ( "CPSID i" ::: "memory" );						\
 		__asm volatile ( "DSB" );										\
@@ -145,12 +142,12 @@
 #define portBIT_0_SET								( ( uint8_t ) 0x01 )
 
 /* Let the user override the pre-loading of the initial LR with the address of
-	prvTaskExitError() in case it messes up unwinding of the stack in the
-	debugger. */
+prvTaskExitError() in case it messes up unwinding of the stack in the
+debugger. */
 #define portTASK_RETURN_ADDRESS	configTASK_RETURN_ADDRESS
 
 /* The space on the stack required to hold the FPU registers.  This is 32 64-bit
-	registers, plus a 32-bit status register. */
+registers, plus a 32-bit status register. */
 #define portFPU_REGISTER_WORDS	( ( 32 * 2 ) + 1 )
 
 /*-----------------------------------------------------------*/
@@ -208,21 +205,21 @@ void vApplicationFPUSafeIRQHandler( uint32_t ulICCIAR ) __attribute__((weak) );
 /*-----------------------------------------------------------*/
 
 /* A variable is used to keep track of the critical section nesting.  This
-	variable has to be stored as part of the task context and must be initialised to
-	a non zero value to ensure interrupts don't inadvertently become unmasked before
-	the scheduler starts.  As it is stored as part of the task context it will
-	automatically be set to 0 when the first task is started. */
+variable has to be stored as part of the task context and must be initialised to
+a non zero value to ensure interrupts don't inadvertently become unmasked before
+the scheduler starts.  As it is stored as part of the task context it will
+automatically be set to 0 when the first task is started. */
 volatile uint32_t ulCriticalNesting = 9999UL;
 
 /* Saved as part of the task context.  If ulPortTaskHasFPUContext is non-zero then
-	a floating point context must be saved and restored for the task. */
+a floating point context must be saved and restored for the task. */
 volatile uint32_t ulPortTaskHasFPUContext = pdFALSE;
 
 /* Set to 1 to pend a context switch from an ISR. */
 volatile uint32_t ulPortYieldRequired = pdFALSE;
 
 /* Counts the interrupt nesting depth.  A context switch is only performed if
-	if the nesting depth is 0. */
+if the nesting depth is 0. */
 volatile uint32_t ulPortInterruptNesting = 0UL;
 /*
  * Global counter used for calculation of run time statistics of tasks.
@@ -246,11 +243,11 @@ __attribute__(( used )) const uint32_t ulMaxAPIPriorityMask = ( configMAX_API_CA
 StackType_t *pxPortInitialiseStack( StackType_t *pxTopOfStack, TaskFunction_t pxCode, void *pvParameters )
 {
 	/* Setup the initial stack of the task.  The stack is set exactly as
-		expected by the portRESTORE_CONTEXT() macro.
+	expected by the portRESTORE_CONTEXT() macro.
 
-		The fist real value on the stack is the status register, which is set for
-		system mode, with interrupts enabled.  A few NULLs are added first to ensure
-		GDB does not try decoding a non-existent return address. */
+	The fist real value on the stack is the status register, which is set for
+	system mode, with interrupts enabled.  A few NULLs are added first to ensure
+	GDB does not try decoding a non-existent return address. */
 	*pxTopOfStack = ( StackType_t ) NULL;
 	pxTopOfStack--;
 	*pxTopOfStack = ( StackType_t ) NULL;
@@ -302,21 +299,21 @@ StackType_t *pxPortInitialiseStack( StackType_t *pxTopOfStack, TaskFunction_t px
 	pxTopOfStack--;
 
 	/* The task will start with a critical nesting count of 0 as interrupts are
-		enabled. */
+	enabled. */
 	*pxTopOfStack = portNO_CRITICAL_NESTING;
 
 #if( configUSE_TASK_FPU_SUPPORT == 1 )
 	{
 		/* The task will start without a floating point context.  A task that
-			uses the floating point hardware must call vPortTaskUsesFPU() before
-			executing any floating point instructions. */
+		uses the floating point hardware must call vPortTaskUsesFPU() before
+		executing any floating point instructions. */
 		pxTopOfStack--;
 		*pxTopOfStack = portNO_FLOATING_POINT_CONTEXT;
 	}
 #elif( configUSE_TASK_FPU_SUPPORT == 2 )
 	{
 		/* The task will start with a floating point context.  Leave enough
-			space for the registers - and ensure they are initialised to 0. */
+		space for the registers - and ensure they are initialised to 0. */
 		pxTopOfStack -= portFPU_REGISTER_WORDS;
 		memset( pxTopOfStack, 0x00, portFPU_REGISTER_WORDS * sizeof( StackType_t ) );
 
@@ -334,14 +331,350 @@ StackType_t *pxPortInitialiseStack( StackType_t *pxTopOfStack, TaskFunction_t px
 }
 /*-----------------------------------------------------------*/
 
+//FPGA INFOS fedit
+
+
+////NEXT TASK HANDLER
+//#define NEXT_TASK_HANDLER_BASEADDR 0x43C00000
+//
+//int enableNewTaskInterrupt() {
+//	NEXT_TASK_HANDLER_EnableInterrupt(NEXT_TASK_HANDLER_BASEADDR);
+//	return 0;
+//}
+//
+//
+//
+////GPIO
+//#include "xparameters.h"
+//#include "xgpio.h"
+//#define GPIO0VAL 0x01
+//#define GPIO_START_SCHED_CHANNEL 1
+//#define GPIO_START_SCHED_DEVICE_ID XPAR_GPIO_0_DEVICE_ID
+//XGpio prvGpio0;
+//
+//struct prvSchedControlStruct {
+//	volatile u8 data; //2byte
+//	volatile u8 control; //1byte
+//} prvSchedControl;
+//
+//void prvWriteSchedControl() {
+//	u16 prvSchedControlU16;
+//	memcpy(&prvSchedControlU16, &prvSchedControl, sizeof(prvSchedControl));
+//	xil_printf("written %x to GPIO0\n", prvSchedControlU16);
+//	XGpio_DiscreteWrite(&prvGpio0, GPIO_START_SCHED_CHANNEL, prvSchedControlU16);
+//}
+
+//DMA____________________________
+//
+//#include "xaxicdma.h"
+//#include "xdebug.h"
+//#include "xil_exception.h"
+//#include "xil_cache.h"
+//#include <math.h>
+//#include "xscugic.h"
+//
+////#define DMA_NUMBER_OF_TRANSFERS	2	/* Number of simple transfers to do */
+//#define DMA_CTRL_DEVICE_ID 	XPAR_AXICDMA_0_DEVICE_ID
+//#define DMA_INTC_DEVICE_ID	XPAR_SCUGIC_SINGLE_DEVICE_ID
+//#define DMA_CTRL_IRPT_INTR	XPAR_FABRIC_AXI_CDMA_0_CDMA_INTROUT_INTR
+//
+//static volatile int prvDmaDone = 0;	/* Dma transfer is done */
+//static volatile int prvDmaError = 0;	/* Dma Bus Error occurs */
+//
+//static u32 prvDmaRTTasksListDestAddr 	= 0xC0000000;
+//
+//static XAxiCdma prvDmaAxiCdmaInstance;	/* Instance of the XAxiCdma */
+//static XScuGic prvDmaIntcController;	/* Instance of the Interrupt Controller */
+//
+//static void prvDmaDisableIntrSystem()
+//{
+//
+//	XScuGic *IntcInstancePtr = &prvDmaIntcController;
+//	u32 IntrId = DMA_CTRL_IRPT_INTR;
+//
+//	XScuGic_Disable(IntcInstancePtr ,IntrId );
+//	XScuGic_Disconnect(IntcInstancePtr ,IntrId );
+//
+//}
+//
+//static int prvDmaSetupIntrSystem(XScuGic *IntcInstancePtr, XAxiCdma *InstancePtr,
+//			u32 IntrId)
+//
+//{
+//	int Status;
+//
+//
+//	/*
+//	 * Initialize the interrupt controller driver
+//	 */
+//	XScuGic_Config *IntcConfig;
+//
+//
+//	/*
+//	 * Initialize the interrupt controller driver so that it is ready to
+//	 * use.
+//	 */
+//	IntcConfig = XScuGic_LookupConfig(DMA_INTC_DEVICE_ID);
+//	if (NULL == IntcConfig) {
+//		return XST_FAILURE;
+//	}
+//
+//	Status = XScuGic_CfgInitialize(IntcInstancePtr, IntcConfig,
+//					IntcConfig->CpuBaseAddress);
+//	if (Status != XST_SUCCESS) {
+//		return XST_FAILURE;
+//	}
+//
+//	XScuGic_SetPriorityTriggerType(IntcInstancePtr, IntrId, 0xA0, 0x3);
+//////////////////////
+//	XScuGic_SetPriorityTriggerType(IntcInstancePtr, XPAR_FABRIC_NEXT_TASK_HANDLER_0_IRQ_INTR, 0xA0, 0x3);
+////////////////////
+//	/*
+//	 * Connect the device driver handler that will be called when an
+//	 * interrupt for the device occurs, the handler defined above performs
+//	 * the specific interrupt processing for the device.
+//	 */
+//	Status = XScuGic_Connect(IntcInstancePtr, IntrId,
+//				(Xil_InterruptHandler)XAxiCdma_IntrHandler,
+//				InstancePtr);
+//	if (Status != XST_SUCCESS) {
+//		return Status;
+//	}
+//
+//	////////////////////
+//	Status = XScuGic_Connect(IntcInstancePtr, XPAR_FABRIC_NEXT_TASK_HANDLER_0_IRQ_INTR,
+//				(Xil_InterruptHandler)newTaskHandler,
+//				(void *) IntcInstancePtr);
+//	if (Status != XST_SUCCESS) {
+//		return Status;
+//	}
+//	////////////////////
+//
+//	/*
+//	 * Enable the interrupt for the DMA device.
+//	 */
+//	XScuGic_Enable(IntcInstancePtr, IntrId);
+//
+/////////////
+//	XScuGic_Enable(IntcInstancePtr, XPAR_FABRIC_NEXT_TASK_HANDLER_0_IRQ_INTR);
+//////////////////
+//
+//	Xil_ExceptionInit();
+//
+//	/*
+//	 * Connect the interrupt controller interrupt handler to the hardware
+//	 * interrupt handling logic in the processor.
+//	 */
+//	Xil_ExceptionRegisterHandler(XIL_EXCEPTION_ID_IRQ_INT,
+//				(Xil_ExceptionHandler)XScuGic_InterruptHandler,
+//				IntcInstancePtr);
+//
+//
+//	/*
+//	 * Enable interrupts in the Processor.
+//	 */
+//	Xil_ExceptionEnable();
+//
+//
+//	return XST_SUCCESS;
+//}
+//
+//int prvDmaInit() {
+//	int Status=XST_FAILURE;
+//	XAxiCdma_Config *CfgPtr;
+//
+//	XScuGic *IntcInstancePtr = &prvDmaIntcController;
+//	XAxiCdma *InstancePtr = &prvDmaAxiCdmaInstance;
+//	u16 DeviceId = DMA_CTRL_DEVICE_ID;
+//	u32 IntrId = DMA_CTRL_IRPT_INTR;
+//
+//	/* Initialize the XAxiCdma device.
+//	 */
+//	CfgPtr = XAxiCdma_LookupConfig(DeviceId);
+//	if (!CfgPtr) {
+//		xil_printf("init failure");
+//		return XST_FAILURE;
+//	}
+//
+//	Status = XAxiCdma_CfgInitialize(InstancePtr, CfgPtr, CfgPtr->BaseAddress);
+//	if (Status != XST_SUCCESS) {
+//		xil_printf("CfgInitialize failure");
+//		xil_printf("status %i", Status);
+//
+//		return XST_FAILURE;
+//	}
+//
+//	/* Setup the interrupt system
+//	 */
+//	Status = prvDmaSetupIntrSystem(IntcInstancePtr, InstancePtr, IntrId);
+//	if (Status != XST_SUCCESS) {
+//		return XST_FAILURE;
+//	}
+//
+//	/* Enable all (completion/error/delay) interrupts
+//	 */
+//	XAxiCdma_IntrEnable(InstancePtr, XAXICDMA_XR_IRQ_ALL_MASK);
+//	return XST_SUCCESS;
+//}
+//
+//static void prvDmaCdma_CallBack(void *CallBackRef, u32 IrqMask, int *IgnorePtr)
+//{
+//	if (IrqMask & XAXICDMA_XR_IRQ_ERROR_MASK) {
+//		prvDmaError = TRUE;
+//		xil_printf("\r\n--- Transfer Error --- \r\n");
+//	}
+//
+//	if (IrqMask & XAXICDMA_XR_IRQ_IOC_MASK) {
+//		xil_printf("\r\n--- Transfer Done --- \r\n");
+//		prvDmaDone = TRUE;
+//	}
+//}
+//
+///* Performs a blocking transfer (waits for transfer completion); Retries are the n */
+//static int prvDmaCDMABlockingTransfer(XAxiCdma *InstancePtr, int Length, u32 SourceAddr, u32 DestAddr)
+//{
+//
+//	int Status;
+//
+//	prvDmaDone = 0;
+//	prvDmaError = 0;
+//
+//
+//	xil_printf("Start Transfer \n\r");
+//	/* Try to start the DMA transfer
+//	 */
+//
+//		/* Flush the SrcBuffer before the DMA transfer, in case the Data Cache
+//		 * is enabled
+//		 */
+//		Xil_DCacheFlushRange((u32)SourceAddr, Length);
+//
+//		Status = XAxiCdma_SimpleTransfer(InstancePtr,
+//										(u32)(SourceAddr),
+//										(u32)(DestAddr),
+//										Length,
+//										prvDmaCdma_CallBack,
+//										(void *)InstancePtr);
+//
+//		if (Status == XST_FAILURE) {
+//			xil_printf("Error in Transfer  \n\r");
+//			return 1;
+//		}
+//
+//
+//
+//		/* Wait until the DMA transfer is done
+//			 */
+//			while (!prvDmaDone && !prvDmaError) {
+//				/* Wait */
+//				xil_printf("waiting Transfer to finish \n\r");
+//			}
+//
+//			if (prvDmaError) {
+//				return XST_FAILURE;
+//			}
+//		/* Invalidate the DestBuffer before receiving the data, in case the
+//		 * Data Cache is enabled
+//		 */
+//		//Xil_DCacheInvalidateRange((u32)DestAddr, Length); THIS ROW CAUSED TO HANG UP
+//
+//	return XST_SUCCESS;
+//}
+//
+///*Transfers the task set via DMA to the FPGA and waits for transfer completion. Then scheduler can be started. */
+//
+//int prvDmaBlockingTransferFreeByteSize( u32 prvDmaDestAddr, u32 prvDmaSourceAddr, u32 byteSize ) {
+//	XAxiCdma *InstancePtr=&prvDmaAxiCdmaInstance;
+//	int index;
+//	int Status=XST_FAILURE;
+//	u32 BUFFER_BYTESIZE	= (XPAR_AXI_CDMA_0_M_AXI_DATA_WIDTH * XPAR_AXI_CDMA_0_M_AXI_MAX_BURST_LEN);
+//
+//	if (byteSize > BUFFER_BYTESIZE) {
+//		//int Tries = DMA_NUMBER_OF_TRANSFERS;
+//		int bursts = ceil( byteSize / BUFFER_BYTESIZE );
+//		u32 remainder = byteSize % BUFFER_BYTESIZE;
+//
+//		for (index = 0; index < bursts; index++) {
+//			Status = prvDmaCDMABlockingTransfer(InstancePtr,
+//					(remainder != 0 && index == bursts -1) ? remainder : byteSize, prvDmaSourceAddr, prvDmaDestAddr);
+//		}
+//	} else {
+//		Status = prvDmaCDMABlockingTransfer(InstancePtr,
+//				byteSize, (u32) prvDmaSourceAddr, (u32)prvDmaDestAddr);
+//	}
+//
+//	if(Status != XST_SUCCESS) {
+//		return XST_FAILURE;
+//	}
+//	return XST_SUCCESS;
+//}
+//
+
+
+
+
+//	status=prvDmaInit();
+//	if (status!=XST_SUCCESS) {
+//		xil_printf("DMA init failed");
+//		return status;
+//	}
+////SINGLE TRANSACTION IF SOURCE ADDRESSES ARE CONTIGUOUS
+//	status=prvDmaBlockingTransferFreeByteSize( prvDmaRTTasksListDestAddr, prvRTTasksListPtr, prvRTTasksListByteSize + prvOrderedQueuesByteSize + orderedDeadlineActivationQPayloadByteSize);
+//	if (status!=XST_SUCCESS) {
+//		xil_printf("DMA RTTTaskSet transfer failed");
+//		return status;
+//	};
+//	//MULTIPLE TRANSACTIONS
+///*
+//	status=prvDmaBlockingTransferFreeByteSize( prvDmaRTTasksListDestAddr, prvRTTasksListPtr, prvRTTasksListByteSize);
+//	if (status!=XST_SUCCESS) {
+//		xil_printf("DMA RTTTaskSet transfer failed");
+//		return status;
+//	};
+//
+//	status=prvDmaBlockingTransferFreeByteSize( prvDmaRTTasksListDestAddr+prvRTTasksListByteSize, prvOrderedQueuesPtr, prvOrderedQueuesByteSize );
+//	if (status!=XST_SUCCESS) {
+//		xil_printf("DMA OrderedDeadlineActivationQueue transfer failed");
+//		return status;
+//	};
+//
+//	status=prvDmaBlockingTransferFreeByteSize( prvDmaRTTasksListDestAddr+prvRTTasksListByteSize+prvOrderedQueuesByteSize, orderedDeadlineActivationQPayload, orderedDeadlineActivationQPayloadByteSize );
+//	if (status!=XST_SUCCESS) {
+//		xil_printf("DMA OrderedDeadlineActivationQueue transfer failed");
+//		return status;
+//	};
+//
+//*/
+//	//TODO CHECK WHETHER DISABLE OR NOT
+//	//prvDmaDisableIntrSystem();
+//	enableNewTaskInterrupt();
+//
+//
+//	status = XGpio_Initialize(&prvGpio0, GPIO_START_SCHED_DEVICE_ID);
+//	if (status != XST_SUCCESS) {
+//		xil_printf("Gpio Initialization Failed\r\n");
+//		return status;
+//	}
+//
+//	XGpio_SetDataDirection(&prvGpio0, GPIO_START_SCHED_CHANNEL, ~GPIO0VAL);
+//
+//	prvSchedControl.control=1;
+//	prvSchedControl.data = numberOfTasks;
+//	prvWriteSchedControl();
+
+
+
+//// END OF DMA FUNCTIONS________________________________
+
+
 static void prvTaskExitError( void )
 {
 	/* A function that implements a task must not exit or attempt to return to
-		its caller as there is nothing to return to.  If a task wants to exit it
-		should instead call vTaskDelete( NULL ).
+	its caller as there is nothing to return to.  If a task wants to exit it
+	should instead call vTaskDelete( NULL ).
 
-		Artificially force an assert() to be triggered if configASSERT() is
-		defined, then stop here so application writers can catch the error. */
+	Artificially force an assert() to be triggered if configASSERT() is
+	defined, then stop here so application writers can catch the error. */
 	xil_printf("Warning: return statement has been called from task %s, deleting it\n",pcTaskGetName(NULL));
 	if (uxTaskGetNumberOfTasks() == 2)
 	{
@@ -377,7 +710,7 @@ static int32_t prvEnsureInterruptControllerIsInitialised( void )
 	int32_t lReturn;
 
 	/* Ensure the interrupt controller instance variable is initialised before
-		it is used, and that the initialisation only happens once. */
+	it is used, and that the initialisation only happens once. */
 	if( lInterruptControllerInitialised != pdTRUE )
 	{
 		lReturn = prvInitialiseInterruptController();
@@ -423,7 +756,7 @@ void vPortEnableInterrupt( uint8_t ucInterruptID )
 	int32_t lReturn;
 
 	/* An API function is provided to enable an interrupt in the interrupt
-		controller. */
+	controller. */
 	lReturn = prvEnsureInterruptControllerIsInitialised();
 	if( lReturn == pdPASS )
 	{
@@ -438,7 +771,7 @@ void vPortDisableInterrupt( uint8_t ucInterruptID )
 	int32_t lReturn;
 
 	/* An API function is provided to disable an interrupt in the interrupt
-		controller. */
+	controller. */
 	lReturn = prvEnsureInterruptControllerIsInitialised();
 	if( lReturn == pdPASS )
 	{
@@ -447,256 +780,6 @@ void vPortDisableInterrupt( uint8_t ucInterruptID )
 	configASSERT( lReturn );
 }
 /*-----------------------------------------------------------*/
-
-
-//___trainedData save and load mechanism___
-#include "xsdps.h"
-#define TRAINEDDATA_REALSIZE (sizeof(FAULTDETECTOR_region_t)*FAULTDETECTOR_MAX_CHECKS*FAULTDETECTOR_MAX_REGIONS+sizeof(u8)*FAULTDETECTOR_MAX_CHECKS)
-#define SD_BLOCKSIZE 512
-#define TRAINEDDATA_BLOCKS_SIZE ((TRAINEDDATA_REALSIZE / SD_BLOCKSIZE) + ((TRAINEDDATA_REALSIZE % SD_BLOCKSIZE) != 0))
-#define SD_SECTOR_OFFSET 1024//204800
-static XSdPs SdInstance;
-u32 Sd_Sector = SD_SECTOR_OFFSET;
-
-typedef struct __attribute__((__packed__)) {
-	FAULTDETECTOR_region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS];
-	u8 n_regions[FAULTDETECTOR_MAX_CHECKS];
-	volatile char padding [ TRAINEDDATA_BLOCKS_SIZE*512 - TRAINEDDATA_REALSIZE ];
-} trainedData ;
-
-
-int prvInitSd(XSdPs* SD_InstancePtr)
-{
-
-	int Status;
-	XSdPs_Config *SdConfig;
-
-	/*
-	 * Since block size is 512 bytes. File Size is 512*BlockCount.
-	 */
-	//	u32 FileSize = (512*TRAINEDDATA_BLOCKS_SIZE); /* File Size is only up to 2MB */
-	/*
-	 * Initialize the host controller
-	 */
-	SdConfig = XSdPs_LookupConfig(XPAR_XSDPS_0_DEVICE_ID);
-	if (NULL == SdConfig) {
-		return XST_FAILURE;
-	}
-
-	Status = XSdPs_CfgInitialize(SD_InstancePtr, SdConfig,
-			SdConfig->BaseAddress);
-	if (Status != XST_SUCCESS) {
-		return XST_FAILURE;
-	}
-
-	Status = XSdPs_CardInitialize(SD_InstancePtr);
-	if (Status != XST_SUCCESS) {
-		//		xil_printf("\nSD CARD INIT FAILED. CHECK AN SD CARD IS IN THE SLOT. TRAINED DATA DUMP DISABLED UNTIL RESET\n");
-		return XST_FAILURE;
-	}
-
-	if (!(SdInstance.HCS)) Sd_Sector *= XSDPS_BLK_SIZE_512_MASK;
-	return XST_SUCCESS;
-}
-#ifdef __ICCARM__
-#pragma data_alignment = 32
-trainedData dumpedDataSdBuf;
-#else
-trainedData dumpedDataSdBuf __attribute__ ((aligned(32)));
-#endif
-
-int prvRestoreTrainedData(
-#ifndef FAULTDETECTOR_EXECINSW
-		XFaultdetector* FaultDet_InstancePtr,
-#endif
-		XSdPs* SD_InstancePtr) {
-	/*
-	 * Read data from SD/eMMC.
-	 */
-	int Status;
-	Status = XSdPs_ReadPolled(SD_InstancePtr, Sd_Sector, TRAINEDDATA_BLOCKS_SIZE,
-			(u8*) (&dumpedDataSdBuf));
-	if (Status!=XST_SUCCESS) {
-		return XST_FAILURE;
-	}
-
-#ifdef FAULTDETECTOR_EXECINSW
-	FAULTDETECTOR_SW_initRegions(dumpedDataSdBuf.trainedRegions, dumpedDataSdBuf.n_regions);
-#else
-	FAULTDETECTOR_initRegions(FaultDet_InstancePtr, dumpedDataSdBuf.trainedRegions, dumpedDataSdBuf.n_regions);
-#endif
-
-	return XST_SUCCESS;
-}
-
-void FAULTDET_StopRunMode();
-
-int prvDumpTrainedData(
-#ifndef FAULTDETECTOR_EXECINSW
-		XFaultdetector* FaultDet_InstancePtr,
-#endif
-		XSdPs* SD_InstancePtr) {
-#ifdef FAULTDETECTOR_EXECINSW
-	xil_printf("\nSTARTING TO DUMP DATA\n");
-	FAULTDETECTOR_SW_dumpRegions(dumpedDataSdBuf.trainedRegions, dumpedDataSdBuf.n_regions);
-
-#else
-	FAULTDET_StopRunMode();
-
-	xil_printf("\nFAULT DETECTOR EXITED RUN MODE. STARTING TO DUMP DATA\n");
-
-	FAULTDETECTOR_dumpRegions(FaultDet_InstancePtr, dumpedDataSdBuf.trainedRegions, dumpedDataSdBuf.n_regions);
-
-#endif
-	/*
-	 * Write data to SD/eMMC.
-	 */
-
-	xil_printf("\nDUMPED DATA FROM FAULT DETECTOR SUCCESFULLY. WRITING TO SD\n");
-	int Status;
-	Status = XSdPs_WritePolled(SD_InstancePtr, Sd_Sector, TRAINEDDATA_BLOCKS_SIZE,
-			(u8*) (&dumpedDataSdBuf));
-	if (Status != XST_SUCCESS) {
-		return XST_FAILURE;
-	}
-	return XST_SUCCESS;
-}
-//_______________________________________________
-//INTERRUPT SYSTEM FOR COPYING MODEL FROM FAULT DETECTOR
-
-#include "xgpio.h"
-//#include "xintc.h"
-#ifdef XPAR_INTC_0_DEVICE_ID
-#include "xintc.h"
-#include <stdio.h>
-#else
-#include "xscugic.h"
-#endif
-
-
-#ifdef XPAR_INTC_0_DEVICE_ID
-#define INTC_GPIO_INTERRUPT_ID	XPAR_INTC_0_GPIO_0_VEC_ID
-#define INTC_DEVICE_ID	XPAR_INTC_0_DEVICE_ID
-#define INTC		XIntc
-#define INTC_HANDLER	XIntc_InterruptHandler
-#else
-#define INTC_GPIO_INTERRUPT_ID	XPAR_FABRIC_AXI_GPIO_0_IP2INTC_IRPT_INTR
-#define INTC_DEVICE_ID	XPAR_SCUGIC_SINGLE_DEVICE_ID
-#define INTC		XScuGic
-#define INTC_HANDLER	XScuGic_InterruptHandler
-#endif /* XPAR_INTC_0_DEVICE_ID */
-
-
-#define GPIO_DEVICE_ID		XPAR_GPIO_0_DEVICE_ID
-#define GPIO_CHANNEL1		1
-
-XGpio Gpio0; /* The Instance of the GPIO Driver */
-INTC Intc; /* The Instance of the Interrupt Controller Driver */
-static u16 GPIOGlobalIntrMask; /* GPIO channel mask that is needed by
- * the Interrupt Handler */
-static volatile u32 GPIOIntrFlag; /* Interrupt Handler Flag */
-
-void BtnPressHandler(void *CallbackRef);
-
-int GpioSetupIntrSystem(INTC *IntcInstancePtr, XGpio *InstancePtr,
-		u16 IntrId, u16 IntrMask)
-{
-	int Result;
-
-	GPIOGlobalIntrMask = IntrMask;
-
-#ifdef XPAR_INTC_0_DEVICE_ID
-
-#ifndef TESTAPP_GEN
-	/*
-	 * Initialize the interrupt controller driver so that it's ready to use.
-	 * specify the device ID that was generated in xparameters.h
-	 */
-	Result = XIntc_Initialize(IntcInstancePtr, INTC_DEVICE_ID);
-	if (Result != XST_SUCCESS) {
-		return Result;
-	}
-#endif /* TESTAPP_GEN */
-
-	/* Hook up interrupt service routine */
-	XIntc_Connect(IntcInstancePtr, IntrId,
-			(Xil_ExceptionHandler)BtnPressHandler, InstancePtr);
-
-	/* Enable the interrupt vector at the interrupt controller */
-	XIntc_Enable(IntcInstancePtr, IntrId);
-
-#ifndef TESTAPP_GEN
-	/*
-	 * Start the interrupt controller such that interrupts are recognized
-	 * and handled by the processor
-	 */
-	Result = XIntc_Start(IntcInstancePtr, XIN_REAL_MODE);
-	if (Result != XST_SUCCESS) {
-		return Result;
-	}
-#endif /* TESTAPP_GEN */
-
-#else /* !XPAR_INTC_0_DEVICE_ID */
-
-#ifndef TESTAPP_GEN
-	XScuGic_Config *IntcConfig;
-
-	/*
-	 * Initialize the interrupt controller driver so that it is ready to
-	 * use.
-	 */
-	IntcConfig = XScuGic_LookupConfig(INTC_DEVICE_ID);
-	if (NULL == IntcConfig) {
-		return XST_FAILURE;
-	}
-
-	Result = XScuGic_CfgInitialize(IntcInstancePtr, IntcConfig,
-			IntcConfig->CpuBaseAddress);
-	if (Result != XST_SUCCESS) {
-		return XST_FAILURE;
-	}
-#endif /* TESTAPP_GEN */
-
-	XScuGic_SetPriorityTriggerType(IntcInstancePtr, IntrId,
-			0xA0, 0x3);
-
-	/*
-	 * Connect the interrupt handler that will be called when an
-	 * interrupt occurs for the device.
-	 */
-	Result = XScuGic_Connect(IntcInstancePtr, IntrId,
-			(Xil_ExceptionHandler)BtnPressHandler, InstancePtr);
-	if (Result != XST_SUCCESS) {
-		return Result;
-	}
-
-	/* Enable the interrupt for the GPIO device.*/
-	XScuGic_Enable(IntcInstancePtr, IntrId);
-#endif /* XPAR_INTC_0_DEVICE_ID */
-
-	/*
-	 * Enable the GPIO channel interrupts so that push button can be
-	 * detected and enable interrupts for the GPIO device
-	 */
-	XGpio_InterruptEnable(InstancePtr, IntrMask);
-	XGpio_InterruptGlobalEnable(InstancePtr);
-
-	/*
-	 * Initialize the exception table and register the interrupt
-	 * controller handler with the exception table
-	 */
-	Xil_ExceptionInit();
-
-	Xil_ExceptionRegisterHandler(XIL_EXCEPTION_ID_INT,
-			(Xil_ExceptionHandler)INTC_HANDLER, IntcInstancePtr);
-
-	/* Enable non-critical exceptions */
-
-	//Xil_ExceptionEnable();
-
-	return XST_SUCCESS;
-}
-//________________________________
 
 
 //fedit add
@@ -708,615 +791,433 @@ int GpioSetupIntrSystem(INTC *IntcInstancePtr, XGpio *InstancePtr,
 //#define INTC_DEVICE_ID	XPAR_SCUGIC_SINGLE_DEVICE_ID
 #define SCHEDULER_INTR XPAR_FABRIC_SCHEDULER_0_IRQ_INTR
 
-//represents the data written to RAM by the scheduler on FPGA
 typedef struct __attribute__((__packed__)) {
 	TCB_t * pxNextTcb;
-	u8 executionMode; //normal, reexecution due to fault, reexecution due to timing fail
-	u8 requiresFaultDetection;
-	u8 executionId;
-	u8 padding;
+	char executionMode; //normal, reexecution due to fault, reexecution due to timing fail
 } newTaskDescrStr;
+//#define PXNEXTTCB 0x10000000
 #define NEWTASKDESCRPTR 0x10000000
+//static XScuGic intControllerInstance;
 
-//pointer to pxCurrentTCB_ptr in task.h
 TCB_t** pxCurrentTCB_ptr;
 
 #define CPU_BASEADDR		XPAR_SCUGIC_CPU_BASEADDR
+#define EXECUTIONMODE_NORMAL 0
+#define EXECUTIONMODE_REEXECUTION_TIMING 1
+#define EXECUTIONMODE_REEXECUTION_FAULT 2
+
+//typedef struct {
+//	u8 checkId;
+//	u8 taskId;
+//	u16 uniId;
+//	char command;
+//	float AOV[configMAX_AOV_DIM];
+//} FAULTDETECTOR_controlStr;
+
+//char ExecutionMode[configMAX_RT_TASKS];
+//OutcomeStr Errors[configMAX_RT_TASKS];
+//#define FAULTDETECTOR_CONTROLSTREAM_BASEADDR XPAR_AXI_MM2S_MAPPER_0_BASEADDR
 #define FAULTDETECTOR_BASEADDR XPAR_RUN_0_S_AXI_CONTROL_BASEADDR
 
-//commands used by the fault detector
 #define COMMAND_INIT 1
 #define COMMAND_TEST 2
 #define COMMAND_TRAIN 3
 
-#ifndef FAULTDETECTOR_EXECINSW
-XFaultdetector FAULTDETECTOR_InstancePtr;
-XFaultdetector FAULTDET_getInstancePtr() {
-	return FAULTDETECTOR_InstancePtr;
-}
-#endif
+//#include "xrun.h"
 
-//contains the test/train points (AOV and metadata). This array is accessed by the fault detector on FPGA by its internal DMA.
-FAULTDETECTOR_controlStr controlForFaultDet [configMAX_RT_TASKS] __attribute__((aligned(4096)));
 
-#define FAULTDETECTOR_DEVICEID XPAR_FAULTDETECTOR_0_DEVICE_ID
-void FAULTDET_dumpRegions() {
-	if (prvDumpTrainedData(
-#ifndef FAULTDETECTOR_EXECINSW
-			&FAULTDETECTOR_InstancePtr,
-#endif
-			&SdInstance)==XST_SUCCESS) {
-		xil_printf("SUCCESS\n");
-	} else {
-		xil_printf("FAILED\n");
-	}
-}
-//callback function called when the button connected to the XGpio CHANNEL1 in FPGA is pressed.
-//it copies the model from the fault detector on FPGA.
-volatile void BtnPressHandler(void *CallbackRef)
-{
-	xPortSchedulerDisableIntr(); //disable scheduler interrupts in order to avoid interruptions from higher priority interrupts and also consequently new AOV (also train ones) being submitted to fault detector
+XRun FAULTDETECTOR_InstancePtr;
+FAULTDETECTOR_controlStr controlForFaultDet;
 
-	XGpio *GpioPtr = (XGpio *)CallbackRef;
-	if (XGpio_DiscreteRead(&Gpio0, GPIO_CHANNEL1)!=0) {
+//#include "xaxidma.h"
+//XAxiDma AxiDma;
+#define FAULTDETECTOR_DEVICEID XPAR_RUN_0_DEVICE_ID
+//#define DMA_DEV_ID		XPAR_AXIDMA_0_DEVICE_ID
 
-		xil_printf("\nBEGIN TRAINED DATA DUMP\n");
-		if (prvDumpTrainedData(
-#ifndef FAULTDETECTOR_EXECINSW
-				&FAULTDETECTOR_InstancePtr,
-#endif
-				&SdInstance)==XST_SUCCESS) {
-			xil_printf("SUCCESS\n");
-		} else {
-			xil_printf("FAILED\n");
-		}
-	}
-
-	/* Clear the Interrupt */
-	XGpio_InterruptClear(GpioPtr, GPIOGlobalIntrMask);
+void FAULTDET_getLastFault(FAULTDETECTOR_OutcomeStr* dest) {
+	FAULTDETECTOR_getLastFault(&FAULTDETECTOR_InstancePtr, ((*pxCurrentTCB_ptr)->uxTaskNumber)-1, dest);
 }
 
-//fault detector initialisation and startup
-void FAULTDET_init(u8 restoreTrainDataFromSd, FAULTDETECTOR_region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS], u8 n_regions[FAULTDETECTOR_MAX_CHECKS]) {
-	//setup GPIO interrupt to enable dump trained data to SD when the user presses a button
-	int sdStatus=prvInitSd(&SdInstance);
-
-	if (sdStatus==XST_SUCCESS) {
-		XGpio_Initialize(&Gpio0, GPIO_DEVICE_ID);
-		GpioSetupIntrSystem(&Intc, &Gpio0,
-				INTC_GPIO_INTERRUPT_ID,
-				GPIO_CHANNEL1);
-	}
-
-#ifndef FAULTDETECTOR_EXECINSW
-	//setup FAULT DETECTOR
-	XFaultdetector_Config* configPtr=XFaultdetector_LookupConfig(FAULTDETECTOR_DEVICEID);
-	XFaultdetector_CfgInitialize(&FAULTDETECTOR_InstancePtr, configPtr);
-	XFaultdetector_Set_inputData(&FAULTDETECTOR_InstancePtr, (u32) (&controlForFaultDet));
-#endif
-	//restore the model loaded from SD card
-	if (sdStatus==XST_SUCCESS && restoreTrainDataFromSd) {
-		prvRestoreTrainedData(
-#ifndef FAULTDETECTOR_EXECINSW
-				&FAULTDETECTOR_InstancePtr,
-#endif
-				&SdInstance);
-	} else {
-		//restore the model passed as function argument
-#ifdef FAULTDETECTOR_EXECINSW
-		FAULTDETECTOR_SW_initRegions(trainedRegions, n_regions);
-#else
-		FAULTDETECTOR_initRegions(&FAULTDETECTOR_InstancePtr, trainedRegions, n_regions);
-#endif
-	}
-}
-#ifndef FAULTDETECTOR_EXECINSW
-//start the fault detector in RUN mode, ready to read test/train point from RAM. Initialisation must be performed first.
-void FAULTDET_start () {
-	FAULTDETECTOR_setModeRun(&FAULTDETECTOR_InstancePtr);
-	XFaultdetector_Start(&FAULTDETECTOR_InstancePtr);
-}
-#endif
-
-//replace the previous fault detection model with the one passed as argument, to be used while the fault detector is running
-void FAULTDET_hotUpdateRegions(FAULTDETECTOR_region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS], u8 n_regions[FAULTDETECTOR_MAX_CHECKS]) {
-#ifdef FAULTDETECTOR_EXECINSW
-	FAULTDETECTOR_SW_initRegions(trainedRegions, n_regions);
-#else
-	FAULTDET_StopRunMode();
+void FAULTDET_init(region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS], u8 n_regions[FAULTDETECTOR_MAX_CHECKS]) {
+	XRun_Config* configPtr=XRun_LookupConfig(FAULTDETECTOR_DEVICEID);
+	XRun_CfgInitialize(&FAULTDETECTOR_InstancePtr, configPtr);
+	XRun_Set_inputAOV(&FAULTDETECTOR_InstancePtr, (u32) (&controlForFaultDet));
 	FAULTDETECTOR_initRegions(&FAULTDETECTOR_InstancePtr, trainedRegions, n_regions);
-	FAULTDET_start ();
-#endif
+
+	//	XAxiDma_Config *CfgPtr;
+	//	int Status;
+	//
+	//	/* Initialize the XAxiDma device.
+	//	 */
+	//	CfgPtr = XAxiDma_LookupConfig(DMA_DEV_ID);
+	////	if (!CfgPtr) {
+	////		xil_printf("No config found for %d\r\n", DMA_DEV_ID);
+	////		return XST_FAILURE;
+	////	}
+	//
+	//	Status = XAxiDma_CfgInitialize(&AxiDma, CfgPtr);
+	////	if (Status != XST_SUCCESS) {
+	////		xil_printf("Initialization failed %d\r\n", Status);
+	////		return XST_FAILURE;
+	////	}
+	//
+	//	/* Disable interrupts, we use polling mode
+	//	 */
+	//	XAxiDma_IntrDisable(&AxiDma, XAXIDMA_IRQ_ALL_MASK,
+	//						XAXIDMA_DEVICE_TO_DMA);
+	//	XAxiDma_IntrDisable(&AxiDma, XAXIDMA_IRQ_ALL_MASK,
+	//						XAXIDMA_DMA_TO_DEVICE);
+
+
 }
 
-#ifndef FAULTDETECTOR_EXECINSW
-
-//to be called when the fault detector is in RUN_MODE, waiting for new AOV: after processing all the pending AOVs, if they exists, it stops
-void FAULTDET_StopRunMode() {
-	FAULTDETECTOR_controlStr contr;
-	contr.command=1;
-	controlForFaultDet[0]=contr;
-	FAULTDETECTOR_startCopy(&FAULTDETECTOR_InstancePtr, 0);
-	while (!XFaultdetector_IsIdle(&FAULTDETECTOR_InstancePtr)) {};
+void FAULTDET_dumpRegions(region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS], u8 n_regions[FAULTDETECTOR_MAX_CHECKS]) {
+	FAULTDETECTOR_dumpRegions(&FAULTDETECTOR_InstancePtr, trainedRegions, n_regions);
 }
 
-//wrapper around FAULTDETECTOR_getLastTestedPoint, to get the last testpoint that has been processed information
-void FAULTDET_getLastTestedPoint(FAULTDETECTOR_testpointDescriptorStr* dest) {
+void FAULTDET_Train(FAULTDETECTOR_controlStr* contr) {
+	contr->command=COMMAND_TRAIN;
 
-	FAULTDETECTOR_getLastTestedPoint(&FAULTDETECTOR_InstancePtr, ((*pxCurrentTCB_ptr)->uxTaskNumber)-1, dest);
+	while(!XRun_IsReady(&FAULTDETECTOR_InstancePtr)) {}
+	controlForFaultDet=*contr;
+	XRun_Start(&FAULTDETECTOR_InstancePtr);
+	//	while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {
+	//		xil_printf("notReady");
+	//	}
+
+
+
+	//	int Status = XAxiDma_SimpleTransfer(&AxiDma,(UINTPTR) &contr,
+	//			sizeof(FAULTDETECTOR_controlStr), XAXIDMA_DMA_TO_DEVICE);
+	//	//xil_printf("status %d", Status);
+	//	while (XAxiDma_Busy(&AxiDma,XAXIDMA_DMA_TO_DEVICE)) //||
+	//		//(XAxiDma_Busy(&AxiDma,XAXIDMA_DMA_TO_DEVICE)))
+	//	{
+	//			/* Wait */
+	//	}
+
 }
-//to manually reset a fault in a task in the fault detector, it is never used because the fault detector automatically resets the fault when a AOV with a different executionId is submitted
+void FAULTDET_Test(FAULTDETECTOR_controlStr* contr) {
+	contr->command=COMMAND_TEST;
+
+	//	if (XRun_IsIdle(&FAULTDETECTOR_InstancePtr))
+	while(!XRun_IsReady(&FAULTDETECTOR_InstancePtr)) {}
+	controlForFaultDet=*contr;
+	XRun_Start(&FAULTDETECTOR_InstancePtr);//	else if (XRun_IsDone(&FAULTDETECTOR_InstancePtr))
+	//		XRun_Continue(&FAULTDETECTOR_InstancePtr);
+	//	else
+	//		xil_printf("err");
+
+	//	while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {}
+	//	controlForFaultDet=*contr;
+	//	FAULTDETECTOR_processNextControl(&FAULTDETECTOR_InstancePtr);
+
+
+
+	//	while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {
+	//		xil_printf("notReady");
+	//	}
+	//	int Status;
+	//	Status = XAxiDma_SimpleTransfer(&AxiDma,(UINTPTR) &contr,
+	//				sizeof(FAULTDETECTOR_controlStr), XAXIDMA_DMA_TO_DEVICE);
+	////	xil_printf("%d", Status);
+	//	while (XAxiDma_Busy(&AxiDma,XAXIDMA_DMA_TO_DEVICE)) //||
+	//		//(XAxiDma_Busy(&AxiDma,XAXIDMA_DMA_TO_DEVICE)))
+	//	{
+	//			/* Wait */
+	//	}
+
+}
+
+
+char FAULTDET_isFault() {
+	while(!(XRun_IsDone(&FAULTDETECTOR_InstancePtr) || XRun_IsIdle(&FAULTDETECTOR_InstancePtr))) {}
+
+	char isFaul=FAULTDETECTOR_isFault(&FAULTDETECTOR_InstancePtr, ((*pxCurrentTCB_ptr)->uxTaskNumber)-1);
+
+	if (isFaul) {
+		FAULTDET_getLastFault(&((*pxCurrentTCB_ptr)->lastError));
+		(*pxCurrentTCB_ptr)->executionMode=EXECUTIONMODE_REEXECUTION_FAULT;
+	}
+//	return FAULTDETECTOR_isFault(&FAULTDETECTOR_InstancePtr, ((*pxCurrentTCB_ptr)->uxTaskNumber)-1);
+	return isFaul;
+}
 void FAULTDET_resetFault() {
+	while(!XRun_IsReady(&FAULTDETECTOR_InstancePtr)) {}
 	FAULTDETECTOR_resetFault(&FAULTDETECTOR_InstancePtr, ((*pxCurrentTCB_ptr)->uxTaskNumber)-1);
 }
-FAULTDETECTOR_controlStr* FAULTDET_initFaultDetection() {
-	//FAULTDET_resetFault(); //not needed, automatically done by the faultdetector when a command from the same check but with different UniId is received
-#ifndef FAULTDETECTOR_EXECINSW
-#ifndef disableOnlineTrain
-	if ((*pxCurrentTCB_ptr)->executionMode==EXECMODE_CURRJOB_FAULT) {
-		FAULTDET_getLastTestedPoint(&((*pxCurrentTCB_ptr)->lastFault));
+void FAULTDET_initFaultDetection() {
+	FAULTDET_resetFault(); //in case a fault happened but the scheduler has decided to not re execute the task, next execution would appear as normal (no reexec), but fault still need to be cleared on fault detector
+	if ((*pxCurrentTCB_ptr)->executionMode==EXECUTIONMODE_REEXECUTION_FAULT)
+		FAULTDETECTOR_getLastFault(&FAULTDETECTOR_InstancePtr, (*pxCurrentTCB_ptr)->uxTaskNumber-1, &((*pxCurrentTCB_ptr)->lastError));
+	//Errors[taskId]=copyFromFaultDetector
+}
+void FAULTDET_endFaultDetection() {
+	//int taskId=(*pxCurrentTCB_ptr)->uxTaskNumber;
+
+	//to remove
+	if (!FAULTDET_isFault()) {
+		(*pxCurrentTCB_ptr)->executionMode=EXECUTIONMODE_NORMAL;
 	}
-#endif
-#endif
-	return &(controlForFaultDet[(*pxCurrentTCB_ptr)->uxTaskNumber-1]);
+	//TO UNCOMMENT
+	//(*pxCurrentTCB_ptr)->executionMode=EXECUTIONMODE_NORMAL;
 }
-#endif
+void FAULTDET_testPoint(int uniId, int checkId, int argCount, ...) {
+	va_list ap;
+	va_start(ap, argCount);
+	if (argCount>FAULTDETECTOR_MAX_AOV_DIM) //MAX_AOV_DIM
+		return; //error
 
-#ifndef FAULTDETECTOR_EXECINSW
-//contains the last test details, FAULTDET_blockIfFaultDetectedInTask will wait until the last test stored in the fault detector matches this one
-u32 lastRequestedTest[configMAX_RT_TASKS];
+	FAULTDETECTOR_controlStr contr;
+	TCB_t* tcbPtr=*pxCurrentTCB_ptr;
 
-//waits until the last test stored in the fault detector matches the last test requested
-void FAULTDET_blockIfFaultDetectedInTask () {
-	if ((*pxCurrentTCB_ptr)->requiresFaultDetection) {
-		//		if (instance->testedOnce) {
-		u8 taskId=((*pxCurrentTCB_ptr)->uxTaskNumber)-1;
+	if (tcbPtr->uxPriority<)
 
-		FAULTDETECTOR_testpointShortDescriptorStr out;
-		do {
-			FAULTDETECTOR_getLastTestedPointShort(&FAULTDETECTOR_InstancePtr, taskId, &out);
-		}
-		while(lastRequestedTest[taskId]!=(*((u32*)(&out))));
-		//			while(memcmp(control, &out, sizeof(FAULTDETECTOR_testpointShortDescriptorStr))!=0);
+	contr.uniId=uniId;
+	contr.checkId=checkId;
+	//contr.taskId=taskId;
+	contr.taskId=tcbPtr->uxTaskNumber-1;
 
-		//			if(FAULTDETECTOR_hasFault(&FAULTDETECTOR_InstancePtr, taskId)) {
-		//				while(1) {}
-		//			}
+	for (int i=0; i<argCount; i++) {
+		contr.AOV[i]=*va_arg(ap, float*);
 	}
-	//	}
-}
-#endif
+	for (int i=argCount; i<FAULTDETECTOR_MAX_AOV_DIM; i++) {
+		contr.AOV[i]=0.0;
+	}
 
-#ifdef detectionPerformanceMeasurement
-//used for performance measurements purpose
-#define GOLDEN_RESULT_SIZE 64
-int FAULTDET_testing_goldenResults_size=0;
-int FAULTDET_testing_goldenResults_idx_tmp=0;
+	controlForFaultDet=contr;
 
-FAULTDETECTOR_testpointDescriptorStr FAULTDET_testing_goldenResults[GOLDEN_RESULT_SIZE];
-
-void FAULTDET_testing_resetGoldens () {
-	FAULTDET_testing_goldenResults_size=0;
-	FAULTDET_testing_goldenResults_idx_tmp=0;
-}
-
-float FAULTDET_testing_relativeErrors[GOLDEN_RESULT_SIZE*FAULTDETECTOR_MAX_AOV_DIM];
-int FAULTDET_testing_relativeErrors_size=0;
-
-
-int FAULTDET_testing_total=0;
-int FAULTDET_testing_ok=0;
-int FAULTDET_testing_total_golden=0;
-int FAULTDET_testing_ok_golden=0;
-int FAULTDET_testing_falsePositives_golden=0;
-int FAULTDET_testing_falseNegatives=0;
-int FAULTDET_testing_noeffects=0;
-int FAULTDET_testing_falseNegatives_wtolerance=0;
-int FAULTDET_testing_ok_wtolerance=0;
-
-char FAULTDET_testing_temp_aovchanged=0;
-char FAULTDET_testing_temp_faultdetected=0;
-char FAULTDET_testing_temp_lastoutputchanged=0;
-
-void FAULTDET_testing_commitTmpStatsAndReset(u8 injectingFault) {
-#ifndef csvOut
-	if (injectingFault) {
-		FAULTDET_testing_total++;
-
-		if (FAULTDET_testing_temp_aovchanged) {
-			if (FAULTDET_testing_temp_faultdetected) {
-				FAULTDET_testing_ok++;
-				FAULTDET_testing_ok_wtolerance++;
-
-			} else {
-				if (FAULTDET_testing_temp_lastoutputchanged) {
-					FAULTDET_testing_falseNegatives++;
-					if (FAULTDET_testing_relativeErrors[FAULTDET_testing_relativeErrors_size-1]>0.15f)
-						FAULTDET_testing_falseNegatives_wtolerance++;
-					else
-						FAULTDET_testing_ok_wtolerance++;
-					//				for (int i=0; i<FAULTDET_testing_relativeErrors_size; i++) {
-					//					xil_printf("%f;", FAULTDET_testing_relativeErrors[i]);
-					//				}
-					//					xil_printf("%f;", FAULTDET_testing_relativeErrors[FAULTDET_testing_relativeErrors_size-1]);
-				} else {
-					FAULTDET_testing_ok++;
-					FAULTDET_testing_ok_wtolerance++;
-
-				}
-			}
-		} else {
-			FAULTDET_testing_noeffects++;
-		}
+	if (tcbPtr->executionMode==EXECUTIONMODE_REEXECUTION_FAULT && tcbPtr->lastError.uniId==uniId && tcbPtr->lastError.checkId==checkId) {
+		tcbPtr->lastError.uniId=0xFFFF;
+		tcbPtr->lastError.checkId=0xFF;
+		if (memcmp(tcbPtr->lastError.AOV, contr.AOV, sizeof(contr.AOV))==0)
+			FAULTDET_Train(&controlForFaultDet);
+		else
+			FAULTDET_Test(&controlForFaultDet);
 	} else {
-		FAULTDET_testing_total_golden++;
-		if (FAULTDET_testing_temp_faultdetected) {
-			FAULTDET_testing_falsePositives_golden++;
-		} else {
-			FAULTDET_testing_ok_golden++;
-		}
+		FAULTDET_Test(&controlForFaultDet);
 	}
-	FAULTDET_testing_relativeErrors_size=0;
-
-	FAULTDET_testing_temp_faultdetected=0;
-	FAULTDET_testing_temp_aovchanged=0;
-	FAULTDET_testing_temp_lastoutputchanged=0;
-#endif
+	va_end(ap);
 }
 
-int FAULTDET_testing_getTotal_golden() {
-	return FAULTDET_testing_total_golden;
-}
+void FAULTDET_trainPoint(int checkId, int argCount, ...) {
+	va_list ap;
+	va_start(ap, argCount);
+	if (argCount>FAULTDETECTOR_MAX_AOV_DIM) //MAX_AOV_DIM
+		return; //error
 
-int FAULTDET_testing_getOk_golden() {
-	return FAULTDET_testing_ok_golden;
-}
-
-int FAULTDET_testing_getTotal() {
-	return FAULTDET_testing_total;
-}
-
-int FAULTDET_testing_getOk() {
-	return FAULTDET_testing_ok;
-}
-
-int FAULTDET_testing_getOk_wtolerance() {
-	return FAULTDET_testing_ok_wtolerance;
-}
-
-int FAULTDET_testing_getFalsePositives_golden() {
-	return FAULTDET_testing_falsePositives_golden;
-}
-
-int FAULTDET_testing_getFalseNegatives() {
-	return FAULTDET_testing_falseNegatives;
-}
-
-int FAULTDET_testing_getFalseNegatives_wtolerance() {
-	return FAULTDET_testing_falseNegatives_wtolerance;
-}
-
-int FAULTDET_testing_getNoEffects() {
-	return FAULTDET_testing_noeffects;
-}
-
-//void FAULTDET_testing_increaseOk() {
-//	FAULTDET_testing_ok++;
-//}
-//
-//void FAULTDET_testing_increaseFalseNegatives() {
-//	FAULTDET_testing_falseNegatives++;
-//}
-
-
-FAULTDETECTOR_testpointDescriptorStr* FAULTDET_testing_findGolden (FAULTDETECTOR_testpointDescriptorStr* newRes) {
-	for (int i=0; i<FAULTDET_testing_goldenResults_size; i++) {
-		if (newRes->checkId==FAULTDET_testing_goldenResults[FAULTDET_testing_goldenResults_idx_tmp].checkId &&
-				newRes->executionId==FAULTDET_testing_goldenResults[FAULTDET_testing_goldenResults_idx_tmp].executionId &&
-				newRes->uniId==FAULTDET_testing_goldenResults[FAULTDET_testing_goldenResults_idx_tmp].uniId) {
-			return &(FAULTDET_testing_goldenResults[FAULTDET_testing_goldenResults_idx_tmp]);
-		}
-		if (FAULTDET_testing_goldenResults_idx_tmp==(FAULTDET_testing_goldenResults_size-1)) {
-			FAULTDET_testing_goldenResults_idx_tmp=0;
-		}
-		else {
-			FAULTDET_testing_goldenResults_idx_tmp++;
-		}
-	}
-	xil_printf("ERROR: golden not found");
-	return 0x0;
-}
-#include <math.h>
-
-u8 FAULTDET_testing_isAovEqual(FAULTDETECTOR_testpointDescriptorStr* golden, FAULTDETECTOR_testpointDescriptorStr* toTest, int lobound, int upbound) {
-	//	return memcmp(&(desc1->AOV), &(desc2->AOV), sizeof(desc1->AOV))==0;
-	u8 equal=0xFF;
-	u8 outEqual=0xFF;
-	for (int i=0; i<FAULTDETECTOR_MAX_AOV_DIM; i++) {
-		//		float tresh=fabs(golden->AOV[i])*0.1;
-		if (toTest->AOV[i] != golden->AOV[i]/*fabs(toTest->AOV[i] - golden->AOV[i]) > GOLDENCOMPARE_THRESH_CONSTANT*/) {
-			if (i>=lobound && i<=upbound) {
-				outEqual=0x0;
-				float relErr=fabs(toTest->AOV[i] - golden->AOV[i])/fabs(golden->AOV[i]);
-#if csvOut
-				xil_printf("0.%f.", relErr);
-#else
-				if (FAULTDET_testing_relativeErrors_size<=GOLDEN_RESULT_SIZE*FAULTDETECTOR_MAX_AOV_DIM) {
-					FAULTDET_testing_relativeErrors[FAULTDET_testing_relativeErrors_size]=relErr;
-					FAULTDET_testing_relativeErrors_size++;
-				} else {
-					xil_printf("ERROR: max relative errors size exceeded");
-				}
-#endif
-			}
-			equal=0x0;
-		}
-	}
-	//	return 0xFF;
-#ifdef csvOut
-	if (outEqual)
-		xil_printf("1.0.");
-#else
-	FAULTDET_testing_temp_lastoutputchanged=!outEqual;
-#endif
-
-#ifdef csvOut
-	if (equal)
-		xil_printf("1;");
-	else
-		xil_printf("0;");
-#else
-	if (!equal)
-		FAULTDET_testing_temp_aovchanged=0xFF;
-#endif
-	return equal;
-}
-
-void FAULTDET_testing_resetStats() {
-	FAULTDET_testing_total_golden=0;
-	FAULTDET_testing_ok_golden=0;
-	FAULTDET_testing_total=0;
-	FAULTDET_testing_ok=0;
-	FAULTDET_testing_falsePositives_golden=0;
-	FAULTDET_testing_falseNegatives=0;
-	FAULTDET_testing_temp_aovchanged=0;
-	FAULTDET_testing_temp_faultdetected=0;
-	FAULTDET_testing_relativeErrors_size=0;
-	FAULTDET_testing_temp_lastoutputchanged=0;
-	FAULTDET_testing_falseNegatives_wtolerance=0;
-	FAULTDET_testing_ok_wtolerance=0;
-}
-
-
-#endif
-
-//called to test an AOV
-void FAULTDET_testPoint(
-) {
-
+	FAULTDETECTOR_controlStr contr;
 	TCB_t* tcbPtr=*pxCurrentTCB_ptr;
-	u8 taskId=tcbPtr->uxTaskNumber-1;
-	FAULTDETECTOR_controlStr* control=&(controlForFaultDet[taskId]);
-	control->taskId=taskId;
-	control->executionId=tcbPtr->executionId;
 
-#ifndef disableOnlineTrain
-	FAULTDETECTOR_testpointDescriptorStr* lastFault=&(tcbPtr->lastFault);
-	char faultyCheckpoint=tcbPtr->executionMode==EXECMODE_CURRJOB_FAULT && *((u32*)lastFault)==*((u32*)control);
+	contr.checkId=checkId;
+	//contr.taskId=taskId;
+	contr.taskId=tcbPtr->uxTaskNumber-1;
 
-	if (faultyCheckpoint &&	memcmp(lastFault->AOV, control->AOV, sizeof(control->AOV))==0) {
-#ifdef FAULTDETECTOR_EXECINSW
-		//		xil_printf(" SW FAULT DETECTOR: train");
-		FAULTDETECTOR_SW_train(control);
-#else //!FAULTDETECTOR_EXECINSW
-		control->command=COMMAND_TRAIN;
-		while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {}
+	for (int i=0; i<argCount; i++) {
+		contr.AOV[i]=*va_arg(ap, float*);
+	}
+	for (int i=argCount; i<FAULTDETECTOR_MAX_AOV_DIM; i++) {
+		contr.AOV[i]=0.0;
+	}
 
-		FAULTDETECTOR_startCopy(&FAULTDETECTOR_InstancePtr, taskId);
-#endif //FAULTDETECTOR_EXECINSW
-	} else
-#endif
-		if (tcbPtr->requiresFaultDetection) {
-			lastRequestedTest[taskId]=*((u32*)control);
-#ifdef FAULTDETECTOR_EXECINSW
-			char fault=FAULTDETECTOR_SW_test(control);
-			if (fault) {
-				tcbPtr->lastFault.uniId=control->uniId;
-				tcbPtr->lastFault.checkId=control->checkId;
-				tcbPtr->lastFault.executionId=control->executionId;
-				memcpy(&(tcbPtr->lastFault.AOV), &(control->AOV), sizeof(control->AOV));
+	controlForFaultDet=contr;
 
-#ifndef testingCampaign
-				SCHEDULER_restartFaultyJob((void*) SCHEDULER_BASEADDR, tcbPtr->uxTaskNumber, control->executionId);
-				while(1) {}
-#endif
-			}
-#else //!FAULTDETECTOR_EXECINSW
-			control->command=COMMAND_TEST;
-			while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {}
-
-			//			controlForFaultDet=*control;
-			FAULTDETECTOR_startCopy(&FAULTDETECTOR_InstancePtr, taskId);
-#endif //FAULTDETECTOR_EXECINSW
-		}
+	FAULTDET_Train(&controlForFaultDet);
+	va_end(ap);
 }
 
-//called to train on an AOV
-void FAULTDET_trainPoint() {
-	TCB_t* tcbPtr=*pxCurrentTCB_ptr;
-	u8 taskId=tcbPtr->uxTaskNumber-1;
 
-	FAULTDETECTOR_controlStr* control=&(controlForFaultDet[taskId]);
-	control->taskId=taskId;
-	control->executionId=tcbPtr->executionId;
-
-#ifdef FAULTDETECTOR_EXECINSW
-
-	char fault=FAULTDETECTOR_SW_test(control);
-	if (fault) {
-		FAULTDETECTOR_SW_train(control);
-		//		fault=FAULTDETECTOR_SW_test(&control);
-		//		if (fault) {
-		//			xil_printf("Train failed, checkId %d, uniId %d", checkId, uniId);
-		//		}
-	}
-#else
-	control->command=COMMAND_TEST;
-	while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {}
-
-	controlForFaultDet[taskId]=*control;
-	FAULTDETECTOR_startCopy(&FAULTDETECTOR_InstancePtr, taskId);
-
-
-	FAULTDET_blockIfFaultDetectedInTask(control);
-	if (FAULTDETECTOR_hasFault(&FAULTDETECTOR_InstancePtr, control->taskId)) {
-		FAULTDETECTOR_resetFault(&FAULTDETECTOR_InstancePtr, control->taskId);
-		control->command=COMMAND_TRAIN;
-		while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {}
-
-		FAULTDETECTOR_startCopy(&FAULTDETECTOR_InstancePtr, taskId);
-	}
-#endif
-}
-
-//called by the ASM function executed on FPGA scheduler interrupt
-//it parses the data provided by the FPGA scheduler and prepares the system for the context switch
+int testIt=0;
 void xPortScheduleNewTask(void)
 {
-	newTaskDescrStr* newtaskdesc=(newTaskDescrStr*) NEWTASKDESCRPTR;
+	unsigned int clk=get_clock_L();
+	perf_reset_clock();
+	xil_printf("%u\n", clk);
 
-	TCB_t* pxNewTCB=newtaskdesc->pxNextTcb;
-#ifdef verboseScheduler
-	xil_printf("| NEW, %X ", pxNewTCB);
-#endif
-	if (newtaskdesc->executionMode==EXECMODE_NORMAL_NEWJOB) {
-		pxNewTCB->jobEnded=0;
+
+	if (testIt>=500000) {
+		for(;;) {}
 	}
+// 	newTaskDescrStr* newtaskdesc=(newTaskDescrStr*) NEWTASKDESCRPTR;
+// 	//*pxCurrentTCB_ptr = *((TCB_t**) NEWTASKDESCRPTR);
+// 	*pxCurrentTCB_ptr = newtaskdesc->pxNextTcb;
+	
+// 	TCB_t* pxNewTCB=*(pxCurrentTCB_ptr);
+// 	//	xil_printf("| NEW, %X ", *pxCurrentTCB_ptr);
+// 	pxNewTCB->jobEnded=0;
 
-	pxNewTCB->executionId=newtaskdesc->executionId;
-	pxNewTCB->requiresFaultDetection=newtaskdesc->requiresFaultDetection;
-	pxNewTCB->executionMode=newtaskdesc->executionMode;
+// 	if (newtaskdesc->executionMode!=EXECUTIONMODE_NORMAL) {
+// 		//ExecutionMode[(*(pxCurrentTCB_ptr))->uxTCBNumber-1]=newtaskdesc->executionMode;
+// 		//reset to begin
 
-#ifdef verboseScheduler
-	xil_printf("exec mode SCH %x, exec id %d, requiresFaultDetection %d\n", newtaskdesc->executionMode, newtaskdesc->executionId, newtaskdesc->requiresFaultDetection);
-#endif
+// 		//NEED TO BE UNCOMMENTED
+// 		//(*pxCurrentTCB_ptr)->executionMode=newtaskdesc->executionMode;
+// 	}
+	
+	
+// #if ( configUSE_MUTEXES == 1 )
+// 			{
+// 				pxNewTCB->uxBasePriority = pxNewTCB->uxPriority;
+// 				pxNewTCB->uxMutexesHeld = 0;
+// 			}
+// #endif /* configUSE_MUTEXES */
 
-	if (newtaskdesc->executionMode>EXECMODE_NORMAL_NEWJOB) {
-		//RESTART TASK
+// 			// vListInitialiseItem(&(pxNewTCB->xStateListItem));
+// 			// vListInitialiseItem(&(pxNewTCB->xEventListItem));
 
-#if ( configUSE_MUTEXES == 1 )
-		{
-			pxNewTCB->uxBasePriority = pxNewTCB->uxPriority;
-			pxNewTCB->uxMutexesHeld = 0;
-		}
-#endif /* configUSE_MUTEXES */
+// 			// /* Set the pxNewTCB as a link back from the ListItem_t.  This is so we can get
+// 			 // * back to  the containing TCB from a generic item in a list. */
+// 			// listSET_LIST_ITEM_OWNER(&(pxNewTCB->xStateListItem), pxNewTCB);
 
-		// vListInitialiseItem(&(pxNewTCB->xStateListItem));
-		// vListInitialiseItem(&(pxNewTCB->xEventListItem));
+// 			// /* Event lists are always in priority order. */
+// 			// listSET_LIST_ITEM_VALUE(&(pxNewTCB->xEventListItem),
+// 					// ( TickType_t ) configMAX_PRIORITIES - ( TickType_t ) uxPriority); /*lint !e961 MISRA exception as the casts are only redundant for some ports. */
+// 			// listSET_LIST_ITEM_OWNER(&(pxNewTCB->xEventListItem), pxNewTCB);
 
-		// /* Set the pxNewTCB as a link back from the ListItem_t.  This is so we can get
-		// * back to  the containing TCB from a generic item in a list. */
-		// listSET_LIST_ITEM_OWNER(&(pxNewTCB->xStateListItem), pxNewTCB);
+// #if ( portCRITICAL_NESTING_IN_TCB == 1 )
+// 			{
+// 				pxNewTCB->uxCriticalNesting = ( UBaseType_t ) 0U;
+// 			}
+// #endif /* portCRITICAL_NESTING_IN_TCB */
 
-		// /* Event lists are always in priority order. */
-		// listSET_LIST_ITEM_VALUE(&(pxNewTCB->xEventListItem),
-		// ( TickType_t ) configMAX_PRIORITIES - ( TickType_t ) uxPriority); /*lint !e961 MISRA exception as the casts are only redundant for some ports. */
-		// listSET_LIST_ITEM_OWNER(&(pxNewTCB->xEventListItem), pxNewTCB);
+// #if ( configGENERATE_RUN_TIME_STATS == 1 )
+// 			{
+// 				pxNewTCB->ulRunTimeCounter = 0UL;
+// 			}
+// #endif /* configGENERATE_RUN_TIME_STATS */
 
-#if ( portCRITICAL_NESTING_IN_TCB == 1 )
-		{
-			pxNewTCB->uxCriticalNesting = ( UBaseType_t ) 0U;
-		}
-#endif /* portCRITICAL_NESTING_IN_TCB */
+// //thread not implemented yet
+// // #if ( configNUM_THREAD_LOCAL_STORAGE_POINTERS != 0 )
+// 			// {
+// 				// memset( ( void * ) &( pxNewTCB->pvThreadLocalStoragePointers[ 0 ] ), 0x00, sizeof( pxNewTCB->pvThreadLocalStoragePointers ) );
+// 			// }
+// // #endif
 
-#if ( configGENERATE_RUN_TIME_STATS == 1 )
-		{
-			pxNewTCB->ulRunTimeCounter = 0UL;
-		}
-#endif /* configGENERATE_RUN_TIME_STATS */
+// /* #if ( configUSE_TASK_NOTIFICATIONS == 1 )
+// 			{
+// 				memset((void *) &(pxNewTCB->ulNotifiedValue[0]), 0x00,
+// 						sizeof(pxNewTCB->ulNotifiedValue));
+// 				memset((void *) &(pxNewTCB->ucNotifyState[0]), 0x00,
+// 						sizeof(pxNewTCB->ucNotifyState));
+// 			}
+// #endif */
 
-		//thread not implemented yet
-		// #if ( configNUM_THREAD_LOCAL_STORAGE_POINTERS != 0 )
-		// {
-		// memset( ( void * ) &( pxNewTCB->pvThreadLocalStoragePointers[ 0 ] ), 0x00, sizeof( pxNewTCB->pvThreadLocalStoragePointers ) );
-		// }
-		// #endif
+// #if ( INCLUDE_xTaskAbortDelay == 1 )
+// 			{
+// 				pxNewTCB->ucDelayAborted = pdFALSE;
+// 			}
+// #endif
 
-		/* #if ( configUSE_TASK_NOTIFICATIONS == 1 )
-				{
-					memset((void *) &(pxNewTCB->ulNotifiedValue[0]), 0x00,
-							sizeof(pxNewTCB->ulNotifiedValue));
-					memset((void *) &(pxNewTCB->ucNotifyState[0]), 0x00,
-							sizeof(pxNewTCB->ucNotifyState));
-				}
-	#endif */
+// 			/* Initialize the TCB stack to look as if the task was already running,
+// 			 * but had been interrupted by the scheduler.  The return address is set
+// 			 * to the start of the task function. Once the stack has been initialised
+// 			 * the top of stack variable is updated. */
+	
+	
+// 	pxNewTCB->pxTopOfStack=pxNewTCB->pxInitialTopOfStack;
 
-#if ( INCLUDE_xTaskAbortDelay == 1 )
-		{
-			pxNewTCB->ucDelayAborted = pdFALSE;
-		}
-#endif
+// 	if (newtaskdesc->executionMode==EXECUTIONMODE_REEXECUTION_FAULT) {
+// 		//reset to begin
+// 	}
 
-		/* Initialize the TCB stack to look as if the task was already running,
-		 * but had been interrupted by the scheduler.  The return address is set
-		 * to the start of the task function. Once the stack has been initialised
-		 * the top of stack variable is updated. */
+// 	SCHEDULER_ACKInterrupt((void *) SCHEDULER_BASEADDR);
+	/*	xil_printf(" initial SP: %X ", ((*pxCurrentTCB_ptr)->pxStack));
+	xil_printf(" SP: %X ", ((*pxCurrentTCB_ptr)->pxTopOfStack));
+	xil_printf(" PC address: %X ", ((*pxCurrentTCB_ptr)->pxTopOfStack + 13));
+	xil_printf(" PC instr: %X |", *((*pxCurrentTCB_ptr)->pxTopOfStack + 13));*/
 
-		pxNewTCB->pxTopOfStack=pxNewTCB->pxInitTopOfStack;
-		pxNewTCB->pxTopOfStack = pxPortInitialiseStack(pxNewTCB->pxInitTopOfStack,
-				pxNewTCB->pxInitTaskCode, (void*) pxNewTCB->pxInitParameters);
-
-	}
-	*pxCurrentTCB_ptr = pxNewTCB;
-	SCHEDULER_ACKInterrupt((void *) SCHEDULER_BASEADDR);
 }
 
-void xPortSchedulerResumeTask(u8 uxTaskNumber, u8 executionId) {
-	//todo
-	//SCHEDULER_resumeTask((void*) SCHEDULER_BASEADDR, uxTaskNumber);
+void xPortSchedulerResumeTask(u16 uxTaskNumber) {
+	SCHEDULER_resumeTask((void*) SCHEDULER_BASEADDR, uxTaskNumber);
 }
 
-void xPortSchedulerSignalTaskSuspended(u8 uxTaskNumber, u8 executionId) {
-	//todo
-	//SCHEDULER_signalTaskSuspended((void*) SCHEDULER_BASEADDR, uxTaskNumber);
+void xPortSchedulerSignalTaskSuspended(u16 uxTaskNumber) {
+	SCHEDULER_signalTaskSuspended((void*) SCHEDULER_BASEADDR, uxTaskNumber);
 }
 
-void xPortSchedulerSignalTaskEnded(u8 uxTaskNumber, u8 executionId) {
-	//todo
+void xPortSchedulerSignalJobEnded(u16 uxTaskNumber) {
+	SCHEDULER_signalJobEnded((void*) SCHEDULER_BASEADDR, uxTaskNumber);
 }
 
-//must be called at the end of each task
-void xPortSchedulerSignalJobEnded(u8 uxTaskNumber, u8 executionId) {
-	SCHEDULER_signalJobEnded((void*) SCHEDULER_BASEADDR, uxTaskNumber, executionId);
+void xPortSchedulerSignalTaskEnded(u16 uxTaskNumber)
+{
+	SCHEDULER_signalTaskEnded((void*) SCHEDULER_BASEADDR, uxTaskNumber);
 }
-
-//initialises the FPGA scheduler
 BaseType_t xPortInitScheduler( u32 numberOfTasks,
 		void* tasksTCBPtrs,
 		void* tasksWCETs,
-		void* tasksDeadlinesDerivative,
 		void* tasksDeadlines,
 		void* tasksPeriods,
-		void* tasksCriticalityLevels,
 		u32* pxCurrentTCBPtr )
 {
-	//will be used by functions in port.c which need to access pxCurrentTCBPtr
 	pxCurrentTCB_ptr=(TCB_t **)pxCurrentTCBPtr;
 	//	int status;
 
 	Xil_DisableMMU();
 
-	//copy data structures to the scheduler on FPGA
 	SCHEDULER_setNumberOfTasks((void*) SCHEDULER_BASEADDR, (u32) numberOfTasks);
 
 	SCHEDULER_copyTCBPtrs((void*) SCHEDULER_BASEADDR, tasksTCBPtrs);
 	SCHEDULER_copyWCETs((void*) SCHEDULER_BASEADDR, tasksWCETs);
-	SCHEDULER_copyDeadlinesDerivative((void*) SCHEDULER_BASEADDR, tasksDeadlinesDerivative);
 	SCHEDULER_copyDeadlines((void*) SCHEDULER_BASEADDR, tasksDeadlines);
 	SCHEDULER_copyPeriods((void*) SCHEDULER_BASEADDR, tasksPeriods);
-	SCHEDULER_copyCriticalityLevels((void*) SCHEDULER_BASEADDR, tasksCriticalityLevels);
 
-	//configure interrupts
+	//	SCHEDULER_copyOrderedDeadlineQIndex((void*) SCHEDULER_BASEADDR, orderedDeadlineQTaskNums);
+	//	SCHEDULER_copyOrderedActivationQIndex((void*) SCHEDULER_BASEADDR, orderedActivationQTaskNums);
+	//	SCHEDULER_copyOrderedDeadlineQ((void*) SCHEDULER_BASEADDR, orderedDeadlineQPayload);
+	//	SCHEDULER_copyOrderedActivationQ((void*) SCHEDULER_BASEADDR, orderedActivationQPayload);
+	//	SCHEDULER_copyOrderedDeadlineQReverseIndex((void*) SCHEDULER_BASEADDR, orderedReverseDeadlineQTaskNums);
+	//	SCHEDULER_copyOrderedActivationQReverseIndex((void*) SCHEDULER_BASEADDR, orderedReverseActivationQTaskNums);
+	//		/*
+	//		 * Initialize the interrupt controller driver so that it is ready to
+	//		 * use.
+	//		 */
+	//		XScuGic_Config* intCConfig = XScuGic_LookupConfig(INTC_DEVICE_ID);
+	//		if (intCConfig == NULL) {
+	//			return XST_FAILURE;
+	//		}
+	//
+	//		status = XScuGic_CfgInitialize(&intControllerInstance, intCConfig,
+	//				intCConfig->CpuBaseAddress);
+	//		if (status != XST_SUCCESS) {
+	//			return XST_FAILURE;
+	//		}
+
+	//		XScuGic_SetPriorityTriggerType(&intControllerInstance, SCHEDULER_INTR, 0xA0, 0x3);
+	//		/*
+	//		 * Connect the device driver handler that will be called when an
+	//		 * interrupt for the device occurs, the handler defined above performs
+	//		 * the specific interrupt processing for the device.
+	//		 */
+	//
+	//		status = XScuGic_Connect(&intControllerInstance, SCHEDULER_INTR,
+	//					(Xil_InterruptHandler)vPortHandleNewTask,
+	//					(void *) &intControllerInstance);
+	//		if (status != XST_SUCCESS) {
+	//			return status;
+	//		}
+	//
+	//		/*
+	//		 * Enable the interrupt for the SCHEDULER device.
+	//		 */
+	//
+	//		XScuGic_Enable(&intControllerInstance, SCHEDULER_INTR);
+	//
+	//		Xil_ExceptionInit();
+	//
+	//		/*
+	//		 * Connect the interrupt controller interrupt handler to the hardware
+	//		 * interrupt handling logic in the processor.
+	//		 */
+	//		Xil_ExceptionRegisterHandler(XIL_EXCEPTION_ID_IRQ_INT,
+	//					(Xil_ExceptionHandler)XScuGic_InterruptHandler,
+	//					&intControllerInstance);
+
+
+	/*
+	 * Enable interrupts in the Processor.
+	 */
 	//Xil_ExceptionEnable(); In this case, interrupts will be automatically enabled when a new task is scheduled
 	Xil_ExceptionInit();
 
@@ -1328,7 +1229,9 @@ BaseType_t xPortInitScheduler( u32 numberOfTasks,
 	 */
 	//Xil_ExceptionEnableMask(XIL_EXCEPTION_ALL);
 
-	//	Xil_ExceptionEnable();
+	Xil_ExceptionEnable();
+
+	//	while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {}
 
 	return pdPASS;
 }
@@ -1345,11 +1248,11 @@ BaseType_t xPortStartScheduler( void )
 
 		/* Determine how many priority bits are implemented in the GIC.
 
-			Save the interrupt priority value that is about to be clobbered. */
+		Save the interrupt priority value that is about to be clobbered. */
 		ulOriginalPriority = *pucFirstUserPriorityRegister;
 
 		/* Determine the number of priority bits available.  First write to
-			all possible bits. */
+		all possible bits. */
 		*pucFirstUserPriorityRegister = portMAX_8_BIT_VALUE;
 
 		/* Read the value back to see how many bits stuck. */
@@ -1362,18 +1265,18 @@ BaseType_t xPortStartScheduler( void )
 		}
 
 		/* Sanity check configUNIQUE_INTERRUPT_PRIORITIES matches the read
-			value. */
+		value. */
 		configASSERT( ucMaxPriorityValue == portLOWEST_INTERRUPT_PRIORITY );
 
 		/* Restore the clobbered interrupt priority register to its original
-			value. */
+		value. */
 		*pucFirstUserPriorityRegister = ulOriginalPriority;
 	}
 #endif /* conifgASSERT_DEFINED */
 
 
 	/* Only continue if the CPU is not in User mode.  The CPU must be in a
-		Privileged mode for the scheduler to start. */
+	Privileged mode for the scheduler to start. */
 	__asm volatile ( "MRS %0, APSR" : "=r" ( ulAPSR ) :: "memory" );
 	ulAPSR &= portAPSR_MODE_BITS_MASK;
 	configASSERT( ulAPSR != portAPSR_USER_MODE );
@@ -1381,16 +1284,16 @@ BaseType_t xPortStartScheduler( void )
 	if( ulAPSR != portAPSR_USER_MODE )
 	{
 		/* Only continue if the binary point value is set to its lowest possible
-			setting.  See the comments in vPortValidateInterruptPriority() below for
-			more information. */
+		setting.  See the comments in vPortValidateInterruptPriority() below for
+		more information. */
 		configASSERT( ( portICCBPR_BINARY_POINT_REGISTER & portBINARY_POINT_BITS ) <= portMAX_BINARY_POINT_VALUE );
 
 		if( ( portICCBPR_BINARY_POINT_REGISTER & portBINARY_POINT_BITS ) <= portMAX_BINARY_POINT_VALUE )
 		{
 			/* Interrupts are turned off in the CPU itself to ensure tick does
-				not execute	while the scheduler is being started.  Interrupts are
-				automatically turned back on in the CPU when the first task starts
-				executing. */
+			not execute	while the scheduler is being started.  Interrupts are
+			automatically turned back on in the CPU when the first task starts
+			executing. */
 			portCPU_IRQ_DISABLE();
 
 			/* Start the timer that generates the tick ISR. */
@@ -1409,23 +1312,19 @@ BaseType_t xPortStartScheduler( void )
 	}
 
 	/* Will only get here if vTaskStartScheduler() was called with the CPU in
-		a non-privileged mode or the binary point register was not set to its lowest
-		possible value.  prvTaskExitError() is referenced to prevent a compiler
-		warning about it being defined but not referenced in the case that the user
-		defines their own exit address. */
+	a non-privileged mode or the binary point register was not set to its lowest
+	possible value.  prvTaskExitError() is referenced to prevent a compiler
+	warning about it being defined but not referenced in the case that the user
+	defines their own exit address. */
 	( void ) prvTaskExitError;
 	return 0;
 }
-void xPortSchedulerDisableIntr() {
-	SCHEDULER_DisableInterrupt((void*) SCHEDULER_BASEADDR);
-}
-
 /*-----------------------------------------------------------*/
 
 void vPortEndScheduler( void )
 {
 	/* Not implemented in ports where there is nothing to return to.
-		Artificially force an assert. */
+	Artificially force an assert. */
 	SCHEDULER_stop((void*) SCHEDULER_BASEADDR);
 	SCHEDULER_DisableInterrupt((void*) SCHEDULER_BASEADDR);
 	configASSERT( ulCriticalNesting == 1000UL );
@@ -1438,15 +1337,15 @@ void vPortEnterCritical( void )
 	ulPortSetInterruptMask();
 
 	/* Now interrupts are disabled ulCriticalNesting can be accessed
-		directly.  Increment ulCriticalNesting to keep a count of how many times
-		portENTER_CRITICAL() has been called. */
+	directly.  Increment ulCriticalNesting to keep a count of how many times
+	portENTER_CRITICAL() has been called. */
 	ulCriticalNesting++;
 
 	/* This is not the interrupt safe version of the enter critical function so
-		assert() if it is being called from an interrupt context.  Only API
-		functions that end in "FromISR" can be used in an interrupt.  Only assert if
-		the critical nesting count is 1 to protect against recursive calls if the
-		assert function also uses a critical section. */
+	assert() if it is being called from an interrupt context.  Only API
+	functions that end in "FromISR" can be used in an interrupt.  Only assert if
+	the critical nesting count is 1 to protect against recursive calls if the
+	assert function also uses a critical section. */
 	if( ulCriticalNesting == 1 )
 	{
 		configASSERT( ulPortInterruptNesting == 0 );
@@ -1459,59 +1358,58 @@ void vPortExitCritical( void )
 	if( ulCriticalNesting > portNO_CRITICAL_NESTING )
 	{
 		/* Decrement the nesting count as the critical section is being
-			exited. */
+		exited. */
 		ulCriticalNesting--;
 
 		/* If the nesting level has reached zero then all interrupt
-			priorities must be re-enabled. */
+		priorities must be re-enabled. */
 		if( ulCriticalNesting == portNO_CRITICAL_NESTING )
 		{
 			/* Critical nesting has reached zero so all interrupt priorities
-				should be unmasked. */
+			should be unmasked. */
 			portCLEAR_INTERRUPT_MASK();
 		}
 	}
 }
 /*-----------------------------------------------------------*/
 
-//unused, tick interrupts (used for original FreeRTOS scheduler) have been disabled.
-//void FreeRTOS_Tick_Handler( void )
-//{
-//		/*
-//		 * The Xilinx implementation of generating run time task stats uses the same timer used for generating
-//		 * FreeRTOS ticks. In case user decides to generate run time stats the tick handler is called more
-//		 * frequently (10 times faster). The timer/tick handler uses logic to handle the same. It handles
-//		 * the FreeRTOS tick once per 10 interrupts.
-//		 * For handling generation of run time stats, it increments a pre-defined counter every time the
-//		 * interrupt handler executes.
-//		 */
-//	#if (configGENERATE_RUN_TIME_STATS == 1)
-//		ulHighFrequencyTimerTicks++;
-//		if (!(ulHighFrequencyTimerTicks % 10))
-//	#endif
-//		{
-//		/* Set interrupt mask before altering scheduler structures.   The tick
-//		handler runs at the lowest priority, so interrupts cannot already be masked,
-//		so there is no need to save and restore the current mask value.  It is
-//		necessary to turn off interrupts in the CPU itself while the ICCPMR is being
-//		updated. */
-//		portCPU_IRQ_DISABLE();
-//		portICCPMR_PRIORITY_MASK_REGISTER = ( uint32_t ) ( configMAX_API_CALL_INTERRUPT_PRIORITY << portPRIORITY_SHIFT );
-//		__asm volatile (	"dsb		\n"
-//							"isb		\n" ::: "memory" );
-//		portCPU_IRQ_ENABLE();
-//
-//		/* Increment the RTOS tick. */
-//		if( xTaskIncrementTick() != pdFALSE )
-//		{
-//			ulPortYieldRequired = pdTRUE;
-//		}
-//		}
-//
-//		/* Ensure all interrupt priorities are active again. */
-//		portCLEAR_INTERRUPT_MASK();
-//		configCLEAR_TICK_INTERRUPT();
-//}
+void FreeRTOS_Tick_Handler( void )
+{
+	//	/*
+	//	 * The Xilinx implementation of generating run time task stats uses the same timer used for generating
+	//	 * FreeRTOS ticks. In case user decides to generate run time stats the tick handler is called more
+	//	 * frequently (10 times faster). The timer/tick handler uses logic to handle the same. It handles
+	//	 * the FreeRTOS tick once per 10 interrupts.
+	//	 * For handling generation of run time stats, it increments a pre-defined counter every time the
+	//	 * interrupt handler executes.
+	//	 */
+	//#if (configGENERATE_RUN_TIME_STATS == 1)
+	//	ulHighFrequencyTimerTicks++;
+	//	if (!(ulHighFrequencyTimerTicks % 10))
+	//#endif
+	//	{
+	//	/* Set interrupt mask before altering scheduler structures.   The tick
+	//	handler runs at the lowest priority, so interrupts cannot already be masked,
+	//	so there is no need to save and restore the current mask value.  It is
+	//	necessary to turn off interrupts in the CPU itself while the ICCPMR is being
+	//	updated. */
+	//	portCPU_IRQ_DISABLE();
+	//	portICCPMR_PRIORITY_MASK_REGISTER = ( uint32_t ) ( configMAX_API_CALL_INTERRUPT_PRIORITY << portPRIORITY_SHIFT );
+	//	__asm volatile (	"dsb		\n"
+	//						"isb		\n" ::: "memory" );
+	//	portCPU_IRQ_ENABLE();
+	//
+	//	/* Increment the RTOS tick. */
+	//	if( xTaskIncrementTick() != pdFALSE )
+	//	{
+	//		ulPortYieldRequired = pdTRUE;
+	//	}
+	//	}
+	//
+	//	/* Ensure all interrupt priorities are active again. */
+	//	portCLEAR_INTERRUPT_MASK();
+	//	configCLEAR_TICK_INTERRUPT();
+}
 /*-----------------------------------------------------------*/
 
 #if( configUSE_TASK_FPU_SUPPORT != 2 )
@@ -1521,7 +1419,7 @@ void vPortTaskUsesFPU( void )
 	uint32_t ulInitialFPSCR = 0;
 
 	/* A task is registering the fact that it needs an FPU context.  Set the
-			FPU flag (which is saved as part of the task context). */
+		FPU flag (which is saved as part of the task context). */
 	ulPortTaskHasFPUContext = pdTRUE;
 
 	/* Initialise the floating point status register. */
@@ -1545,7 +1443,7 @@ uint32_t ulPortSetInterruptMask( void )
 	uint32_t ulReturn;
 
 	/* Interrupt in the CPU must be turned off while the ICCPMR is being
-		updated. */
+	updated. */
 	portCPU_IRQ_DISABLE();
 	if( portICCPMR_PRIORITY_MASK_REGISTER == ( uint32_t ) ( configMAX_API_CALL_INTERRUPT_PRIORITY << portPRIORITY_SHIFT ) )
 	{
@@ -1570,31 +1468,31 @@ uint32_t ulPortSetInterruptMask( void )
 void vPortValidateInterruptPriority( void )
 {
 	/* The following assertion will fail if a service routine (ISR) for
-			an interrupt that has been assigned a priority above
-			configMAX_SYSCALL_INTERRUPT_PRIORITY calls an ISR safe FreeRTOS API
-			function.  ISR safe FreeRTOS API functions must *only* be called
-			from interrupts that have been assigned a priority at or below
-			configMAX_SYSCALL_INTERRUPT_PRIORITY.
+		an interrupt that has been assigned a priority above
+		configMAX_SYSCALL_INTERRUPT_PRIORITY calls an ISR safe FreeRTOS API
+		function.  ISR safe FreeRTOS API functions must *only* be called
+		from interrupts that have been assigned a priority at or below
+		configMAX_SYSCALL_INTERRUPT_PRIORITY.
 
-			Numerically low interrupt priority numbers represent logically high
-			interrupt priorities, therefore the priority of the interrupt must
-			be set to a value equal to or numerically *higher* than
-			configMAX_SYSCALL_INTERRUPT_PRIORITY.
+		Numerically low interrupt priority numbers represent logically high
+		interrupt priorities, therefore the priority of the interrupt must
+		be set to a value equal to or numerically *higher* than
+		configMAX_SYSCALL_INTERRUPT_PRIORITY.
 
-			FreeRTOS maintains separate thread and ISR API functions to ensure
-			interrupt entry is as fast and simple as possible. */
+		FreeRTOS maintains separate thread and ISR API functions to ensure
+		interrupt entry is as fast and simple as possible. */
 	configASSERT( portICCRPR_RUNNING_PRIORITY_REGISTER >= ( uint32_t ) ( configMAX_API_CALL_INTERRUPT_PRIORITY << portPRIORITY_SHIFT ) );
 
 	/* Priority grouping:  The interrupt controller (GIC) allows the bits
-			that define each interrupt's priority to be split between bits that
-			define the interrupt's pre-emption priority bits and bits that define
-			the interrupt's sub-priority.  For simplicity all bits must be defined
-			to be pre-emption priority bits.  The following assertion will fail if
-			this is not the case (if some bits represent a sub-priority).
+		that define each interrupt's priority to be split between bits that
+		define the interrupt's pre-emption priority bits and bits that define
+		the interrupt's sub-priority.  For simplicity all bits must be defined
+		to be pre-emption priority bits.  The following assertion will fail if
+		this is not the case (if some bits represent a sub-priority).
 
-			The priority grouping is configured by the GIC's binary point register
-			(ICCBPR).  Writing 0 to ICCBPR will ensure it is set to its lowest
-			possible value (which may be above 0). */
+		The priority grouping is configured by the GIC's binary point register
+		(ICCBPR).  Writing 0 to ICCBPR will ensure it is set to its lowest
+		possible value (which may be above 0). */
 	configASSERT( ( portICCBPR_BINARY_POINT_REGISTER & portBINARY_POINT_BITS ) <= portMAX_BINARY_POINT_VALUE );
 }
 

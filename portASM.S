@@ -171,17 +171,41 @@ vPortHandleNewTask:
 	DSB
 	ISB*/
 	//subs	pc, lr, #4			/* adjust return */
-	subs	lr, lr, #4			/* adjust return */
+	//subs	lr, lr, #4			/* adjust return */
 	
 	push    {r1}
 	push    {r2}
 	ldr     r1, =9
 	ldr     r2, =0xF8F00208
-        str	r1, [r2]
+    str		r1, [r2]
 	pop     {r2}
 	pop     {r1}
+
+	push    {r1}
+	push    {r2}
+	ldr     r1, =9
+	ldr     r2, =0xF8F00208
+    str		r1, [r2]
+	pop     {r2}
+	pop     {r1}
+
+	push    {r1}
+	push    {r2}
+	ldr     r1, =9
+	ldr     r2, =0xF8F00208
+    str		r1, [r2]
+	pop     {r2}
+	pop     {r1}
+
+	push    {r1}
+	push    {r2}
+	ldr     r1, =0
+	ldr     r2, =0xF8F00208
+    str	r1, [r2]
+    pop     {r2}
+    pop     {r1}
 	
-	portSAVE_CONTEXT
+//	portSAVE_CONTEXT
 /*	LDR R0, pxCurrentTCBConst
 	LDR R2, pxNextTCBConst
 	LDR R1, [R2]
@@ -192,14 +216,9 @@ vPortHandleNewTask:
 	/* schedule new task */
 	LDR R0, xPortScheduleNewTaskConst
 	BLX	R0
-	portRESTORE_CONTEXT
-	push    {r1}
-	push    {r2}
-	ldr     r1, =0
-	ldr     r2, =0xF8F00208
-        str	r1, [r2]
-        pop     {r2}
-        pop     {r1}
+	BLX vPortHandleNewTask
+//	portRESTORE_CONTEXT
+
 //	subs	pc, lr, #0			/* adjust return */
 
 .align 4
