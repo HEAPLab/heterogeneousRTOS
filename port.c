@@ -1181,94 +1181,104 @@ void FAULTDET_trainPoint() {
 
 //called by the ASM function executed on FPGA scheduler interrupt
 //it parses the data provided by the FPGA scheduler and prepares the system for the context switch
+int testIt=0;
 void xPortScheduleNewTask(void)
 {
-	newTaskDescrStr* newtaskdesc=(newTaskDescrStr*) NEWTASKDESCRPTR;
+	unsigned int clk=get_clock_L();
+	perf_reset_clock();
+	xil_printf("%u\n", clk);
+	testIt++;
 
-	TCB_t* pxNewTCB=newtaskdesc->pxNextTcb;
-#ifdef verboseScheduler
-	xil_printf("| NEW, %X ", pxNewTCB);
-#endif
-	if (newtaskdesc->executionMode==EXECMODE_NORMAL_NEWJOB) {
-		pxNewTCB->jobEnded=0;
+
+	if (testIt>=500000) {
+		for(;;) {}
 	}
+// 	newTaskDescrStr* newtaskdesc=(newTaskDescrStr*) NEWTASKDESCRPTR;
 
-	pxNewTCB->executionId=newtaskdesc->executionId;
-	pxNewTCB->requiresFaultDetection=newtaskdesc->requiresFaultDetection;
-	pxNewTCB->executionMode=newtaskdesc->executionMode;
+// 	TCB_t* pxNewTCB=newtaskdesc->pxNextTcb;
+// #ifdef verboseScheduler
+// 	xil_printf("| NEW, %X ", pxNewTCB);
+// #endif
+// 	if (newtaskdesc->executionMode==EXECMODE_NORMAL_NEWJOB) {
+// 		pxNewTCB->jobEnded=0;
+// 	}
 
-#ifdef verboseScheduler
-	xil_printf("exec mode SCH %x, exec id %d, requiresFaultDetection %d\n", newtaskdesc->executionMode, newtaskdesc->executionId, newtaskdesc->requiresFaultDetection);
-#endif
+// 	pxNewTCB->executionId=newtaskdesc->executionId;
+// 	pxNewTCB->requiresFaultDetection=newtaskdesc->requiresFaultDetection;
+// 	pxNewTCB->executionMode=newtaskdesc->executionMode;
 
-	if (newtaskdesc->executionMode>EXECMODE_NORMAL_NEWJOB) {
-		//RESTART TASK
+// #ifdef verboseScheduler
+// 	xil_printf("exec mode SCH %x, exec id %d, requiresFaultDetection %d\n", newtaskdesc->executionMode, newtaskdesc->executionId, newtaskdesc->requiresFaultDetection);
+// #endif
 
-#if ( configUSE_MUTEXES == 1 )
-		{
-			pxNewTCB->uxBasePriority = pxNewTCB->uxPriority;
-			pxNewTCB->uxMutexesHeld = 0;
-		}
-#endif /* configUSE_MUTEXES */
+// 	if (newtaskdesc->executionMode>EXECMODE_NORMAL_NEWJOB) {
+// 		//RESTART TASK
 
-		// vListInitialiseItem(&(pxNewTCB->xStateListItem));
-		// vListInitialiseItem(&(pxNewTCB->xEventListItem));
+// #if ( configUSE_MUTEXES == 1 )
+// 		{
+// 			pxNewTCB->uxBasePriority = pxNewTCB->uxPriority;
+// 			pxNewTCB->uxMutexesHeld = 0;
+// 		}
+// #endif /* configUSE_MUTEXES */
 
-		// /* Set the pxNewTCB as a link back from the ListItem_t.  This is so we can get
-		// * back to  the containing TCB from a generic item in a list. */
-		// listSET_LIST_ITEM_OWNER(&(pxNewTCB->xStateListItem), pxNewTCB);
+// 		// vListInitialiseItem(&(pxNewTCB->xStateListItem));
+// 		// vListInitialiseItem(&(pxNewTCB->xEventListItem));
 
-		// /* Event lists are always in priority order. */
-		// listSET_LIST_ITEM_VALUE(&(pxNewTCB->xEventListItem),
-		// ( TickType_t ) configMAX_PRIORITIES - ( TickType_t ) uxPriority); /*lint !e961 MISRA exception as the casts are only redundant for some ports. */
-		// listSET_LIST_ITEM_OWNER(&(pxNewTCB->xEventListItem), pxNewTCB);
+// 		// /* Set the pxNewTCB as a link back from the ListItem_t.  This is so we can get
+// 		// * back to  the containing TCB from a generic item in a list. */
+// 		// listSET_LIST_ITEM_OWNER(&(pxNewTCB->xStateListItem), pxNewTCB);
 
-#if ( portCRITICAL_NESTING_IN_TCB == 1 )
-		{
-			pxNewTCB->uxCriticalNesting = ( UBaseType_t ) 0U;
-		}
-#endif /* portCRITICAL_NESTING_IN_TCB */
+// 		// /* Event lists are always in priority order. */
+// 		// listSET_LIST_ITEM_VALUE(&(pxNewTCB->xEventListItem),
+// 		// ( TickType_t ) configMAX_PRIORITIES - ( TickType_t ) uxPriority); /*lint !e961 MISRA exception as the casts are only redundant for some ports. */
+// 		// listSET_LIST_ITEM_OWNER(&(pxNewTCB->xEventListItem), pxNewTCB);
 
-#if ( configGENERATE_RUN_TIME_STATS == 1 )
-		{
-			pxNewTCB->ulRunTimeCounter = 0UL;
-		}
-#endif /* configGENERATE_RUN_TIME_STATS */
+// #if ( portCRITICAL_NESTING_IN_TCB == 1 )
+// 		{
+// 			pxNewTCB->uxCriticalNesting = ( UBaseType_t ) 0U;
+// 		}
+// #endif /* portCRITICAL_NESTING_IN_TCB */
 
-		//thread not implemented yet
-		// #if ( configNUM_THREAD_LOCAL_STORAGE_POINTERS != 0 )
-		// {
-		// memset( ( void * ) &( pxNewTCB->pvThreadLocalStoragePointers[ 0 ] ), 0x00, sizeof( pxNewTCB->pvThreadLocalStoragePointers ) );
-		// }
-		// #endif
+// #if ( configGENERATE_RUN_TIME_STATS == 1 )
+// 		{
+// 			pxNewTCB->ulRunTimeCounter = 0UL;
+// 		}
+// #endif /* configGENERATE_RUN_TIME_STATS */
 
-		/* #if ( configUSE_TASK_NOTIFICATIONS == 1 )
-				{
-					memset((void *) &(pxNewTCB->ulNotifiedValue[0]), 0x00,
-							sizeof(pxNewTCB->ulNotifiedValue));
-					memset((void *) &(pxNewTCB->ucNotifyState[0]), 0x00,
-							sizeof(pxNewTCB->ucNotifyState));
-				}
-	#endif */
+// 		//thread not implemented yet
+// 		// #if ( configNUM_THREAD_LOCAL_STORAGE_POINTERS != 0 )
+// 		// {
+// 		// memset( ( void * ) &( pxNewTCB->pvThreadLocalStoragePointers[ 0 ] ), 0x00, sizeof( pxNewTCB->pvThreadLocalStoragePointers ) );
+// 		// }
+// 		// #endif
 
-#if ( INCLUDE_xTaskAbortDelay == 1 )
-		{
-			pxNewTCB->ucDelayAborted = pdFALSE;
-		}
-#endif
+// 		/* #if ( configUSE_TASK_NOTIFICATIONS == 1 )
+// 				{
+// 					memset((void *) &(pxNewTCB->ulNotifiedValue[0]), 0x00,
+// 							sizeof(pxNewTCB->ulNotifiedValue));
+// 					memset((void *) &(pxNewTCB->ucNotifyState[0]), 0x00,
+// 							sizeof(pxNewTCB->ucNotifyState));
+// 				}
+// 	#endif */
 
-		/* Initialize the TCB stack to look as if the task was already running,
-		 * but had been interrupted by the scheduler.  The return address is set
-		 * to the start of the task function. Once the stack has been initialised
-		 * the top of stack variable is updated. */
+// #if ( INCLUDE_xTaskAbortDelay == 1 )
+// 		{
+// 			pxNewTCB->ucDelayAborted = pdFALSE;
+// 		}
+// #endif
 
-		pxNewTCB->pxTopOfStack=pxNewTCB->pxInitTopOfStack;
-		pxNewTCB->pxTopOfStack = pxPortInitialiseStack(pxNewTCB->pxInitTopOfStack,
-				pxNewTCB->pxInitTaskCode, (void*) pxNewTCB->pxInitParameters);
+// 		/* Initialize the TCB stack to look as if the task was already running,
+// 		 * but had been interrupted by the scheduler.  The return address is set
+// 		 * to the start of the task function. Once the stack has been initialised
+// 		 * the top of stack variable is updated. */
 
-	}
-	*pxCurrentTCB_ptr = pxNewTCB;
-	SCHEDULER_ACKInterrupt((void *) SCHEDULER_BASEADDR);
+// 		pxNewTCB->pxTopOfStack=pxNewTCB->pxInitTopOfStack;
+// 		pxNewTCB->pxTopOfStack = pxPortInitialiseStack(pxNewTCB->pxInitTopOfStack,
+// 				pxNewTCB->pxInitTaskCode, (void*) pxNewTCB->pxInitParameters);
+
+// 	}
+// 	*pxCurrentTCB_ptr = pxNewTCB;
+// 	SCHEDULER_ACKInterrupt((void *) SCHEDULER_BASEADDR);
 }
 
 void xPortSchedulerResumeTask(u8 uxTaskNumber, u8 executionId) {
