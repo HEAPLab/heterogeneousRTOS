@@ -714,7 +714,7 @@ typedef struct __attribute__((__packed__)) {
 	u8 executionMode; //normal, reexecution due to fault, reexecution due to timing fail
 	u8 requiresFaultDetection;
 	u8 executionId;
-	u8 padding;
+//	u8 padding;
 } newTaskDescrStr;
 #define NEWTASKDESCRPTR 0x10000000
 

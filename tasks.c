@@ -1418,11 +1418,11 @@
 
 			//		xil_printf(" end ");
 			pxCurrentTCB->jobEnded=1;
-			perf_reset_and_start_clock();
+//			perf_reset_and_start_clock();
 			xPortSchedulerSignalJobEnded(pxCurrentTCB->uxTaskNumber, pxCurrentTCB->executionId);
-			unsigned int clk=get_clock_L();
-			perf_reset_clock();
-			xil_printf("%u\n", clk);
+//			unsigned int clk=get_clock_L();
+//			perf_reset_clock();
+//			xil_printf("%u\n", clk);
 			//xil_printf(" JOBEND SENT ");
 
 			//if (pxTCB == pxCurrentTCB) {
