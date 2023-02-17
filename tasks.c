@@ -1417,6 +1417,14 @@
 			//blockIfFaultDetectedInTask();
 
 			//		xil_printf(" end ");
+//			perf_start_clock();
+			__asm__("push    {r1}"
+				 "push    {r2}"
+				 "ldr     r1, =0"
+				 "ldr     r2, =0xF8F00208"
+				 "str	r1, [r2]"
+				 "pop     {r2}"
+				 "pop     {r1}");
 			pxCurrentTCB->jobEnded=1;
 //			perf_reset_and_start_clock();
 			xPortSchedulerSignalJobEnded(pxCurrentTCB->uxTaskNumber, pxCurrentTCB->executionId);
