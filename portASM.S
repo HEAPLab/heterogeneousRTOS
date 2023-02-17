@@ -171,7 +171,6 @@ vPortHandleNewTask:
 	DSB
 	ISB*/
 	//subs	pc, lr, #4			/* adjust return */
-	subs	lr, lr, #4			/* adjust return */
 	
 	push    {r1}
 	push    {r2}
@@ -181,6 +180,7 @@ vPortHandleNewTask:
 	pop     {r2}
 	pop     {r1}
 	
+	subs	lr, lr, #4			/* adjust return */
 	portSAVE_CONTEXT
 /*	LDR R0, pxCurrentTCBConst
 	LDR R2, pxNextTCBConst
