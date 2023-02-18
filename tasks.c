@@ -42,6 +42,9 @@
 #include "timers.h"
 #include "stack_macros.h"
 
+
+#include "perf_timer.h"
+
 /* Lint e9021, e961 and e750 are suppressed as a MISRA exception justified
  * because the MPU ports require MPU_WRAPPERS_INCLUDED_FROM_API_FILE to be defined
  * for the header files above, but not in this file, in order to generate the
@@ -1402,7 +1405,6 @@
 			}
 		}
 		/*-----------------------------------------------------------*/
-
 		void vTaskJobEnd() { //(TaskHandle_t xTaskToEndJob) {
 			//TCB_t* pxTCB;
 
@@ -1417,14 +1419,24 @@
 			//blockIfFaultDetectedInTask();
 
 			//		xil_printf(" end ");
+////			perf_start_clock();
+//			register int addr asm("r1") = 9;
+//			register int addr asm("r2") = 0xdeadbeef;
+			//int localv=0xF8F00208;
+			uint32_t clkaddress = 0xF8F00208;
+//			int32_t b;
+
+			asm volatile ("push	{r1}");
+			asm volatile ("push	{r2}");
+			asm volatile ("ldr	r1, =9");
+//			asm volatile ("ldr	r2, [%0]" : : "r"(clkaddress) : );
+//			asm volatile ("ldr  r2, %0" : : "r"(localv) : );
+//			asm volatile ("ldr	r2, =0xF8F00208");
+////			asm(" ldr r2 %1" : "+r" (0xF8F00208));
+			asm volatile ("str	r1, [%0]" : : "r"(clkaddress) : );
+			asm volatile ("pop	{r2}");
+			asm volatile ("pop	{r1}");
 //			perf_start_clock();
-			__asm__("push    {r1}"
-				 "push    {r2}"
-				 "ldr     r1, =0"
-				 "ldr     r2, =0xF8F00208"
-				 "str	r1, [r2]"
-				 "pop     {r2}"
-				 "pop     {r1}");
 			pxCurrentTCB->jobEnded=1;
 //			perf_reset_and_start_clock();
 			xPortSchedulerSignalJobEnded(pxCurrentTCB->uxTaskNumber, pxCurrentTCB->executionId);

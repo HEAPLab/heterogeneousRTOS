@@ -9,12 +9,13 @@
 
 
 /* start timer */
-void perf_start_clock(void)
+void inline perf_start_clock(void)
 {
-	*(volatile unsigned int*)SCU_GLOBAL_TIMER_CONTROL = ((1 << 0) | // Timer Enable
-			(1 << 3) | // Auto-increment
-			(0 << 8) // Pre-scale
-	); 
+	*(volatile unsigned int*)SCU_GLOBAL_TIMER_CONTROL = 0b1001;
+
+	/*((1 << 0) | // Timer Enable
+				(1 << 3) | // Auto-increment
+				(0 << 8) // Pre-scale*/
 }
 
 
