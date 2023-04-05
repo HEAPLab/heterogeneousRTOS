@@ -1204,12 +1204,12 @@ void xPortScheduleNewTask(void)
 	if (newtaskdesc->executionMode>EXECMODE_NORMAL_NEWJOB) {
 		//RESTART TASK
 
-#if ( configUSE_MUTEXES == 1 )
-		{
-			pxNewTCB->uxBasePriority = pxNewTCB->uxPriority;
-			pxNewTCB->uxMutexesHeld = 0;
-		}
-#endif /* configUSE_MUTEXES */
+//#if ( configUSE_MUTEXES == 1 )
+//		{
+//			pxNewTCB->uxBasePriority = pxNewTCB->uxPriority;
+//			pxNewTCB->uxMutexesHeld = 0;
+//		}
+//#endif /* configUSE_MUTEXES */
 
 		// vListInitialiseItem(&(pxNewTCB->xStateListItem));
 		// vListInitialiseItem(&(pxNewTCB->xEventListItem));
@@ -1223,17 +1223,17 @@ void xPortScheduleNewTask(void)
 		// ( TickType_t ) configMAX_PRIORITIES - ( TickType_t ) uxPriority); /*lint !e961 MISRA exception as the casts are only redundant for some ports. */
 		// listSET_LIST_ITEM_OWNER(&(pxNewTCB->xEventListItem), pxNewTCB);
 
-#if ( portCRITICAL_NESTING_IN_TCB == 1 )
-		{
-			pxNewTCB->uxCriticalNesting = ( UBaseType_t ) 0U;
-		}
-#endif /* portCRITICAL_NESTING_IN_TCB */
+//#if ( portCRITICAL_NESTING_IN_TCB == 1 )
+//		{
+//			pxNewTCB->uxCriticalNesting = ( UBaseType_t ) 0U;
+//		}
+//#endif /* portCRITICAL_NESTING_IN_TCB */
 
-#if ( configGENERATE_RUN_TIME_STATS == 1 )
-		{
-			pxNewTCB->ulRunTimeCounter = 0UL;
-		}
-#endif /* configGENERATE_RUN_TIME_STATS */
+//#if ( configGENERATE_RUN_TIME_STATS == 1 )
+//		{
+//			pxNewTCB->ulRunTimeCounter = 0UL;
+//		}
+//#endif /* configGENERATE_RUN_TIME_STATS */
 
 		//thread not implemented yet
 		// #if ( configNUM_THREAD_LOCAL_STORAGE_POINTERS != 0 )
@@ -1251,18 +1251,18 @@ void xPortScheduleNewTask(void)
 				}
 	#endif */
 
-#if ( INCLUDE_xTaskAbortDelay == 1 )
-		{
-			pxNewTCB->ucDelayAborted = pdFALSE;
-		}
-#endif
+//#if ( INCLUDE_xTaskAbortDelay == 1 )
+//		{
+//			pxNewTCB->ucDelayAborted = pdFALSE;
+//		}
+//#endif
 
 		/* Initialize the TCB stack to look as if the task was already running,
 		 * but had been interrupted by the scheduler.  The return address is set
 		 * to the start of the task function. Once the stack has been initialised
 		 * the top of stack variable is updated. */
 
-		pxNewTCB->pxTopOfStack=pxNewTCB->pxInitTopOfStack;
+//		pxNewTCB->pxTopOfStack=pxNewTCB->pxInitTopOfStack;
 		pxNewTCB->pxTopOfStack = pxPortInitialiseStack(pxNewTCB->pxInitTopOfStack,
 				pxNewTCB->pxInitTaskCode, (void*) pxNewTCB->pxInitParameters);
 
