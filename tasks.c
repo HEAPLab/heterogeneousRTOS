@@ -1406,51 +1406,16 @@
 		}
 		/*-----------------------------------------------------------*/
 		void vTaskJobEnd() { //(TaskHandle_t xTaskToEndJob) {
-			//TCB_t* pxTCB;
-
-			//taskENTER_CRITICAL()
-			//	;
-			//	{
-			/* If null is passed in here then it is the running task that is
-			 * being suspended. */
-			//pxTCB = prvGetTCBFromHandle(xTaskToEndJob);
-			//pxTCB=pxCurrentTCB;
-
-			//blockIfFaultDetectedInTask();
-
-			//		xil_printf(" end ");
-////			perf_start_clock();
-//			register int addr asm("r1") = 9;
-//			register int addr asm("r2") = 0xdeadbeef;
-			//int localv=0xF8F00208;
-			uint32_t clkaddress = 0xF8F00208;
-//			int32_t b;
-
-			asm volatile ("push	{r1}");
-			asm volatile ("push	{r2}");
-			asm volatile ("ldr	r1, =9");
-//			asm volatile ("ldr	r2, [%0]" : : "r"(clkaddress) : );
-//			asm volatile ("ldr  r2, %0" : : "r"(localv) : );
-//			asm volatile ("ldr	r2, =0xF8F00208");
-////			asm(" ldr r2 %1" : "+r" (0xF8F00208));
-			asm volatile ("str	r1, [%0]" : : "r"(clkaddress) : );
-			asm volatile ("pop	{r2}");
-			asm volatile ("pop	{r1}");
-//			perf_start_clock();
+//			uint32_t clkaddress = 0xF8F00208;
+//
+//			asm volatile ("push	{r1}");
+//			asm volatile ("push	{r2}");
+//			asm volatile ("ldr	r1, =9");
+//			asm volatile ("str	r1, [%0]" : : "r"(clkaddress) : );
+//			asm volatile ("pop	{r2}");
+//			asm volatile ("pop	{r1}");
 			pxCurrentTCB->jobEnded=1;
-//			perf_reset_and_start_clock();
 			xPortSchedulerSignalJobEnded(pxCurrentTCB->uxTaskNumber, pxCurrentTCB->executionId);
-//			unsigned int clk=get_clock_L();
-//			perf_reset_clock();
-//			xil_printf("%u\n", clk);
-			//xil_printf(" JOBEND SENT ");
-
-			//if (pxTCB == pxCurrentTCB) {
-			//		portYIELD_WITHIN_API()
-			//			;
-			//		}
-			//	taskEXIT_CRITICAL()
-			//		;
 
 			while(pxCurrentTCB->jobEnded) {
 			}
