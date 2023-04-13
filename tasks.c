@@ -1402,7 +1402,7 @@
 			}
 		}
 		/*-----------------------------------------------------------*/
-
+#include <stdint.h>
 		void vTaskJobEnd() { //(TaskHandle_t xTaskToEndJob) {
 			//TCB_t* pxTCB;
 
@@ -1418,13 +1418,13 @@
 
 			//		xil_printf(" end ");
 			pxCurrentTCB->jobEnded=1;
-//			perf_reset_and_start_clock();
 
 			perf_stop_clock();
 			uint32_t clk=get_clock_L();
 			uint32_t clku=get_clock_U();
 			uint64_t tot=(uint64_t) clk | ((uint64_t) clku) << 32;
-			printf("e%u %llu\n", pxCurrentTCB->uxTaskNumber, tot);
+			xil_printf("e%u %llu\n", pxCurrentTCB->uxTaskNumber, tot);
+			//fflush(stdout);
 			perf_start_clock();
 
 			xPortSchedulerSignalJobEnded(pxCurrentTCB->uxTaskNumber, pxCurrentTCB->executionId);
