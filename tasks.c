@@ -1420,13 +1420,14 @@
 			//		xil_printf(" end ");
 			pxCurrentTCB->jobEnded=1;
 
-			perf_stop_clock();
+//			perf_stop_clock();
 			uint32_t clk=get_clock_L();
 			uint32_t clku=get_clock_U();
 			uint64_t tot=(uint64_t) clk | ((uint64_t) clku) << 32;
-			printf("e1 %" PRIu64 "\n", tot);
-			fflush(stdout);
-			perf_start_clock();
+
+			char foo[20];
+			sprintf(foo, "e%u %" PRIu64 "\n", pxCurrentTCB->uxTaskNumber, tot);
+			xil_printf(foo);
 
 			xPortSchedulerSignalJobEnded(pxCurrentTCB->uxTaskNumber, pxCurrentTCB->executionId);
 //			unsigned int clk=get_clock_L();
