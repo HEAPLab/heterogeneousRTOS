@@ -1269,7 +1269,7 @@
 			return -1;
 		}
 
-		int calculate_x(RTTask_t tasks[], u8 numberOfTasks, int k) {
+		float calculate_x(RTTask_t tasks[], u8 numberOfTasks, int k) {
 			float v1=0;
 			for (int l=k+1; l<configCRITICALITY_LEVELS; l++) {
 				v1+=compute_utilisation(tasks, numberOfTasks, l, l);
@@ -1280,17 +1280,17 @@
 				v2+=compute_utilisation(tasks, numberOfTasks, l, l);
 			}
 			val=val/v2;
-			return (int)val;
+			return val;
 		}
 
-		void generate_deadlines(u32 tasksDerivativesDeadlines[configCRITICALITY_LEVELS][configMAX_RT_TASKS], u32 tasksDeadlines[configCRITICALITY_LEVELS][configMAX_RT_TASKS], RTTask_t task, int taskIndex, u32 x, u32 k) {
+		void generate_deadlines(u32 tasksDerivativesDeadlines[configCRITICALITY_LEVELS][configMAX_RT_TASKS], u32 tasksDeadlines[configCRITICALITY_LEVELS][configMAX_RT_TASKS], RTTask_t task, int taskIndex, float x, u32 k) {
 			u32 cumulated=0;
 			for (int i=0; i<=task.pxCriticalityLevel; i++) {
 				u32 currDeadline;
 				if (task.pxCriticalityLevel<=k) //|| k==-2)
 					currDeadline=task.pxDeadline;
 				else
-					currDeadline=task.pxDeadline*x;
+					currDeadline=(u32) (task.pxDeadline*x);
 
 				//			if (i==0)
 				//				tasksDeadlines[i]=currDeadline;
@@ -1319,7 +1319,7 @@
 				return -1;
 			}
 
-			int x;
+			float x;
 			if (k==-2) {
 				x=1;
 			} else {
@@ -1329,7 +1329,7 @@
 			for (int i = 0; i < numberOfTasks; i++) {
 				tasksTCBPtrs[i]=prvRTTasksList[i].taskTCB;
 				for (int j=0; j<configCRITICALITY_LEVELS; j++) {
-					tasksWCETs[j][i]=ceil((configATOMIC_OVERHEAD_TIME_WITH_REEXECUTION+prvRTTasksList[i].pxWcet[j]+configATOMIC_OVERHEAD_TIME)/configATOMIC_OVERHEAD_TIME_WITH_REEXECUTION)*configATOMIC_OVERHEAD_TIME_WITH_REEXECUTION;
+					tasksWCETs[j][i]=ceil((configATOMIC_OVERHEAD_TIME_WITH_REEXECUTION+prvRTTasksList[i].pxWcet[j]+configJOBEND_TIME+configATOMIC_OVERHEAD_TIME)/configATOMIC_OVERHEAD_TIME_WITH_REEXECUTION)*configATOMIC_OVERHEAD_TIME_WITH_REEXECUTION;
 				}
 				generate_deadlines(tasksDerivativesDeadlines, tasksDeadlines, prvRTTasksList[i], i, x, k),
 				tasksPeriods[i]=prvRTTasksList[i].pxPeriod-1;
@@ -1403,8 +1403,7 @@
 		}
 		/*-----------------------------------------------------------*/
 #include <inttypes.h>
-
-		void vTaskJobEnd() { //(TaskHandle_t xTaskToEndJob) {
+		void vTaskJobEnd(char *out) { //(TaskHandle_t xTaskToEndJob) {
 			//TCB_t* pxTCB;
 
 			//taskENTER_CRITICAL()
@@ -1425,9 +1424,9 @@
 			uint32_t clku=get_clock_U();
 			uint64_t tot=(uint64_t) clk | ((uint64_t) clku) << 32;
 
-			char foo[20];
-			sprintf(foo, "e%u %" PRIu64 "\n", pxCurrentTCB->uxTaskNumber, tot);
-			xil_printf(foo);
+//			char foo[20];
+			sprintf(out, "e%u %" PRIu64 "\n", pxCurrentTCB->uxTaskNumber, tot);
+//			xil_printf(foo);
 
 			xPortSchedulerSignalJobEnded(pxCurrentTCB->uxTaskNumber, pxCurrentTCB->executionId);
 //			unsigned int clk=get_clock_L();

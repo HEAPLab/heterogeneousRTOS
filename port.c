@@ -879,9 +879,9 @@ void FAULTDET_blockIfFaultDetectedInTask () {
 		while(lastRequestedTest[taskId]!=(*((u32*)(&out))));
 		//			while(memcmp(control, &out, sizeof(FAULTDETECTOR_testpointShortDescriptorStr))!=0);
 
-		//			if(FAULTDETECTOR_hasFault(&FAULTDETECTOR_InstancePtr, taskId)) {
-		//				while(1) {}
-		//			}
+		if(FAULTDETECTOR_hasFault(&FAULTDETECTOR_InstancePtr, taskId)) {
+			while(1) {}
+		}
 	}
 	//	}
 }
