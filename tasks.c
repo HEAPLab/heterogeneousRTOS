@@ -1424,7 +1424,6 @@
 			uint32_t clku=get_clock_U();
 			uint64_t tot=(uint64_t) clk | ((uint64_t) clku) << 32;
 			xil_printf("e%u %llu\n", pxCurrentTCB->uxTaskNumber, tot);
-			//fflush(stdout);
 			perf_start_clock();
 
 			xPortSchedulerSignalJobEnded(pxCurrentTCB->uxTaskNumber, pxCurrentTCB->executionId);

@@ -161,7 +161,7 @@ vPortRestoreTaskContext:
 	/* Switch to system mode. */
 	CPS		#SYS_MODE
 	portRESTORE_CONTEXT
-	
+
 /******************************************************************************
  * vPortHandleNewTask is used to perform a context switch when a new task is provided by the FPGA scheduler (hardware scheduler interrupt handler).
  *****************************************************************************/
@@ -170,37 +170,13 @@ vPortHandleNewTask:
 /*	CPSID	i
 	DSB
 	ISB*/
-	//subs	pc, lr, #4			/* adjust return */
-	
-	push    {r1}
-	push    {r2}
-	ldr     r1, =9
-	ldr     r2, =0xF8F00208
-        str	r1, [r2]
-	pop     {r2}
-	pop     {r1}
-	
+
 	subs	lr, lr, #4			/* adjust return */
 	portSAVE_CONTEXT
-/*	LDR R0, pxCurrentTCBConst
-	LDR R2, pxNextTCBConst
-	LDR R1, [R2]
-	STR R1, [R0]
-	LDR R0, SCHEDULER_BASEADDRConst
-	LDR R3, SCHEDULER_ACKInterruptConst
-	BLX	R3*/
 	/* schedule new task */
 	LDR R0, xPortScheduleNewTaskConst
 	BLX	R0
 	portRESTORE_CONTEXT
-	push    {r1}
-	push    {r2}
-	ldr     r1, =0
-	ldr     r2, =0xF8F00208
-        str	r1, [r2]
-        pop     {r2}
-        pop     {r1}
-//	subs	pc, lr, #0			/* adjust return */
 
 .align 4
 .type FreeRTOS_IRQ_Handler, %function
@@ -365,11 +341,6 @@ vApplicationIRQHandlerConst: .word vApplicationIRQHandler
 ulPortInterruptNestingConst: .word ulPortInterruptNesting
 vApplicationFPUSafeIRQHandlerConst: .word vApplicationFPUSafeIRQHandler
 
-TIMERCTRL: .word 
+TIMERCTRL: .word
 
 .end
-
-
-
-
-
