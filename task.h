@@ -1315,13 +1315,6 @@ void vTaskPrioritySet( TaskHandle_t xTask,
  * \ingroup TaskCtrl
  */
 
-typedef struct {
-	char ev;
-	u8 tskId;
-	u32 timer;
-	u32 job;
-} regEvent;
-
 void vTaskJobEnd(u32 *tmr) PRIVILEGED_FUNCTION;
 
 void vTaskSuspend( TaskHandle_t xTaskToSuspend ) PRIVILEGED_FUNCTION;

@@ -62,8 +62,8 @@ volatile unsigned long long int get_clock() {
 	return *(volatile unsigned long long int*)SCU_GLOBAL_TIMER_COUNT_L32;
 }
 
-volatile unsigned int get_clock_L() {
-	return *(volatile unsigned int*)SCU_GLOBAL_TIMER_COUNT_L32;
+volatile uint32_t get_clock_L() {
+	return *(volatile uint32_t*)SCU_GLOBAL_TIMER_COUNT_L32;
 }
 
 volatile unsigned int get_clock_U() {
