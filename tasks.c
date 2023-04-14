@@ -1231,7 +1231,7 @@
 			float val=0;
 			for (int i=0; i<number_of_tasks; i++) {
 				if (tasks[i].pxCriticalityLevel==taskCriticalityLevel && systemCriticalityLevel>=tasks[i].pxCriticalityLevel)
-					val+=ceil((configATOMIC_OVERHEAD_TIME_WITH_REEXECUTION+tasks[i].pxWcet[systemCriticalityLevel]+configATOMIC_OVERHEAD_TIME)/configATOMIC_OVERHEAD_TIME_WITH_REEXECUTION)/floor(tasks[i].pxPeriod/configATOMIC_OVERHEAD_TIME_WITH_REEXECUTION);
+					val+=ceil((configATOMIC_OVERHEAD_TIME_WITH_REEXECUTION+tasks[i].pxWcet[systemCriticalityLevel]+configJOBEND_TIME+configATOMIC_OVERHEAD_TIME)/configATOMIC_OVERHEAD_TIME_WITH_REEXECUTION)/floor(tasks[i].pxPeriod/configATOMIC_OVERHEAD_TIME_WITH_REEXECUTION);
 			}
 			return val;
 		}
@@ -1312,6 +1312,7 @@
 				u32 tasksDeadlines[configCRITICALITY_LEVELS][configMAX_RT_TASKS],
 				u32 tasksPeriods[configMAX_RT_TASKS],
 				u32 criticalityLevels[configMAX_RT_TASKS]) {
+
 
 			int k=find_k(prvRTTasksList, numberOfTasks);
 			if (k==-1) {
