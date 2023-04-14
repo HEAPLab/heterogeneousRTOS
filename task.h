@@ -1319,9 +1319,10 @@ typedef struct {
 	char ev;
 	u8 tskId;
 	u32 timer;
+	u32 job;
 } regEvent;
 
-void vTaskJobEnd(regEvent *tmr) PRIVILEGED_FUNCTION;
+void vTaskJobEnd(u32 *tmr) PRIVILEGED_FUNCTION;
 
 void vTaskSuspend( TaskHandle_t xTaskToSuspend ) PRIVILEGED_FUNCTION;
 
