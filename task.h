@@ -1317,9 +1317,9 @@ void vTaskPrioritySet( TaskHandle_t xTask,
 
 typedef struct {
 	char ev;
-	u8 tskId;
+	unsigned int tskId;
 	u32 timer;
-	u32 job;
+	unsigned int job;
 } regEvent;
 
 void vTaskJobEnd(u32 *tmr) PRIVILEGED_FUNCTION;

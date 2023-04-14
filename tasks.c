@@ -1411,8 +1411,7 @@
 
 			xPortSchedulerSignalJobEnded(pxCurrentTCB->uxTaskNumber, pxCurrentTCB->executionId);
 
-			while(pxCurrentTCB->jobEnded) {
-			}
+			while(pxCurrentTCB->jobEnded) {}
 		}
 
 		//void vTaskJobEnd(TaskHandle_t xTaskToEndJob) {
