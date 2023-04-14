@@ -1404,7 +1404,7 @@
 		}
 		/*-----------------------------------------------------------*/
 #include <inttypes.h>
-		void vTaskJobEnd(char *out) { //(TaskHandle_t xTaskToEndJob) {
+		void vTaskJobEnd(regEvent *tmr) { //(TaskHandle_t xTaskToEndJob) {
 			//TCB_t* pxTCB;
 
 			//taskENTER_CRITICAL()
@@ -1421,15 +1421,22 @@
 			pxCurrentTCB->jobEnded=1;
 
 //			perf_stop_clock();
-			uint32_t clk=get_clock_L();
-			uint32_t clku=get_clock_U();
-			uint64_t tot=(uint64_t) clk | ((uint64_t) clku) << 32;
+//			uint32_t clk=get_clock_L();
+//			uint32_t clku=get_clock_U();
+//			uint64_t tot=(uint64_t) clk | ((uint64_t) clku) << 32;
 
 //			char foo[20];
-			sprintf(out, "e%u %" PRIu64 "\n", pxCurrentTCB->uxTaskNumber, tot);
+//			sprintf(out, "e%u %" PRIu64 "\n", pxCurrentTCB->uxTaskNumber, tot);
+			u8 tsk=pxCurrentTCB->uxTaskNumber;
+
+			tmr->ev='e';
+			tmr->tskId=tsk;
+			tmr->timer=get_clock_L();
+//			sprintf(out, "e%u %u\n", tsk, get_clock_L());
+
 //			xil_printf(foo);
 
-			xPortSchedulerSignalJobEnded(pxCurrentTCB->uxTaskNumber, pxCurrentTCB->executionId);
+			xPortSchedulerSignalJobEnded(tsk, pxCurrentTCB->executionId);
 //			unsigned int clk=get_clock_L();
 //			perf_reset_clock();
 //			xil_printf("%u\n", clk);
