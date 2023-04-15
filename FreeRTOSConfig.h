@@ -79,7 +79,7 @@
 //fedit add
 #define configMAX_RT_TASKS (4)
 
-#define configCRITICALITY_LEVELS (2)
+#define configCRITICALITY_LEVELS (3)
 
 //#define configATOMIC_OVERHEAD_TIME_NS (5011)
 
