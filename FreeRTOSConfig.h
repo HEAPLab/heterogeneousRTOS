@@ -79,6 +79,8 @@
 //fedit add
 #define configMAX_RT_TASKS (4)
 
+#define config_SOFTWARESCHEDULER_testing
+
 #define configCRITICALITY_LEVELS (3)
 
 #define configATOMIC_OVERHEAD_TIME (10)

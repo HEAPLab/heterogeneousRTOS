@@ -42,6 +42,23 @@
 #include "timers.h"
 #include "stack_macros.h"
 
+//paper
+#ifdef config_SOFTWARESCHEDULER_testing
+u32 highestPriorityTask=0xFFFFFFFF;
+u32 highestPriorityTaskDeadline=0xFFFFFFFF;
+u32 systemCriticality=0;
+u32 tasksTCBPtrs[ configMAX_RT_TASKS ];
+u32 tasksWCETs[ configCRITICALITY_LEVELS ][ configMAX_RT_TASKS ];
+u32 tasksDerivativeDeadlines[ configCRITICALITY_LEVELS ][ configMAX_RT_TASKS ];
+u32 tasksDeadlines[ configCRITICALITY_LEVELS ][ configMAX_RT_TASKS ];
+u32 tasksPeriods[ configMAX_RT_TASKS ];
+u32 tasksCriticalityLevels[ configMAX_RT_TASKS ];
+u32 totalTime=0;
+u32 AbsDeadlines[ configCRITICALITY_LEVELS ][ configMAX_RT_TASKS ];
+u32 AbsActivations [ configMAX_RT_TASKS ];
+u32 jobsExecutionTimes [ configMAX_RT_TASKS ];
+#endif
+
 /* Lint e9021, e961 and e750 are suppressed as a MISRA exception justified
  * because the MPU ports require MPU_WRAPPERS_INCLUDED_FROM_API_FILE to be defined
  * for the header files above, but not in this file, in order to generate the
@@ -2290,12 +2307,14 @@
 		void vTaskStartScheduler() {
 			BaseType_t xReturn;
 
+#ifndef config_SOFTWARESCHEDULER_testing
 			u32 tasksTCBPtrs[ configMAX_RT_TASKS ];
 			u32 tasksWCETs[ configCRITICALITY_LEVELS ][ configMAX_RT_TASKS ];
 			u32 tasksDerivativeDeadlines[ configCRITICALITY_LEVELS ][ configMAX_RT_TASKS ];
 			u32 tasksDeadlines[ configCRITICALITY_LEVELS ][ configMAX_RT_TASKS ];
 			u32 tasksPeriods[ configMAX_RT_TASKS ];
 			u32 tasksCriticalityLevels[ configMAX_RT_TASKS ];
+#endif
 
 			memset(tasksTCBPtrs, 0, sizeof(tasksTCBPtrs));
 			memset(tasksWCETs, 0, sizeof(tasksWCETs));
@@ -2317,6 +2336,11 @@
 				return;
 			}
 
+#ifdef config_SOFTWARESCHEDULER_testing
+			memset(jobsExecutionTimes, 0, sizeof(jobsExecutionTimes));
+			memcpy(AbsDeadlines, tasksDeadlines, sizeof(tasksDeadlines));
+			memcpy(AbsActivations, tasksPeriods, sizeof(tasksPeriods));
+#else
 			if (xPortInitScheduler( (u32) uxTaskNumber,
 					(void *) tasksTCBPtrs,
 					(void *) tasksWCETs,
@@ -2325,6 +2349,7 @@
 					(void *) tasksPeriods,
 					(void *) tasksCriticalityLevels,
 					(u32*) &pxCurrentTCB) == pdPASS) {
+#endif
 				/* Add the idle task at the lowest priority. */
 #if ( configSUPPORT_STATIC_ALLOCATION == 1 )
 				{
@@ -2441,11 +2466,12 @@
 					 * or the timer task. */
 					configASSERT(xReturn != errCOULD_NOT_ALLOCATE_REQUIRED_MEMORY);
 				}
+#ifndef config_SOFTWARESCHEDULER_testing
 			} else {
 				/* Error in initialising the scheduler */
 				configASSERT(FALSE);
 			}
-
+#endif
 			/* Prevent compiler warnings if INCLUDE_xTaskGetIdleTaskHandle is set to 0,
 			 * meaning xIdleTaskHandle is not used anywhere else. */
 			(void) xIdleTaskHandle;
@@ -3305,6 +3331,9 @@ void SchedulerNewTaskIntrHandl(void)
 	SCHEDULER_ACKInterrupt(SCHEDULER_BASEADDR);
 }*/
 
+		//paper
+
+
 		void vTaskSwitchContext(void) {
 			if (uxSchedulerSuspended != (UBaseType_t) pdFALSE) {
 				/* The scheduler is currently suspended - do not allow a context
@@ -3356,11 +3385,64 @@ void SchedulerNewTaskIntrHandl(void)
 				///* Select a new task to run using either the generic C or port
 				// * optimised asm code. */
 				//taskSELECT_HIGHEST_PRIORITY_TASK()
+
+#ifdef config_SOFTWARESCHEDULER_testing
+//software scheduler
+
+				totalTime++;
+
+				if (highestPriorityTask!=0xFFFFFFFF)
+					jobsExecutionTimes[highestPriorityTask]++;
+
+				if (jobsExecutionTimes[highestPriorityTask]>tasksWCETs[systemCriticality][highestPriorityTask]) {
+					//mode switch
+					if (tasksCriticalityLevels[highestPriorityTask]>systemCriticality) {
+						systemCriticality++;
+					} else {
+						//taskKilled[HighestPriorityTask]=true
+						for (int c=0; c<configCRITICALITY_LEVELS; c++)
+							AbsDeadlines[c][highestPriorityTask]=0xFFFFFFFF;
+					}
+				}
+
+				highestPriorityTask=0xFFFFFFFF;
+				highestPriorityTaskDeadline=0xFFFFFFFF;
+
+				//check activations
+				for (int i=0; i<configMAX_RT_TASKS; i++) {
+					if (AbsActivations[i]<=totalTime) {
+						//new activation
+
+						AbsActivations[i]+=tasksPeriods[i];
+						//update deadlines
+						for (int c=0; c<configCRITICALITY_LEVELS; c++)
+							AbsDeadlines[i][c]=totalTime+tasksDeadlines[c][i];
+					}
+				}
+				//check highest priority task
+				for (int i=0; i<configMAX_RT_TASKS; i++) {
+					if (tasksCriticalityLevels[i]>=systemCriticality && AbsDeadlines[systemCriticality][i]<highestPriorityTaskDeadline);
+						highestPriorityTask=i;
+				}
+
+//				//context sw
+//				if (highestPriorityTask==0xFFFFFFFF) {
+//					systemCriticality=0;
+//					pxCurrentTCB=tasksTCBPtrs[highestPriorityTask];
+//				} else {
+//					pxCurrentTCB=pxIdleTCB;
+//				}
+
+
+
+#else
 				//; /*lint !e9079 void * is used as this macro is used with timers and co-routines too.  Alignment is known to be fine as the type of the pointer stored and retrieved is the same. */
 				//ORIG______________
 				//fedit add
 				//always schedule the idle task, FPGA will cause an interrupt when a new task is available
 				pxCurrentTCB = pxIdleTCB;
+#endif
+
 
 				traceTASK_SWITCHED_IN();
 
