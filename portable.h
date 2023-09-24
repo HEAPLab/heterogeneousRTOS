@@ -192,7 +192,11 @@ void xPortSchedulerResumeTask(u8 uxTaskNumber, u8 executionId) PRIVILEGED_FUNCTI
 
 void xPortSchedulerSignalTaskSuspended(u8 uxTaskNumber, u8 executionId) PRIVILEGED_FUNCTION;
 
+#ifdef config_SOFTWARESCHEDULER_testing
+void xPortSchedulerSignalJobEnded() PRIVILEGED_FUNCTION;
+#else
 void xPortSchedulerSignalJobEnded(u8 uxTaskNumber, u8 executionId) PRIVILEGED_FUNCTION;
+#endif
 
 void xPortSchedulerSignalTaskEnded(u8 uxTaskNumber, u8 executionId) PRIVILEGED_FUNCTION;
 
