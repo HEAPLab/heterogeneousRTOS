@@ -57,6 +57,8 @@ u32 totalTime=0;
 u32 AbsDeadlines[ configCRITICALITY_LEVELS ][ configMAX_RT_TASKS ];
 u32 AbsActivations [ configMAX_RT_TASKS ];
 u32 jobsExecutionTimes [ configMAX_RT_TASKS ];
+u32 partialExecutionTimes [ configMAX_RT_TASKS ];
+u32 reExecutions [ configMAX_RT_TASKS ];
 u32 numberOfTasksGlob;
 #endif
 
@@ -3400,6 +3402,77 @@ void SchedulerNewTaskIntrHandl(void)
 				if (highestPriorityTask!=0xFFFFFFFF) {
 					//a task is executing
 					jobsExecutionTimes[highestPriorityTask]++;
+					partialExecutionTimes[highestPriorityTask]++;
+
+					if (partialExecutionTimes[highestPriorityTask]>tasksWCETs[0][highestPriorityTask] && reExecutions[highestPriorityTask]<tasksCriticalityLevels[highestPriorityTask]) {
+						//restore stack or mark and restore stack later
+						//pxCurrentTCB->executionMode=EXECMODE_CURRJOB_WCETEXCEEDED:
+						reExecutions[highestPriorityTask]++;
+
+			#if ( configUSE_MUTEXES == 1 )
+					{
+						pxNewTCB->uxBasePriority = pxNewTCB->uxPriority;
+						pxNewTCB->uxMutexesHeld = 0;
+					}
+			#endif /* configUSE_MUTEXES */
+
+					// vListInitialiseItem(&(pxNewTCB->xStateListItem));
+					// vListInitialiseItem(&(pxNewTCB->xEventListItem));
+
+					// /* Set the pxNewTCB as a link back from the ListItem_t.  This is so we can get
+					// * back to  the containing TCB from a generic item in a list. */
+					// listSET_LIST_ITEM_OWNER(&(pxNewTCB->xStateListItem), pxNewTCB);
+
+					// /* Event lists are always in priority order. */
+					// listSET_LIST_ITEM_VALUE(&(pxNewTCB->xEventListItem),
+					// ( TickType_t ) configMAX_PRIORITIES - ( TickType_t ) uxPriority); /*lint !e961 MISRA exception as the casts are only redundant for some ports. */
+					// listSET_LIST_ITEM_OWNER(&(pxNewTCB->xEventListItem), pxNewTCB);
+
+			#if ( portCRITICAL_NESTING_IN_TCB == 1 )
+					{
+						pxNewTCB->uxCriticalNesting = ( UBaseType_t ) 0U;
+					}
+			#endif /* portCRITICAL_NESTING_IN_TCB */
+
+			#if ( configGENERATE_RUN_TIME_STATS == 1 )
+					{
+						pxNewTCB->ulRunTimeCounter = 0UL;
+					}
+			#endif /* configGENERATE_RUN_TIME_STATS */
+
+					//thread not implemented yet
+					// #if ( configNUM_THREAD_LOCAL_STORAGE_POINTERS != 0 )
+					// {
+					// memset( ( void * ) &( pxNewTCB->pvThreadLocalStoragePointers[ 0 ] ), 0x00, sizeof( pxNewTCB->pvThreadLocalStoragePointers ) );
+					// }
+					// #endif
+
+					/* #if ( configUSE_TASK_NOTIFICATIONS == 1 )
+							{
+								memset((void *) &(pxNewTCB->ulNotifiedValue[0]), 0x00,
+										sizeof(pxNewTCB->ulNotifiedValue));
+								memset((void *) &(pxNewTCB->ucNotifyState[0]), 0x00,
+										sizeof(pxNewTCB->ucNotifyState));
+							}
+				#endif */
+
+			#if ( INCLUDE_xTaskAbortDelay == 1 )
+					{
+						pxNewTCB->ucDelayAborted = pdFALSE;
+					}
+			#endif
+
+					/* Initialize the TCB stack to look as if the task was already running,
+					 * but had been interrupted by the scheduler.  The return address is set
+					 * to the start of the task function. Once the stack has been initialised
+					 * the top of stack variable is updated. */
+
+					//pxCurrentTCB->pxTopOfStack=pxCurrentTCB->pxInitTopOfStack;
+					pxCurrentTCB->pxTopOfStack = pxPortInitialiseStack(pxCurrentTCB->pxInitTopOfStack,
+							pxCurrentTCB->pxInitTaskCode, (void*) pxCurrentTCB->pxInitParameters);
+
+					}
+
 					if (jobsExecutionTimes[highestPriorityTask]>tasksWCETs[systemCriticality][highestPriorityTask]) {
 						//mode switch
 						if (tasksCriticalityLevels[highestPriorityTask]>systemCriticality) {
@@ -3421,7 +3494,13 @@ void SchedulerNewTaskIntrHandl(void)
 					if (AbsActivations[i]<=totalTime) {
 						//new activation
 						jobsExecutionTimes[i]=0;
+						partialExecutionTimes[i]=0;
+						reExecutions[i]=0;
 						AbsActivations[i]+=tasksPeriods[i];
+
+						//pxCurrentTCB->executionMode=EXECMODE_NORMAL_NEWJOB:
+						pxCurrentTCB->jobEnded=0;
+
 						//update deadlines
 						for (int c=0; c<configCRITICALITY_LEVELS; c++)
 							AbsDeadlines[i][c]=totalTime+tasksDeadlines[c][i];

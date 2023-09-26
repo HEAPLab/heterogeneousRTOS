@@ -1262,7 +1262,7 @@ void xPortScheduleNewTask(void)
 		 * to the start of the task function. Once the stack has been initialised
 		 * the top of stack variable is updated. */
 
-		pxNewTCB->pxTopOfStack=pxNewTCB->pxInitTopOfStack;
+//		pxNewTCB->pxTopOfStack=pxNewTCB->pxInitTopOfStack;
 		pxNewTCB->pxTopOfStack = pxPortInitialiseStack(pxNewTCB->pxInitTopOfStack,
 				pxNewTCB->pxInitTaskCode, (void*) pxNewTCB->pxInitParameters);
 
