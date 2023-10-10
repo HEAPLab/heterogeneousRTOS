@@ -189,6 +189,11 @@ typedef tskTCB TCB_t;
 
 //______________________________________________________
 
+//paper
+#ifdef config_SOFTWARESCHEDULER_testing
+u8 SCHEDULER_SW_FaultDetected=0;
+#endif
+
 //fedit add
 
 /*Used to represent real time tasks, contain timing informations of task and pointer to its TCB_t. Will be used by RT scheduler. */

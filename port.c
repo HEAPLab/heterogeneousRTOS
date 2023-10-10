@@ -1091,6 +1091,7 @@ void FAULTDET_testing_resetStats() {
 #endif
 
 //called to test an AOV
+extern u8 SCHEDULER_SW_FaultDetected;
 void FAULTDET_testPoint(
 ) {
 
@@ -1127,7 +1128,11 @@ void FAULTDET_testPoint(
 				memcpy(&(tcbPtr->lastFault.AOV), &(control->AOV), sizeof(control->AOV));
 
 #ifndef testingCampaign
+#ifdef config_SOFTWARESCHEDULER_testing
+				SCHEDULER_SW_FaultDetected=0xFF;
+#else
 				SCHEDULER_restartFaultyJob((void*) SCHEDULER_BASEADDR, tcbPtr->uxTaskNumber, control->executionId);
+#endif
 				while(1) {}
 #endif
 			}
@@ -1288,12 +1293,16 @@ void xPortSchedulerSignalTaskEnded(u8 uxTaskNumber, u8 executionId) {
 //must be called at the end of each task
 #ifdef config_SOFTWARESCHEDULER_testing
 extern u32 highestPriorityTask;
+extern int activeJobs;
+extern TCB_t* pxCurrentTCB;
 void xPortSchedulerSignalJobEnded() {
 	portCPU_IRQ_DISABLE();
 	//portICCPMR_PRIORITY_MASK_REGISTER = ( uint32_t ) ( configMAX_API_CALL_INTERRUPT_PRIORITY << portPRIORITY_SHIFT );
 	//__asm volatile (	"dsb		\n"
 	//					"isb		\n" ::: "memory" );
 	highestPriorityTask=0xFFFFFFFF;
+	pxCurrentTCB->executionMode=EXECMODE_NORMAL_NEWJOB;
+	activeJobs--;
 	portCPU_IRQ_ENABLE();
 }
 #else
