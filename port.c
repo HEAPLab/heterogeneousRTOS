@@ -1090,8 +1090,7 @@ void FAULTDET_testing_resetStats() {
 
 #endif
 
-//called to test an AOV
-extern u8 SCHEDULER_SW_FaultDetected;
+
 void FAULTDET_testPoint(
 ) {
 
@@ -1498,7 +1497,7 @@ void vPortExitCritical( void )
 /*-----------------------------------------------------------*/
 
 #ifdef config_SOFTWARESCHEDULER_testing
-extern u32 totalTime;
+//extern u32 totalTime;
 void FreeRTOS_Tick_Handler( void )
 {
 		/*
@@ -1529,7 +1528,7 @@ void FreeRTOS_Tick_Handler( void )
 //		if( xTaskIncrementTick() != pdFALSE )
 //		{
 			ulPortYieldRequired = pdTRUE;
-			totalTime++;
+//			totalTime++;
 //		}
 		}
 

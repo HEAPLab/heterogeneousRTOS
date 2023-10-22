@@ -189,10 +189,10 @@ typedef tskTCB TCB_t;
 
 //______________________________________________________
 
-//paper
-#ifdef config_SOFTWARESCHEDULER_testing
-u8 SCHEDULER_SW_FaultDetected=0;
-#endif
+////paper
+//#ifdef config_SOFTWARESCHEDULER_testing
+//u8 SCHEDULER_SW_FaultDetected;
+//#endif
 
 //fedit add
 

@@ -218,6 +218,9 @@ BaseType_t xPortInitScheduler( u32 numberOfTasks,
 
 void newTaskHandler(void *HandlerRef) PRIVILEGED_FUNCTION;
 
+//called to test an AOV
+extern u8 SCHEDULER_SW_FaultDetected;
+
 #ifdef FAULTDETECTOR_EXECINSW
 #include "faultdetector_sw.h"
 #else

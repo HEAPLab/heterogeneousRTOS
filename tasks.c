@@ -54,7 +54,7 @@ u32 tasksDerivativeDeadlines[ configCRITICALITY_LEVELS ][ configMAX_RT_TASKS ];
 u32 tasksDeadlines[ configCRITICALITY_LEVELS ][ configMAX_RT_TASKS ];
 u32 tasksPeriods[ configMAX_RT_TASKS ];
 u32 tasksCriticalityLevels[ configMAX_RT_TASKS ];
-u32 totalTime=0;
+u32 totalTime=-1;
 u32 AbsDeadlines[ configCRITICALITY_LEVELS ][ configMAX_RT_TASKS ];
 u32 AbsActivations [ configMAX_RT_TASKS ];
 u32 jobsExecutionTimes [ configMAX_RT_TASKS ];
@@ -63,6 +63,10 @@ u32 reExecutions [ configMAX_RT_TASKS ];
 u32 jobsExecutionsIds [ configMAX_RT_TASKS ];
 u32 numberOfTasksGlob;
 #endif
+
+//#ifdef config_SOFTWARESCHEDULER_testing
+//u8 SCHEDULER_SW_FaultDetected=0;
+//#endif
 
 /* Lint e9021, e961 and e750 are suppressed as a MISRA exception justified
  * because the MPU ports require MPU_WRAPPERS_INCLUDED_FROM_API_FILE to be defined
@@ -1253,7 +1257,11 @@ u32 numberOfTasksGlob;
 			float val=0;
 			for (int i=0; i<number_of_tasks; i++) {
 				if (tasks[i].pxCriticalityLevel==taskCriticalityLevel && systemCriticalityLevel>=tasks[i].pxCriticalityLevel)
+#ifdef config_SOFTWARESCHEDULER_testing
+					val+=(tasks[i].pxWcet[systemCriticalityLevel])/(tasks[i].pxPeriod);
+#else
 					val+=ceil((configATOMIC_OVERHEAD_TIME_WITH_REEXECUTION+tasks[i].pxWcet[systemCriticalityLevel]+configATOMIC_OVERHEAD_TIME)/configATOMIC_OVERHEAD_TIME_WITH_REEXECUTION)/floor(tasks[i].pxPeriod/configATOMIC_OVERHEAD_TIME_WITH_REEXECUTION);
+#endif
 			}
 			return val;
 		}
@@ -1307,7 +1315,7 @@ u32 numberOfTasksGlob;
 
 		void generate_deadlines(u32 tasksDerivativesDeadlines[configCRITICALITY_LEVELS][configMAX_RT_TASKS], u32 tasksDeadlines[configCRITICALITY_LEVELS][configMAX_RT_TASKS], RTTask_t task, int taskIndex, u32 x, u32 k) {
 			u32 cumulated=0;
-			for (int i=0; i<=task.pxCriticalityLevel; i++) {
+			for (u32 i=0; i<=task.pxCriticalityLevel; i++) {
 				u32 currDeadline;
 				if (task.pxCriticalityLevel<=k) //|| k==-2)
 					currDeadline=task.pxDeadline;
@@ -1317,7 +1325,9 @@ u32 numberOfTasksGlob;
 				//			if (i==0)
 				//				tasksDeadlines[i]=currDeadline;
 				//			else
+#ifndef config_SOFTWARESCHEDULER_testing
 				currDeadline-=1;
+#endif
 				tasksDeadlines[i][taskIndex]=currDeadline;
 				tasksDerivativesDeadlines[i][taskIndex]=currDeadline-cumulated; //save increment wrt base deadline
 				cumulated=currDeadline;
@@ -1354,7 +1364,11 @@ u32 numberOfTasksGlob;
 					tasksWCETs[j][i]=ceil((configATOMIC_OVERHEAD_TIME_WITH_REEXECUTION+prvRTTasksList[i].pxWcet[j]+configATOMIC_OVERHEAD_TIME)/configATOMIC_OVERHEAD_TIME_WITH_REEXECUTION)*configATOMIC_OVERHEAD_TIME_WITH_REEXECUTION;
 				}
 				generate_deadlines(tasksDerivativesDeadlines, tasksDeadlines, prvRTTasksList[i], i, x, k),
+#ifdef config_SOFTWARESCHEDULER_testing
+				tasksPeriods[i]=prvRTTasksList[i].pxPeriod;
+#else
 				tasksPeriods[i]=prvRTTasksList[i].pxPeriod-1;
+#endif
 				criticalityLevels[i]=prvRTTasksList[i].pxCriticalityLevel;
 			}
 
@@ -1440,9 +1454,18 @@ u32 numberOfTasksGlob;
 
 			//		xil_printf(" end ");
 			pxCurrentTCB->jobEnded=1;
-#ifdef config_SOFTWARESCHEDULER_testing
-			xPortSchedulerSignalJobEnded(pxCurrentTCB);
-#else
+//#ifdef config_SOFTWARESCHEDULER_testing
+//			portCPU_IRQ_DISABLE();
+//
+//			highestPriorityTask=0xFFFFFFFF;
+//			pxCurrentTCB->executionMode=EXECMODE_NORMAL_NEWJOB;
+//			activeJobs--;
+//
+//			portCPU_IRQ_ENABLE();
+
+//			xPortSchedulerSignalJobEnded(pxCurrentTCB);
+//#else
+#ifndef config_SOFTWARESCHEDULER_testing
 //			perf_reset_and_start_clock();
 			xPortSchedulerSignalJobEnded(pxCurrentTCB->uxTaskNumber, pxCurrentTCB->executionId);
 //			unsigned int clk=get_clock_L();
@@ -2330,7 +2353,6 @@ u32 numberOfTasksGlob;
 			memset(tasksDeadlines, 0, sizeof(tasksDeadlines));
 			memset(tasksPeriods, 0, sizeof(tasksPeriods));
 			memset(tasksCriticalityLevels, 0, sizeof(tasksCriticalityLevels));
-			numberOfTasksGlob=uxTaskNumber;
 
 			if (prvGenerateSchedulerDataFromTaskSet(pxRTTasksList, uxTaskNumber,
 					configMAX_RT_TASKS,
@@ -2346,6 +2368,9 @@ u32 numberOfTasksGlob;
 			}
 
 #ifdef config_SOFTWARESCHEDULER_testing
+			numberOfTasksGlob=uxTaskNumber;
+			activeJobs=uxTaskNumber;
+
 			memset(jobsExecutionTimes, 0, sizeof(jobsExecutionTimes));
 			memcpy(AbsDeadlines, tasksDeadlines, sizeof(tasksDeadlines));
 			memcpy(AbsActivations, tasksPeriods, sizeof(tasksPeriods));
@@ -3341,7 +3366,9 @@ void SchedulerNewTaskIntrHandl(void)
 }*/
 
 		//paper
-
+		#ifdef config_SOFTWARESCHEDULER_testing
+		u8 SCHEDULER_SW_FaultDetected=0;
+		#endif
 
 		void vTaskSwitchContext(void) {
 			if (uxSchedulerSuspended != (UBaseType_t) pdFALSE) {
@@ -3397,62 +3424,71 @@ void SchedulerNewTaskIntrHandl(void)
 
 #ifdef config_SOFTWARESCHEDULER_testing
 //software scheduler
-
 				totalTime++;
-
-				if (activeJobs==0) {
-					systemCriticality=0;
-				}
+				xil_printf("totalTime: %u ", totalTime);
 
 				if (highestPriorityTask!=0xFFFFFFFF) {
-					//a task is executing
-					jobsExecutionTimes[highestPriorityTask]++;
-					partialExecutionTimes[highestPriorityTask]++;
+					if (tasksTCBPtrs[highestPriorityTask]->jobEnded) {
 
+						activeJobs--;
+						pxCurrentTCB->executionMode=EXECMODE_NORMAL_NEWJOB;
 
-					//read ram to check whether an error has been detected
-					if (SCHEDULER_SW_FaultDetected) {
-						SCHEDULER_SW_FaultDetected=0;
+						for (u32 c=0; c<configCRITICALITY_LEVELS; c++)
+							AbsDeadlines[c][highestPriorityTask]=0xFFFFFFFF;
 
-						tasksTCBPtrs[highestPriorityTask]->executionMode=EXECMODE_CURRJOB_FAULT;
-						reExecutions[highestPriorityTask]++;
-						partialExecutionTimes[highestPriorityTask]=0;
-						pxCurrentTCB->requiresFaultDetection=reExecutions[highestPriorityTask]<tasksCriticalityLevels[highestPriorityTask] ? 0xFF : 0x0;
-						pxCurrentTCB->executionId++;
-					} else if (partialExecutionTimes[highestPriorityTask]>tasksWCETs[0][highestPriorityTask] && reExecutions[highestPriorityTask]<tasksCriticalityLevels[highestPriorityTask] ) {
-						//restore stack or mark and restore stack later
-						pxCurrentTCB->executionMode=EXECMODE_CURRJOB_WCETEXCEEDED;
-						reExecutions[highestPriorityTask]++;
-						partialExecutionTimes[highestPriorityTask]=0;
-						pxCurrentTCB->requiresFaultDetection=reExecutions[highestPriorityTask]<tasksCriticalityLevels[highestPriorityTask] ? 0xFF : 0x0;
-						pxCurrentTCB->executionId++;
-					}
+//						highestPriorityTask=0xFFFFFFFF;
 
-					if (jobsExecutionTimes[highestPriorityTask]>tasksWCETs[systemCriticality][highestPriorityTask]) {
-						//mode switch
-						if (tasksCriticalityLevels[highestPriorityTask]>systemCriticality) {
-							systemCriticality++;
-							for (int t=0; t<numberOfTasksGlob; t++) {
-								if (tasksCriticalityLevels[t]<systemCriticality) {
-									activeJobs--;
+					} else {
 
-									pxCurrentTCB->executionMode=EXECMODE_RESTART;
-									for (int c=0; c<configCRITICALITY_LEVELS; c++)
-										AbsDeadlines[c][t]=0xFFFFFFFF;
-								}
-							}
-						} else {
-							activeJobs--;
+						//a task is executing
+						jobsExecutionTimes[highestPriorityTask]++;
+						partialExecutionTimes[highestPriorityTask]++;
 
-							pxCurrentTCB->executionMode=EXECMODE_RESTART;
-							for (int c=0; c<configCRITICALITY_LEVELS; c++)
-								AbsDeadlines[c][highestPriorityTask]=0xFFFFFFFF;
+						//read ram to check whether an error has been detected
+						if (SCHEDULER_SW_FaultDetected) {
+							SCHEDULER_SW_FaultDetected=0;
+
+							tasksTCBPtrs[highestPriorityTask]->executionMode=EXECMODE_CURRJOB_FAULT;
+							reExecutions[highestPriorityTask]++;
+							partialExecutionTimes[highestPriorityTask]=0;
+							pxCurrentTCB->requiresFaultDetection=reExecutions[highestPriorityTask]<tasksCriticalityLevels[highestPriorityTask] ? 0xFF : 0x0;
+							pxCurrentTCB->executionId++;
+						} else if (partialExecutionTimes[highestPriorityTask]>tasksWCETs[0][highestPriorityTask] && reExecutions[highestPriorityTask]<tasksCriticalityLevels[highestPriorityTask] ) {
+							//restore stack or mark and restore stack later
+							pxCurrentTCB->executionMode=EXECMODE_CURRJOB_WCETEXCEEDED;
+							reExecutions[highestPriorityTask]++;
+							partialExecutionTimes[highestPriorityTask]=0;
+							pxCurrentTCB->requiresFaultDetection=reExecutions[highestPriorityTask]<tasksCriticalityLevels[highestPriorityTask] ? 0xFF : 0x0;
+							pxCurrentTCB->executionId++;
 						}
+
+						if (jobsExecutionTimes[highestPriorityTask]>tasksWCETs[systemCriticality][highestPriorityTask]) {
+							//mode switch
+							if (tasksCriticalityLevels[highestPriorityTask]>systemCriticality) {
+								systemCriticality++;
+								for (u32 t=0; t<numberOfTasksGlob; t++) {
+									if (tasksCriticalityLevels[t]<systemCriticality) {
+										activeJobs--;
+
+										pxCurrentTCB->executionMode=EXECMODE_RESTART;
+										for (u32 c=0; c<configCRITICALITY_LEVELS; c++)
+											AbsDeadlines[c][t]=0xFFFFFFFF;
+									}
+								}
+							} else {
+								activeJobs--;
+
+								pxCurrentTCB->executionMode=EXECMODE_RESTART;
+								for (int c=0; c<configCRITICALITY_LEVELS; c++)
+									AbsDeadlines[c][highestPriorityTask]=0xFFFFFFFF;
+							}
+						}
+
 					}
 				}
 
 				//check activations
-				for (int i=0; i<numberOfTasksGlob; i++) {
+				for (u32 i=0; i<numberOfTasksGlob; i++) {
 					if (AbsActivations[i]==totalTime) {
 						//new activation
 						activeJobs++;
@@ -3467,8 +3503,8 @@ void SchedulerNewTaskIntrHandl(void)
 						tasksTCBPtrs[i]->requiresFaultDetection=tasksCriticalityLevels[i]>0 ? 0xFF : 0x0;
 
 						//update deadlines
-						for (int c=0; c<configCRITICALITY_LEVELS; c++)
-							AbsDeadlines[i][c]=totalTime+tasksDeadlines[c][i];
+						for (int c=0; c<=tasksCriticalityLevels[i]; c++)
+							AbsDeadlines[c][i]=totalTime+tasksDeadlines[c][i];
 					}
 				}
 
@@ -3482,82 +3518,79 @@ void SchedulerNewTaskIntrHandl(void)
 					}
 				}
 
-//				if (highestPriorityTask==0xFFFFFFFF)
-//					systemCriticality=0;
-
-				if (pxCurrentTCB->executionMode==EXECMODE_NORMAL_NEWJOB) {
-					pxCurrentTCB->jobEnded=0;
-					pxCurrentTCB->executionMode=EXECMODE_NORMAL;
-				} else if (pxCurrentTCB->executionMode!=EXECMODE_NORMAL && partialExecutionTimes[highestPriorityTask]==0) {
-						//clean stack
-						#if ( configUSE_MUTEXES == 1 )
-								{
-									pxCurrentTCB->uxBasePriority = pxNewTCB->uxPriority;
-									pxCurrentTCB->uxMutexesHeld = 0;
-								}
-						#endif /* configUSE_MUTEXES */
-
-								// vListInitialiseItem(&(pxNewTCB->xStateListItem));
-								// vListInitialiseItem(&(pxNewTCB->xEventListItem));
-
-								// /* Set the pxNewTCB as a link back from the ListItem_t.  This is so we can get
-								// * back to  the containing TCB from a generic item in a list. */
-								// listSET_LIST_ITEM_OWNER(&(pxNewTCB->xStateListItem), pxNewTCB);
-
-								// /* Event lists are always in priority order. */
-								// listSET_LIST_ITEM_VALUE(&(pxNewTCB->xEventListItem),
-								// ( TickType_t ) configMAX_PRIORITIES - ( TickType_t ) uxPriority); /*lint !e961 MISRA exception as the casts are only redundant for some ports. */
-								// listSET_LIST_ITEM_OWNER(&(pxNewTCB->xEventListItem), pxNewTCB);
-
-						#if ( portCRITICAL_NESTING_IN_TCB == 1 )
-								{
-									pxCurrentTCB->uxCriticalNesting = ( UBaseType_t ) 0U;
-								}
-						#endif /* portCRITICAL_NESTING_IN_TCB */
-
-						#if ( configGENERATE_RUN_TIME_STATS == 1 )
-								{
-									pxCurrentTCB->ulRunTimeCounter = 0UL;
-								}
-						#endif /* configGENERATE_RUN_TIME_STATS */
-
-								//thread not implemented yet
-								// #if ( configNUM_THREAD_LOCAL_STORAGE_POINTERS != 0 )
-								// {
-								// memset( ( void * ) &( pxNewTCB->pvThreadLocalStoragePointers[ 0 ] ), 0x00, sizeof( pxNewTCB->pvThreadLocalStoragePointers ) );
-								// }
-								// #endif
-
-								/* #if ( configUSE_TASK_NOTIFICATIONS == 1 )
-										{
-											memset((void *) &(pxNewTCB->ulNotifiedValue[0]), 0x00,
-													sizeof(pxNewTCB->ulNotifiedValue));
-											memset((void *) &(pxNewTCB->ucNotifyState[0]), 0x00,
-													sizeof(pxNewTCB->ucNotifyState));
-										}
-							#endif */
-
-						#if ( INCLUDE_xTaskAbortDelay == 1 )
-								{
-									pxNewTCB->ucDelayAborted = pdFALSE;
-								}
-						#endif
-
-								/* Initialize the TCB stack to look as if the task was already running,
-								 * but had been interrupted by the scheduler.  The return address is set
-								 * to the start of the task function. Once the stack has been initialised
-								 * the top of stack variable is updated. */
-
-								//pxCurrentTCB->pxTopOfStack=pxCurrentTCB->pxInitTopOfStack;
-								pxCurrentTCB->pxTopOfStack = pxPortInitialiseStack(pxCurrentTCB->pxInitTopOfStack,
-										pxCurrentTCB->pxInitTaskCode, (void*) pxCurrentTCB->pxInitParameters);
-				}
-
 				//switch current running task
 				if (highestPriorityTask==0xFFFFFFFF) {
 					pxCurrentTCB=pxIdleTCB;
 				} else {
 					pxCurrentTCB=tasksTCBPtrs[highestPriorityTask];
+
+					if (pxCurrentTCB->executionMode==EXECMODE_NORMAL_NEWJOB) {
+						pxCurrentTCB->jobEnded=0;
+						pxCurrentTCB->executionMode=EXECMODE_NORMAL;
+					} else if (pxCurrentTCB->executionMode!=EXECMODE_NORMAL && partialExecutionTimes[highestPriorityTask]==0) {
+							//clean stack
+							#if ( configUSE_MUTEXES == 1 )
+									{
+										pxCurrentTCB->uxBasePriority = pxNewTCB->uxPriority;
+										pxCurrentTCB->uxMutexesHeld = 0;
+									}
+							#endif /* configUSE_MUTEXES */
+
+									// vListInitialiseItem(&(pxNewTCB->xStateListItem));
+									// vListInitialiseItem(&(pxNewTCB->xEventListItem));
+
+									// /* Set the pxNewTCB as a link back from the ListItem_t.  This is so we can get
+									// * back to  the containing TCB from a generic item in a list. */
+									// listSET_LIST_ITEM_OWNER(&(pxNewTCB->xStateListItem), pxNewTCB);
+
+									// /* Event lists are always in priority order. */
+									// listSET_LIST_ITEM_VALUE(&(pxNewTCB->xEventListItem),
+									// ( TickType_t ) configMAX_PRIORITIES - ( TickType_t ) uxPriority); /*lint !e961 MISRA exception as the casts are only redundant for some ports. */
+									// listSET_LIST_ITEM_OWNER(&(pxNewTCB->xEventListItem), pxNewTCB);
+
+							#if ( portCRITICAL_NESTING_IN_TCB == 1 )
+									{
+										pxCurrentTCB->uxCriticalNesting = ( UBaseType_t ) 0U;
+									}
+							#endif /* portCRITICAL_NESTING_IN_TCB */
+
+							#if ( configGENERATE_RUN_TIME_STATS == 1 )
+									{
+										pxCurrentTCB->ulRunTimeCounter = 0UL;
+									}
+							#endif /* configGENERATE_RUN_TIME_STATS */
+
+									//thread not implemented yet
+									// #if ( configNUM_THREAD_LOCAL_STORAGE_POINTERS != 0 )
+									// {
+									// memset( ( void * ) &( pxNewTCB->pvThreadLocalStoragePointers[ 0 ] ), 0x00, sizeof( pxNewTCB->pvThreadLocalStoragePointers ) );
+									// }
+									// #endif
+
+									/* #if ( configUSE_TASK_NOTIFICATIONS == 1 )
+											{
+												memset((void *) &(pxNewTCB->ulNotifiedValue[0]), 0x00,
+														sizeof(pxNewTCB->ulNotifiedValue));
+												memset((void *) &(pxNewTCB->ucNotifyState[0]), 0x00,
+														sizeof(pxNewTCB->ucNotifyState));
+											}
+								#endif */
+
+							#if ( INCLUDE_xTaskAbortDelay == 1 )
+									{
+										pxNewTCB->ucDelayAborted = pdFALSE;
+									}
+							#endif
+
+									/* Initialize the TCB stack to look as if the task was already running,
+									 * but had been interrupted by the scheduler.  The return address is set
+									 * to the start of the task function. Once the stack has been initialised
+									 * the top of stack variable is updated. */
+
+									//pxCurrentTCB->pxTopOfStack=pxCurrentTCB->pxInitTopOfStack;
+									pxCurrentTCB->pxTopOfStack = pxPortInitialiseStack(pxCurrentTCB->pxInitTopOfStack,
+											pxCurrentTCB->pxInitTaskCode, (void*) pxCurrentTCB->pxInitParameters);
+					}
 				}
 
 #else
