@@ -506,7 +506,7 @@ trainedData dumpedDataSdBuf __attribute__ ((aligned(32)));
 #endif
 
 int prvRestoreTrainedData(
-#ifndef FAULTDETECTOR_EXECINSW
+#ifndef config_FAULTDETECTOR_SOFTWARE
 		XFaultdetector* FaultDet_InstancePtr,
 #endif
 		XSdPs* SD_InstancePtr) {
@@ -520,7 +520,7 @@ int prvRestoreTrainedData(
 		return XST_FAILURE;
 	}
 
-#ifdef FAULTDETECTOR_EXECINSW
+#ifdef config_FAULTDETECTOR_SOFTWARE
 	FAULTDETECTOR_SW_initRegions(dumpedDataSdBuf.trainedRegions, dumpedDataSdBuf.n_regions);
 #else
 	FAULTDETECTOR_initRegions(FaultDet_InstancePtr, dumpedDataSdBuf.trainedRegions, dumpedDataSdBuf.n_regions);
@@ -532,11 +532,11 @@ int prvRestoreTrainedData(
 void FAULTDET_StopRunMode();
 
 int prvDumpTrainedData(
-#ifndef FAULTDETECTOR_EXECINSW
+#ifndef config_FAULTDETECTOR_SOFTWARE
 		XFaultdetector* FaultDet_InstancePtr,
 #endif
 		XSdPs* SD_InstancePtr) {
-#ifdef FAULTDETECTOR_EXECINSW
+#ifdef config_FAULTDETECTOR_SOFTWARE
 	xil_printf("\nSTARTING TO DUMP DATA\n");
 	FAULTDETECTOR_SW_dumpRegions(dumpedDataSdBuf.trainedRegions, dumpedDataSdBuf.n_regions);
 
@@ -729,7 +729,7 @@ TCB_t** pxCurrentTCB_ptr;
 #define COMMAND_TEST 2
 #define COMMAND_TRAIN 3
 
-#ifndef FAULTDETECTOR_EXECINSW
+#ifndef config_FAULTDETECTOR_SOFTWARE
 XFaultdetector FAULTDETECTOR_InstancePtr;
 XFaultdetector FAULTDET_getInstancePtr() {
 	return FAULTDETECTOR_InstancePtr;
@@ -742,7 +742,7 @@ FAULTDETECTOR_controlStr controlForFaultDet [configMAX_RT_TASKS] __attribute__((
 #define FAULTDETECTOR_DEVICEID XPAR_FAULTDETECTOR_0_DEVICE_ID
 void FAULTDET_dumpRegions() {
 	if (prvDumpTrainedData(
-#ifndef FAULTDETECTOR_EXECINSW
+#ifndef config_FAULTDETECTOR_SOFTWARE
 			&FAULTDETECTOR_InstancePtr,
 #endif
 			&SdInstance)==XST_SUCCESS) {
@@ -762,7 +762,7 @@ volatile void BtnPressHandler(void *CallbackRef)
 
 		xil_printf("\nBEGIN TRAINED DATA DUMP\n");
 		if (prvDumpTrainedData(
-#ifndef FAULTDETECTOR_EXECINSW
+#ifndef config_FAULTDETECTOR_SOFTWARE
 				&FAULTDETECTOR_InstancePtr,
 #endif
 				&SdInstance)==XST_SUCCESS) {
@@ -788,7 +788,7 @@ void FAULTDET_init(u8 restoreTrainDataFromSd, FAULTDETECTOR_region_t trainedRegi
 				GPIO_CHANNEL1);
 	}
 
-#ifndef FAULTDETECTOR_EXECINSW
+#ifndef config_FAULTDETECTOR_SOFTWARE
 	//setup FAULT DETECTOR
 	XFaultdetector_Config* configPtr=XFaultdetector_LookupConfig(FAULTDETECTOR_DEVICEID);
 	XFaultdetector_CfgInitialize(&FAULTDETECTOR_InstancePtr, configPtr);
@@ -797,20 +797,20 @@ void FAULTDET_init(u8 restoreTrainDataFromSd, FAULTDETECTOR_region_t trainedRegi
 	//restore the model loaded from SD card
 	if (sdStatus==XST_SUCCESS && restoreTrainDataFromSd) {
 		prvRestoreTrainedData(
-#ifndef FAULTDETECTOR_EXECINSW
+#ifndef config_FAULTDETECTOR_SOFTWARE
 				&FAULTDETECTOR_InstancePtr,
 #endif
 				&SdInstance);
 	} else {
 		//restore the model passed as function argument
-#ifdef FAULTDETECTOR_EXECINSW
+#ifdef config_FAULTDETECTOR_SOFTWARE
 		FAULTDETECTOR_SW_initRegions(trainedRegions, n_regions);
 #else
 		FAULTDETECTOR_initRegions(&FAULTDETECTOR_InstancePtr, trainedRegions, n_regions);
 #endif
 	}
 }
-#ifndef FAULTDETECTOR_EXECINSW
+#ifndef config_FAULTDETECTOR_SOFTWARE
 //start the fault detector in RUN mode, ready to read test/train point from RAM. Initialisation must be performed first.
 void FAULTDET_start () {
 	FAULTDETECTOR_setModeRun(&FAULTDETECTOR_InstancePtr);
@@ -820,7 +820,7 @@ void FAULTDET_start () {
 
 //replace the previous fault detection model with the one passed as argument, to be used while the fault detector is running
 void FAULTDET_hotUpdateRegions(FAULTDETECTOR_region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS], u8 n_regions[FAULTDETECTOR_MAX_CHECKS]) {
-#ifdef FAULTDETECTOR_EXECINSW
+#ifdef config_FAULTDETECTOR_SOFTWARE
 	FAULTDETECTOR_SW_initRegions(trainedRegions, n_regions);
 #else
 	FAULTDET_StopRunMode();
@@ -829,7 +829,20 @@ void FAULTDET_hotUpdateRegions(FAULTDETECTOR_region_t trainedRegions[FAULTDETECT
 #endif
 }
 
-#ifndef FAULTDETECTOR_EXECINSW
+FAULTDETECTOR_controlStr* FAULTDET_initFaultDetection() {
+	//FAULTDET_resetFault(); //not needed, automatically done by the faultdetector when a command from the same check but with different UniId is received
+#ifndef config_FAULTDETECTOR_SOFTWARE
+#ifndef disableOnlineTrain
+	if ((*pxCurrentTCB_ptr)->executionMode==EXECMODE_CURRJOB_FAULT) {
+		FAULTDET_getLastTestedPoint(&((*pxCurrentTCB_ptr)->lastFault));
+	}
+#endif
+#endif
+	//return &(controlForFaultDet[(*pxCurrentTCB_ptr)->uxTaskNumber-1]);
+	return NULL;
+}
+
+#ifndef config_FAULTDETECTOR_SOFTWARE
 
 //to be called when the fault detector is in RUN_MODE, waiting for new AOV: after processing all the pending AOVs, if they exists, it stops
 void FAULTDET_StopRunMode() {
@@ -849,20 +862,10 @@ void FAULTDET_getLastTestedPoint(FAULTDETECTOR_testpointDescriptorStr* dest) {
 void FAULTDET_resetFault() {
 	FAULTDETECTOR_resetFault(&FAULTDETECTOR_InstancePtr, ((*pxCurrentTCB_ptr)->uxTaskNumber)-1);
 }
-FAULTDETECTOR_controlStr* FAULTDET_initFaultDetection() {
-	//FAULTDET_resetFault(); //not needed, automatically done by the faultdetector when a command from the same check but with different UniId is received
-#ifndef FAULTDETECTOR_EXECINSW
-#ifndef disableOnlineTrain
-	if ((*pxCurrentTCB_ptr)->executionMode==EXECMODE_CURRJOB_FAULT) {
-		FAULTDET_getLastTestedPoint(&((*pxCurrentTCB_ptr)->lastFault));
-	}
-#endif
-#endif
-	return &(controlForFaultDet[(*pxCurrentTCB_ptr)->uxTaskNumber-1]);
-}
+
 #endif
 
-#ifndef FAULTDETECTOR_EXECINSW
+#ifndef config_FAULTDETECTOR_SOFTWARE
 //contains the last test details, FAULTDET_blockIfFaultDetectedInTask will wait until the last test stored in the fault detector matches this one
 u32 lastRequestedTest[configMAX_RT_TASKS];
 
@@ -1105,21 +1108,23 @@ void FAULTDET_testPoint(
 	char faultyCheckpoint=tcbPtr->executionMode==EXECMODE_CURRJOB_FAULT && *((u32*)lastFault)==*((u32*)control);
 
 	if (faultyCheckpoint &&	memcmp(lastFault->AOV, control->AOV, sizeof(control->AOV))==0) {
-#ifdef FAULTDETECTOR_EXECINSW
+#ifdef config_FAULTDETECTOR_SOFTWARE
 		//		xil_printf(" SW FAULT DETECTOR: train");
 		FAULTDETECTOR_SW_train(control);
-#else //!FAULTDETECTOR_EXECINSW
+#else //!config_FAULTDETECTOR_SOFTWARE
 		control->command=COMMAND_TRAIN;
 		while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {}
 
 		FAULTDETECTOR_startCopy(&FAULTDETECTOR_InstancePtr, taskId);
-#endif //FAULTDETECTOR_EXECINSW
+#endif //config_FAULTDETECTOR_SOFTWARE
 	} else
 #endif
+#ifdef config_SCHEDULER_SOFTWARE
 		if (tcbPtr->requiresFaultDetection) {
-			lastRequestedTest[taskId]=*((u32*)control);
-#ifdef FAULTDETECTOR_EXECINSW
 			char fault=FAULTDETECTOR_SW_test(control);
+
+			xil_printf(" fault ");
+
 			if (fault) {
 				tcbPtr->lastFault.uniId=control->uniId;
 				tcbPtr->lastFault.checkId=control->checkId;
@@ -1127,23 +1132,24 @@ void FAULTDET_testPoint(
 				memcpy(&(tcbPtr->lastFault.AOV), &(control->AOV), sizeof(control->AOV));
 
 #ifndef testingCampaign
-#ifdef config_SOFTWARESCHEDULER_testing
 				SCHEDULER_SW_FaultDetected=0xFF;
-#else
-				SCHEDULER_restartFaultyJob((void*) SCHEDULER_BASEADDR, tcbPtr->uxTaskNumber, control->executionId);
-#endif
 				while(1) {}
 #endif
 			}
-#else //!FAULTDETECTOR_EXECINSW
-			control->command=COMMAND_TEST;
-			while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {}
-
-			//			controlForFaultDet=*control;
-			FAULTDETECTOR_startCopy(&FAULTDETECTOR_InstancePtr, taskId);
-#endif //FAULTDETECTOR_EXECINSW
 		}
+#else //!config_FAULTDETECTOR_SOFTWARE
+	if (tcbPtr->requiresFaultDetection) {
+		lastRequestedTest[taskId]=*((u32*)control);
+		control->command=COMMAND_TEST;
+
+		while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {}
+
+		//			controlForFaultDet=*control;
+		FAULTDETECTOR_startCopy(&FAULTDETECTOR_InstancePtr, taskId);
+	#endif
+
 }
+
 
 //called to train on an AOV
 void FAULTDET_trainPoint() {
@@ -1154,7 +1160,7 @@ void FAULTDET_trainPoint() {
 	control->taskId=taskId;
 	control->executionId=tcbPtr->executionId;
 
-#ifdef FAULTDETECTOR_EXECINSW
+#ifdef config_FAULTDETECTOR_SOFTWARE
 
 	char fault=FAULTDETECTOR_SW_test(control);
 	if (fault) {
@@ -1290,7 +1296,7 @@ void xPortSchedulerSignalTaskEnded(u8 uxTaskNumber, u8 executionId) {
 }
 
 //must be called at the end of each task
-#ifdef config_SOFTWARESCHEDULER_testing
+#ifdef config_SCHEDULER_SOFTWARE
 extern u32 highestPriorityTask;
 extern int activeJobs;
 extern TCB_t* pxCurrentTCB;
@@ -1415,7 +1421,7 @@ BaseType_t xPortStartScheduler( void )
 
 			/* Start the timer that generates the tick ISR. */
 			//fedit remove: DISABLED TICKS INTERRUPT initialisation at scheduler startup which triggers periodic scheduler routine - in port.c since architecture specific: interrupts for context switch will be generated by FPGA, we don't want CPU tick interrupt
-#ifdef config_SOFTWARESCHEDULER_testing
+#ifdef config_SCHEDULER_SOFTWARE
 			configSETUP_TICK_INTERRUPT();
 #else
 			/* Start the scheduler on hardware */
@@ -1496,7 +1502,7 @@ void vPortExitCritical( void )
 }
 /*-----------------------------------------------------------*/
 
-#ifdef config_SOFTWARESCHEDULER_testing
+#ifdef config_SCHEDULER_SOFTWARE
 //extern u32 totalTime;
 void FreeRTOS_Tick_Handler( void )
 {
