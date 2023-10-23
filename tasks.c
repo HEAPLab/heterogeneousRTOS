@@ -3433,7 +3433,7 @@ void SchedulerNewTaskIntrHandl(void)
 #ifdef config_SCHEDULER_SOFTWARE
 //software scheduler
 				totalTime++;
-				xil_printf("totalTime: %u ", totalTime);
+//				xil_printf("totalTime: %u \n", totalTime);
 
 				if (activeJobs==0) {
 					systemCriticality=0;

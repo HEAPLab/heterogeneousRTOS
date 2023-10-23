@@ -1,5 +1,3 @@
-//#define config_FAULTDETECTOR_SOFTWARE
-#define testingCampaign
 //#define detectionPerformanceMeasurement
 
 /*

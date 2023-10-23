@@ -1120,7 +1120,7 @@ void FAULTDET_testPoint(
 		if (pxCurrentTCB->requiresFaultDetection) {
 			char fault=FAULTDETECTOR_SW_test(control);
 
-			xil_printf(" fault ");
+//			xil_printf(" fault : %u", fault);
 
 			if (fault) {
 				pxCurrentTCB->lastFault.uniId=control->uniId;
