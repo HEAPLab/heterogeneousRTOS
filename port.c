@@ -719,7 +719,7 @@ typedef struct __attribute__((__packed__)) {
 #define NEWTASKDESCRPTR 0x10000000
 
 //pointer to pxCurrentTCB_ptr in task.h
-TCB_t** pxCurrentTCB_ptr;
+extern PRIVILEGED_DATA TCB_t * volatile pxCurrentTCB;
 
 #define CPU_BASEADDR		XPAR_SCUGIC_CPU_BASEADDR
 #define FAULTDETECTOR_BASEADDR XPAR_RUN_0_S_AXI_CONTROL_BASEADDR
@@ -833,13 +833,12 @@ FAULTDETECTOR_controlStr* FAULTDET_initFaultDetection() {
 	//FAULTDET_resetFault(); //not needed, automatically done by the faultdetector when a command from the same check but with different UniId is received
 #ifndef config_FAULTDETECTOR_SOFTWARE
 #ifndef disableOnlineTrain
-	if ((*pxCurrentTCB_ptr)->executionMode==EXECMODE_CURRJOB_FAULT) {
-		FAULTDET_getLastTestedPoint(&((*pxCurrentTCB_ptr)->lastFault));
+	if (pxCurrentTCB->executionMode==EXECMODE_CURRJOB_FAULT) {
+		FAULTDET_getLastTestedPoint(&(pxCurrentTCB->lastFault));
 	}
 #endif
 #endif
-	//return &(controlForFaultDet[(*pxCurrentTCB_ptr)->uxTaskNumber-1]);
-	return NULL;
+	return &(controlForFaultDet[pxCurrentTCB->uxTaskNumber-1]);
 }
 
 #ifndef config_FAULTDETECTOR_SOFTWARE
@@ -856,11 +855,11 @@ void FAULTDET_StopRunMode() {
 //wrapper around FAULTDETECTOR_getLastTestedPoint, to get the last testpoint that has been processed information
 void FAULTDET_getLastTestedPoint(FAULTDETECTOR_testpointDescriptorStr* dest) {
 
-	FAULTDETECTOR_getLastTestedPoint(&FAULTDETECTOR_InstancePtr, ((*pxCurrentTCB_ptr)->uxTaskNumber)-1, dest);
+	FAULTDETECTOR_getLastTestedPoint(&FAULTDETECTOR_InstancePtr, (pxCurrentTCB->uxTaskNumber)-1, dest);
 }
 //to manually reset a fault in a task in the fault detector, it is never used because the fault detector automatically resets the fault when a AOV with a different executionId is submitted
 void FAULTDET_resetFault() {
-	FAULTDETECTOR_resetFault(&FAULTDETECTOR_InstancePtr, ((*pxCurrentTCB_ptr)->uxTaskNumber)-1);
+	FAULTDETECTOR_resetFault(&FAULTDETECTOR_InstancePtr, (pxCurrentTCB->uxTaskNumber)-1);
 }
 
 #endif
@@ -871,9 +870,9 @@ u32 lastRequestedTest[configMAX_RT_TASKS];
 
 //waits until the last test stored in the fault detector matches the last test requested
 void FAULTDET_blockIfFaultDetectedInTask () {
-	if ((*pxCurrentTCB_ptr)->requiresFaultDetection) {
+	if (pxCurrentTCB->requiresFaultDetection) {
 		//		if (instance->testedOnce) {
-		u8 taskId=((*pxCurrentTCB_ptr)->uxTaskNumber)-1;
+		u8 taskId=(pxCurrentTCB->uxTaskNumber)-1;
 
 		FAULTDETECTOR_testpointShortDescriptorStr out;
 		do {
@@ -1096,16 +1095,14 @@ void FAULTDET_testing_resetStats() {
 
 void FAULTDET_testPoint(
 ) {
-
-	TCB_t* tcbPtr=*pxCurrentTCB_ptr;
-	u8 taskId=tcbPtr->uxTaskNumber-1;
+	u8 taskId=pxCurrentTCB->uxTaskNumber-1;
 	FAULTDETECTOR_controlStr* control=&(controlForFaultDet[taskId]);
 	control->taskId=taskId;
-	control->executionId=tcbPtr->executionId;
+	control->executionId=pxCurrentTCB->executionId;
 
 #ifndef disableOnlineTrain
-	FAULTDETECTOR_testpointDescriptorStr* lastFault=&(tcbPtr->lastFault);
-	char faultyCheckpoint=tcbPtr->executionMode==EXECMODE_CURRJOB_FAULT && *((u32*)lastFault)==*((u32*)control);
+	FAULTDETECTOR_testpointDescriptorStr* lastFault=&(pxCurrentTCB->lastFault);
+	char faultyCheckpoint=pxCurrentTCB->executionMode==EXECMODE_CURRJOB_FAULT && *((u32*)lastFault)==*((u32*)control);
 
 	if (faultyCheckpoint &&	memcmp(lastFault->AOV, control->AOV, sizeof(control->AOV))==0) {
 #ifdef config_FAULTDETECTOR_SOFTWARE
@@ -1120,16 +1117,16 @@ void FAULTDET_testPoint(
 	} else
 #endif
 #ifdef config_SCHEDULER_SOFTWARE
-		if (tcbPtr->requiresFaultDetection) {
+		if (pxCurrentTCB->requiresFaultDetection) {
 			char fault=FAULTDETECTOR_SW_test(control);
 
 			xil_printf(" fault ");
 
 			if (fault) {
-				tcbPtr->lastFault.uniId=control->uniId;
-				tcbPtr->lastFault.checkId=control->checkId;
-				tcbPtr->lastFault.executionId=control->executionId;
-				memcpy(&(tcbPtr->lastFault.AOV), &(control->AOV), sizeof(control->AOV));
+				pxCurrentTCB->lastFault.uniId=control->uniId;
+				pxCurrentTCB->lastFault.checkId=control->checkId;
+				pxCurrentTCB->lastFault.executionId=control->executionId;
+				memcpy(&(pxCurrentTCB->lastFault.AOV), &(control->AOV), sizeof(control->AOV));
 
 #ifndef testingCampaign
 				SCHEDULER_SW_FaultDetected=0xFF;
@@ -1138,7 +1135,7 @@ void FAULTDET_testPoint(
 			}
 		}
 #else //!config_FAULTDETECTOR_SOFTWARE
-	if (tcbPtr->requiresFaultDetection) {
+	if (pxCurrentTCB->requiresFaultDetection) {
 		lastRequestedTest[taskId]=*((u32*)control);
 		control->command=COMMAND_TEST;
 
@@ -1153,12 +1150,11 @@ void FAULTDET_testPoint(
 
 //called to train on an AOV
 void FAULTDET_trainPoint() {
-	TCB_t* tcbPtr=*pxCurrentTCB_ptr;
-	u8 taskId=tcbPtr->uxTaskNumber-1;
+	u8 taskId=pxCurrentTCB->uxTaskNumber-1;
 
 	FAULTDETECTOR_controlStr* control=&(controlForFaultDet[taskId]);
 	control->taskId=taskId;
-	control->executionId=tcbPtr->executionId;
+	control->executionId=pxCurrentTCB->executionId;
 
 #ifdef config_FAULTDETECTOR_SOFTWARE
 
@@ -1194,11 +1190,11 @@ void FAULTDET_trainPoint() {
 void xPortScheduleNewTask(void)
 {
 	newTaskDescrStr* newtaskdesc=(newTaskDescrStr*) NEWTASKDESCRPTR;
-
 	TCB_t* pxNewTCB=newtaskdesc->pxNextTcb;
 #ifdef verboseScheduler
 	xil_printf("| NEW, %X ", pxNewTCB);
 #endif
+
 	if (newtaskdesc->executionMode==EXECMODE_NORMAL_NEWJOB) {
 		pxNewTCB->jobEnded=0;
 	}
@@ -1277,7 +1273,7 @@ void xPortScheduleNewTask(void)
 				pxNewTCB->pxInitTaskCode, (void*) pxNewTCB->pxInitParameters);
 
 	}
-	*pxCurrentTCB_ptr = pxNewTCB;
+	pxCurrentTCB = pxNewTCB;
 	SCHEDULER_ACKInterrupt((void *) SCHEDULER_BASEADDR);
 }
 
@@ -1299,7 +1295,6 @@ void xPortSchedulerSignalTaskEnded(u8 uxTaskNumber, u8 executionId) {
 #ifdef config_SCHEDULER_SOFTWARE
 extern u32 highestPriorityTask;
 extern int activeJobs;
-extern TCB_t* pxCurrentTCB;
 void xPortSchedulerSignalJobEnded() {
 	portCPU_IRQ_DISABLE();
 	//portICCPMR_PRIORITY_MASK_REGISTER = ( uint32_t ) ( configMAX_API_CALL_INTERRUPT_PRIORITY << portPRIORITY_SHIFT );
@@ -1323,11 +1318,10 @@ BaseType_t xPortInitScheduler( u32 numberOfTasks,
 		void* tasksDeadlinesDerivative,
 		void* tasksDeadlines,
 		void* tasksPeriods,
-		void* tasksCriticalityLevels,
-		u32* pxCurrentTCBPtr )
+		void* tasksCriticalityLevels
+		)
 {
 	//will be used by functions in port.c which need to access pxCurrentTCBPtr
-	pxCurrentTCB_ptr=(TCB_t **)pxCurrentTCBPtr;
 	//	int status;
 
 	Xil_DisableMMU();

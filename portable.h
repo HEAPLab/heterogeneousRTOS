@@ -213,8 +213,8 @@ BaseType_t xPortInitScheduler( u32 numberOfTasks,
 		void* tasksDeadlinesDerivative,
 		void* tasksDeadlines,
 		void* tasksPeriods,
-		void* tasksCriticalityLevels,
-		u32* pxCurrentTCBPtr ) PRIVILEGED_FUNCTION;
+		void* tasksCriticalityLevels
+		) PRIVILEGED_FUNCTION;
 
 void newTaskHandler(void *HandlerRef) PRIVILEGED_FUNCTION;
 

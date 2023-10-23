@@ -2388,7 +2388,7 @@ u32 numberOfTasksGlob;
 					(void *) tasksDeadlines,
 					(void *) tasksPeriods,
 					(void *) tasksCriticalityLevels,
-					(u32*) &pxCurrentTCB) == pdPASS) {
+					) == pdPASS) {
 #endif
 				/* Add the idle task at the lowest priority. */
 #if ( configSUPPORT_STATIC_ALLOCATION == 1 )
