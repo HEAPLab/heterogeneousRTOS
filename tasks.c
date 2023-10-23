@@ -1376,6 +1376,8 @@ u32 numberOfTasksGlob;
 				tasksPeriods[i]=prvRTTasksList[i].pxPeriod-1;
 #endif
 				criticalityLevels[i]=prvRTTasksList[i].pxCriticalityLevel;
+				prvRTTasksList[i].taskTCB->requiresFaultDetection=prvRTTasksList[i].pxCriticalityLevel>0 ? 0xFF : 0x0;
+				prvRTTasksList[i].taskTCB->executionMode=EXECMODE_NORMAL;
 			}
 
 
