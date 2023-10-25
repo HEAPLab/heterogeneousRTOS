@@ -1143,7 +1143,8 @@ void FAULTDET_testPoint(
 
 		//			controlForFaultDet=*control;
 		FAULTDETECTOR_startCopy(&FAULTDETECTOR_InstancePtr, taskId);
-	#endif
+	}
+#endif
 
 }
 

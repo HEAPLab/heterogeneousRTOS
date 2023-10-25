@@ -2389,7 +2389,7 @@ u32 numberOfTasksGlob;
 					(void *) tasksDerivativeDeadlines,
 					(void *) tasksDeadlines,
 					(void *) tasksPeriods,
-					(void *) tasksCriticalityLevels,
+					(void *) tasksCriticalityLevels
 					) == pdPASS) {
 #endif
 				/* Add the idle task at the lowest priority. */
