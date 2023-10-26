@@ -190,7 +190,7 @@ void xPortSchedulerResumeTask(u8 uxTaskNumber, u8 executionId) PRIVILEGED_FUNCTI
 
 void xPortSchedulerSignalTaskSuspended(u8 uxTaskNumber, u8 executionId) PRIVILEGED_FUNCTION;
 
-#ifdef config_SCHEDULER_SOFTWARE
+#ifdef configSCHEDULER_SOFTWARE
 void xPortSchedulerSignalJobEnded() PRIVILEGED_FUNCTION;
 #else
 void xPortSchedulerSignalJobEnded(u8 uxTaskNumber, u8 executionId) PRIVILEGED_FUNCTION;
@@ -219,7 +219,7 @@ void newTaskHandler(void *HandlerRef) PRIVILEGED_FUNCTION;
 //called to test an AOV
 extern u8 SCHEDULER_SW_FaultDetected;
 
-#ifdef config_FAULTDETECTOR_SOFTWARE
+#ifdef configFAULTDETECTOR_SOFTWARE
 #include "faultdetector_sw.h"
 #else
 #include "xfaultdetector.h"

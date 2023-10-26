@@ -43,7 +43,7 @@
 #include "stack_macros.h"
 
 //paper
-#ifdef config_SCHEDULER_SOFTWARE
+#ifdef configSCHEDULER_SOFTWARE
 int activeJobs=0;
 u32 highestPriorityTask=0xFFFFFFFF;
 u32 highestPriorityTaskDeadline=0xFFFFFFFF;
@@ -64,7 +64,7 @@ u32 jobsExecutionsIds [ configMAX_RT_TASKS ];
 u32 numberOfTasksGlob;
 #endif
 
-//#ifdef config_SCHEDULER_SOFTWARE
+//#ifdef configSCHEDULER_SOFTWARE
 //u8 SCHEDULER_SW_FaultDetected=0;
 //#endif
 
@@ -1257,7 +1257,7 @@ u32 numberOfTasksGlob;
 			float val=0;
 			for (int i=0; i<number_of_tasks; i++) {
 				if (tasks[i].pxCriticalityLevel==taskCriticalityLevel && systemCriticalityLevel>=tasks[i].pxCriticalityLevel)
-#ifdef config_SCHEDULER_SOFTWARE
+#ifdef configSCHEDULER_SOFTWARE
 //when the correct overhead values are set in the configs (not zero), this row must be used
 //					val+=ceil((tasks[i].pxWcet[systemCriticalityLevel]+(tasks[i].pxWcet[systemCriticalityLevel]-1)*configATOMIC_SOFTWARE_SCHEDULER_OVERHEAD_IN_SOFTWARE_SCHEDULER_TICKS+configATOMIC_SOFTWARE_SCHEDULER_OVERHEAD_WITH_REEXECUTION_IN_SOFTWARE_SCHEDULER_TICKS)/configATOMIC_SOFTWARE_SCHEDULER_OVERHEAD_WITH_REEXECUTION_IN_SOFTWARE_SCHEDULER_TICKS)/floor(tasks[i].pxPeriod/configATOMIC_SOFTWARE_SCHEDULER_OVERHEAD_WITH_REEXECUTION_IN_SOFTWARE_SCHEDULER_TICKS);
 					val+=(tasks[i].pxWcet[systemCriticalityLevel]+(tasks[i].pxWcet[systemCriticalityLevel]-1)*configATOMIC_SOFTWARE_SCHEDULER_OVERHEAD_IN_SOFTWARE_SCHEDULER_TICKS+configATOMIC_SOFTWARE_SCHEDULER_OVERHEAD_WITH_REEXECUTION_IN_SOFTWARE_SCHEDULER_TICKS)/(tasks[i].pxPeriod);
@@ -1327,7 +1327,7 @@ u32 numberOfTasksGlob;
 				//			if (i==0)
 				//				tasksDeadlines[i]=currDeadline;
 				//			else
-#ifndef config_SCHEDULER_SOFTWARE
+#ifndef configSCHEDULER_SOFTWARE
 				currDeadline-=1;
 #endif
 				tasksDeadlines[i][taskIndex]=currDeadline;
@@ -1363,14 +1363,14 @@ u32 numberOfTasksGlob;
 			for (int i = 0; i < numberOfTasks; i++) {
 				tasksTCBPtrs[i]=prvRTTasksList[i].taskTCB;
 				for (int j=0; j<configCRITICALITY_LEVELS; j++) {
-#ifdef config_SCHEDULER_SOFTWARE
+#ifdef configSCHEDULER_SOFTWARE
 					tasksWCETs[j][i]=prvRTTasksList[i].pxWcet[j];
 #else
 					tasksWCETs[j][i]=ceil((configATOMIC_OVERHEAD_WITH_REEXECUTION_IN_FPGA_SCHEDULER_TICKS+prvRTTasksList[i].pxWcet[j]+configATOMIC_OVERHEAD_IN_FPGA_SCHEDULER_TICKS)/configATOMIC_OVERHEAD_WITH_REEXECUTION_IN_FPGA_SCHEDULER_TICKS)*configATOMIC_OVERHEAD_WITH_REEXECUTION_IN_FPGA_SCHEDULER_TICKS;
 #endif
 				}
 				generate_deadlines(tasksDerivativesDeadlines, tasksDeadlines, prvRTTasksList[i], i, x, k),
-#ifdef config_SCHEDULER_SOFTWARE
+#ifdef configSCHEDULER_SOFTWARE
 				tasksPeriods[i]=prvRTTasksList[i].pxPeriod;
 #else
 				tasksPeriods[i]=prvRTTasksList[i].pxPeriod-1;
@@ -1462,7 +1462,7 @@ u32 numberOfTasksGlob;
 
 			//		xil_printf(" end ");
 			pxCurrentTCB->jobEnded=1;
-//#ifdef config_SCHEDULER_SOFTWARE
+//#ifdef configSCHEDULER_SOFTWARE
 //			portCPU_IRQ_DISABLE();
 //
 //			highestPriorityTask=0xFFFFFFFF;
@@ -1473,7 +1473,7 @@ u32 numberOfTasksGlob;
 
 //			xPortSchedulerSignalJobEnded(pxCurrentTCB);
 //#else
-#ifndef config_SCHEDULER_SOFTWARE
+#ifndef configSCHEDULER_SOFTWARE
 //			perf_reset_and_start_clock();
 			xPortSchedulerSignalJobEnded(pxCurrentTCB->uxTaskNumber, pxCurrentTCB->executionId);
 //			unsigned int clk=get_clock_L();
@@ -2337,7 +2337,7 @@ u32 numberOfTasksGlob;
 //initialises and starts the fault detector in FPGA
 		void vTaskStartFaultDetector(u8 restoreTrainDataFromSd, FAULTDETECTOR_region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS], u8 n_regions[FAULTDETECTOR_MAX_CHECKS]) {
 			FAULTDET_init(restoreTrainDataFromSd, trainedRegions, n_regions);
-#ifndef config_FAULTDETECTOR_SOFTWARE
+#ifndef configFAULTDETECTOR_SOFTWARE
 			FAULTDET_start();
 #endif
 		}
@@ -2346,7 +2346,7 @@ u32 numberOfTasksGlob;
 		void vTaskStartScheduler() {
 			BaseType_t xReturn;
 
-#ifndef config_SCHEDULER_SOFTWARE
+#ifndef configSCHEDULER_SOFTWARE
 			u32 tasksTCBPtrs[ configMAX_RT_TASKS ];
 			u32 tasksWCETs[ configCRITICALITY_LEVELS ][ configMAX_RT_TASKS ];
 			u32 tasksDerivativeDeadlines[ configCRITICALITY_LEVELS ][ configMAX_RT_TASKS ];
@@ -2375,7 +2375,7 @@ u32 numberOfTasksGlob;
 				return;
 			}
 
-#ifdef config_SCHEDULER_SOFTWARE
+#ifdef configSCHEDULER_SOFTWARE
 			numberOfTasksGlob=uxTaskNumber;
 			activeJobs=uxTaskNumber;
 
@@ -2508,7 +2508,7 @@ u32 numberOfTasksGlob;
 					 * or the timer task. */
 					configASSERT(xReturn != errCOULD_NOT_ALLOCATE_REQUIRED_MEMORY);
 				}
-#ifndef config_SCHEDULER_SOFTWARE
+#ifndef configSCHEDULER_SOFTWARE
 			} else {
 				/* Error in initialising the scheduler */
 				configASSERT(FALSE);
@@ -3374,7 +3374,7 @@ void SchedulerNewTaskIntrHandl(void)
 }*/
 
 		//paper
-		#ifdef config_SCHEDULER_SOFTWARE
+		#ifdef configSCHEDULER_SOFTWARE
 		u8 SCHEDULER_SW_FaultDetected=0;
 		#endif
 
@@ -3430,7 +3430,7 @@ void SchedulerNewTaskIntrHandl(void)
 				// * optimised asm code. */
 				//taskSELECT_HIGHEST_PRIORITY_TASK()
 
-#ifdef config_SCHEDULER_SOFTWARE
+#ifdef configSCHEDULER_SOFTWARE
 //software scheduler
 				totalTime++;
 //				xil_printf("totalTime: %u \n", totalTime);

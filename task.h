@@ -190,7 +190,7 @@ typedef tskTCB TCB_t;
 //______________________________________________________
 
 ////paper
-//#ifdef config_SCHEDULER_SOFTWARE
+//#ifdef configSCHEDULER_SOFTWARE
 //u8 SCHEDULER_SW_FaultDetected;
 //#endif
 

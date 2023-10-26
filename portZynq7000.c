@@ -82,7 +82,7 @@ const uint8_t ucRisingEdge = 3;
 	XScuGic_SetPriorityTriggerType( &xInterruptController, XPAR_SCUTIMER_INTR, portLOWEST_USABLE_INTERRUPT_PRIORITY << portPRIORITY_SHIFT, ucRisingEdge );
 
 	/* Install the FreeRTOS tick handler. */
-#ifdef config_SCHEDULER_SOFTWARE
+#ifdef configSCHEDULER_SOFTWARE
 	xStatus = XScuGic_Connect( &xInterruptController, XPAR_SCUTIMER_INTR, (Xil_ExceptionHandler) FreeRTOS_Tick_Handler, ( void * ) &xTimer );
 #endif
 	//paper

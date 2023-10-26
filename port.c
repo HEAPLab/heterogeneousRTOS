@@ -178,7 +178,7 @@ extern void vPortHandleNewTask( void );
  */
 static void prvTaskExitError( void );
 
-/* 
+/*
  * The instance of the interrupt controller used by this port.  This is required
  * by the Xilinx library API functions.
  */
@@ -403,7 +403,7 @@ static int32_t prvInitialiseInterruptController( void )
 
 	/* Initialize the interrupt controller driver. */
 	pxGICConfig = XScuGic_LookupConfig( XPAR_SCUGIC_SINGLE_DEVICE_ID );
-	xStatus = XScuGic_CfgInitialize( &xInterruptController, pxGICConfig, pxGICConfig->CpuBaseAddress );	
+	xStatus = XScuGic_CfgInitialize( &xInterruptController, pxGICConfig, pxGICConfig->CpuBaseAddress );
 	if( xStatus == XST_SUCCESS )
 	{
 		xStatus = pdPASS;
@@ -428,7 +428,7 @@ void vPortEnableInterrupt( uint8_t ucInterruptID )
 	if( lReturn == pdPASS )
 	{
 		XScuGic_Enable( &xInterruptController, ucInterruptID );
-	}	
+	}
 	configASSERT( lReturn );
 }
 /*-----------------------------------------------------------*/
@@ -506,7 +506,7 @@ trainedData dumpedDataSdBuf __attribute__ ((aligned(32)));
 #endif
 
 int prvRestoreTrainedData(
-#ifndef config_FAULTDETECTOR_SOFTWARE
+#ifndef configFAULTDETECTOR_SOFTWARE
 		XFaultdetector* FaultDet_InstancePtr,
 #endif
 		XSdPs* SD_InstancePtr) {
@@ -520,7 +520,7 @@ int prvRestoreTrainedData(
 		return XST_FAILURE;
 	}
 
-#ifdef config_FAULTDETECTOR_SOFTWARE
+#ifdef configFAULTDETECTOR_SOFTWARE
 	FAULTDETECTOR_SW_initRegions(dumpedDataSdBuf.trainedRegions, dumpedDataSdBuf.n_regions);
 #else
 	FAULTDETECTOR_initRegions(FaultDet_InstancePtr, dumpedDataSdBuf.trainedRegions, dumpedDataSdBuf.n_regions);
@@ -532,11 +532,11 @@ int prvRestoreTrainedData(
 void FAULTDET_StopRunMode();
 
 int prvDumpTrainedData(
-#ifndef config_FAULTDETECTOR_SOFTWARE
+#ifndef configFAULTDETECTOR_SOFTWARE
 		XFaultdetector* FaultDet_InstancePtr,
 #endif
 		XSdPs* SD_InstancePtr) {
-#ifdef config_FAULTDETECTOR_SOFTWARE
+#ifdef configFAULTDETECTOR_SOFTWARE
 	xil_printf("\nSTARTING TO DUMP DATA\n");
 	FAULTDETECTOR_SW_dumpRegions(dumpedDataSdBuf.trainedRegions, dumpedDataSdBuf.n_regions);
 
@@ -729,7 +729,7 @@ extern PRIVILEGED_DATA TCB_t * volatile pxCurrentTCB;
 #define COMMAND_TEST 2
 #define COMMAND_TRAIN 3
 
-#ifndef config_FAULTDETECTOR_SOFTWARE
+#ifndef configFAULTDETECTOR_SOFTWARE
 XFaultdetector FAULTDETECTOR_InstancePtr;
 XFaultdetector FAULTDET_getInstancePtr() {
 	return FAULTDETECTOR_InstancePtr;
@@ -742,7 +742,7 @@ FAULTDETECTOR_controlStr controlForFaultDet [configMAX_RT_TASKS] __attribute__((
 #define FAULTDETECTOR_DEVICEID XPAR_FAULTDETECTOR_0_DEVICE_ID
 void FAULTDET_dumpRegions() {
 	if (prvDumpTrainedData(
-#ifndef config_FAULTDETECTOR_SOFTWARE
+#ifndef configFAULTDETECTOR_SOFTWARE
 			&FAULTDETECTOR_InstancePtr,
 #endif
 			&SdInstance)==XST_SUCCESS) {
@@ -762,7 +762,7 @@ volatile void BtnPressHandler(void *CallbackRef)
 
 		xil_printf("\nBEGIN TRAINED DATA DUMP\n");
 		if (prvDumpTrainedData(
-#ifndef config_FAULTDETECTOR_SOFTWARE
+#ifndef configFAULTDETECTOR_SOFTWARE
 				&FAULTDETECTOR_InstancePtr,
 #endif
 				&SdInstance)==XST_SUCCESS) {
@@ -788,7 +788,7 @@ void FAULTDET_init(u8 restoreTrainDataFromSd, FAULTDETECTOR_region_t trainedRegi
 				GPIO_CHANNEL1);
 	}
 
-#ifndef config_FAULTDETECTOR_SOFTWARE
+#ifndef configFAULTDETECTOR_SOFTWARE
 	//setup FAULT DETECTOR
 	XFaultdetector_Config* configPtr=XFaultdetector_LookupConfig(FAULTDETECTOR_DEVICEID);
 	XFaultdetector_CfgInitialize(&FAULTDETECTOR_InstancePtr, configPtr);
@@ -797,20 +797,20 @@ void FAULTDET_init(u8 restoreTrainDataFromSd, FAULTDETECTOR_region_t trainedRegi
 	//restore the model loaded from SD card
 	if (sdStatus==XST_SUCCESS && restoreTrainDataFromSd) {
 		prvRestoreTrainedData(
-#ifndef config_FAULTDETECTOR_SOFTWARE
+#ifndef configFAULTDETECTOR_SOFTWARE
 				&FAULTDETECTOR_InstancePtr,
 #endif
 				&SdInstance);
 	} else {
 		//restore the model passed as function argument
-#ifdef config_FAULTDETECTOR_SOFTWARE
+#ifdef configFAULTDETECTOR_SOFTWARE
 		FAULTDETECTOR_SW_initRegions(trainedRegions, n_regions);
 #else
 		FAULTDETECTOR_initRegions(&FAULTDETECTOR_InstancePtr, trainedRegions, n_regions);
 #endif
 	}
 }
-#ifndef config_FAULTDETECTOR_SOFTWARE
+#ifndef configFAULTDETECTOR_SOFTWARE
 //start the fault detector in RUN mode, ready to read test/train point from RAM. Initialisation must be performed first.
 void FAULTDET_start () {
 	FAULTDETECTOR_setModeRun(&FAULTDETECTOR_InstancePtr);
@@ -820,7 +820,7 @@ void FAULTDET_start () {
 
 //replace the previous fault detection model with the one passed as argument, to be used while the fault detector is running
 void FAULTDET_hotUpdateRegions(FAULTDETECTOR_region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS], u8 n_regions[FAULTDETECTOR_MAX_CHECKS]) {
-#ifdef config_FAULTDETECTOR_SOFTWARE
+#ifdef configFAULTDETECTOR_SOFTWARE
 	FAULTDETECTOR_SW_initRegions(trainedRegions, n_regions);
 #else
 	FAULTDET_StopRunMode();
@@ -831,7 +831,7 @@ void FAULTDET_hotUpdateRegions(FAULTDETECTOR_region_t trainedRegions[FAULTDETECT
 
 FAULTDETECTOR_controlStr* FAULTDET_initFaultDetection() {
 	//FAULTDET_resetFault(); //not needed, automatically done by the faultdetector when a command from the same check but with different UniId is received
-#ifndef config_FAULTDETECTOR_SOFTWARE
+#ifndef configFAULTDETECTOR_SOFTWARE
 #ifndef disableOnlineTrain
 	if (pxCurrentTCB->executionMode==EXECMODE_CURRJOB_FAULT) {
 		FAULTDET_getLastTestedPoint(&(pxCurrentTCB->lastFault));
@@ -841,7 +841,7 @@ FAULTDETECTOR_controlStr* FAULTDET_initFaultDetection() {
 	return &(controlForFaultDet[pxCurrentTCB->uxTaskNumber-1]);
 }
 
-#ifndef config_FAULTDETECTOR_SOFTWARE
+#ifndef configFAULTDETECTOR_SOFTWARE
 
 //to be called when the fault detector is in RUN_MODE, waiting for new AOV: after processing all the pending AOVs, if they exists, it stops
 void FAULTDET_StopRunMode() {
@@ -864,7 +864,7 @@ void FAULTDET_resetFault() {
 
 #endif
 
-#ifndef config_FAULTDETECTOR_SOFTWARE
+#ifndef configFAULTDETECTOR_SOFTWARE
 //contains the last test details, FAULTDET_blockIfFaultDetectedInTask will wait until the last test stored in the fault detector matches this one
 u32 lastRequestedTest[configMAX_RT_TASKS];
 
@@ -1105,19 +1105,19 @@ void FAULTDET_testPoint(
 	char faultyCheckpoint=pxCurrentTCB->executionMode==EXECMODE_CURRJOB_FAULT && *((u32*)lastFault)==*((u32*)control);
 
 	if (faultyCheckpoint &&	memcmp(lastFault->AOV, control->AOV, sizeof(control->AOV))==0) {
-#ifdef config_FAULTDETECTOR_SOFTWARE
-		//		xil_printf(" SW FAULT DETECTOR: train");
+#ifdef configFAULTDETECTOR_SOFTWARE
 		FAULTDETECTOR_SW_train(control);
-#else //!config_FAULTDETECTOR_SOFTWARE
+#else //!configFAULTDETECTOR_SOFTWARE
 		control->command=COMMAND_TRAIN;
 		while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {}
 
 		FAULTDETECTOR_startCopy(&FAULTDETECTOR_InstancePtr, taskId);
-#endif //config_FAULTDETECTOR_SOFTWARE
+#endif //configFAULTDETECTOR_SOFTWARE
 	} else
 #endif
-#ifdef config_SCHEDULER_SOFTWARE
 		if (pxCurrentTCB->requiresFaultDetection) {
+#ifdef configFAULTDETECTOR_SOFTWARE
+
 			char fault=FAULTDETECTOR_SW_test(control);
 
 //			xil_printf(" fault : %u", fault);
@@ -1128,13 +1128,17 @@ void FAULTDET_testPoint(
 				pxCurrentTCB->lastFault.executionId=control->executionId;
 				memcpy(&(pxCurrentTCB->lastFault.AOV), &(control->AOV), sizeof(control->AOV));
 
-#ifndef testingCampaign
+#ifndef configIGNORE_FAULTS_DETECTED_BY_SW_FAULT_DETECTOR
+#ifdef configSCHEDULER_SOFTWARE
 				SCHEDULER_SW_FaultDetected=0xFF;
+#else
+				SCHEDULER_restartFaultyJob((void*) SCHEDULER_BASEADDR, tcbPtr->uxTaskNumber, control->executionId);
+#endif
 				while(1) {}
 #endif
 			}
 		}
-#else //!config_FAULTDETECTOR_SOFTWARE
+#else //!configFAULTDETECTOR_SOFTWARE
 	if (pxCurrentTCB->requiresFaultDetection) {
 		lastRequestedTest[taskId]=*((u32*)control);
 		control->command=COMMAND_TEST;
@@ -1157,7 +1161,7 @@ void FAULTDET_trainPoint() {
 	control->taskId=taskId;
 	control->executionId=pxCurrentTCB->executionId;
 
-#ifdef config_FAULTDETECTOR_SOFTWARE
+#ifdef configFAULTDETECTOR_SOFTWARE
 
 	char fault=FAULTDETECTOR_SW_test(control);
 	if (fault) {
@@ -1293,7 +1297,7 @@ void xPortSchedulerSignalTaskEnded(u8 uxTaskNumber, u8 executionId) {
 }
 
 //must be called at the end of each task
-#ifdef config_SCHEDULER_SOFTWARE
+#ifdef configSCHEDULER_SOFTWARE
 extern u32 highestPriorityTask;
 extern int activeJobs;
 void xPortSchedulerSignalJobEnded() {
@@ -1416,7 +1420,7 @@ BaseType_t xPortStartScheduler( void )
 
 			/* Start the timer that generates the tick ISR. */
 			//fedit remove: DISABLED TICKS INTERRUPT initialisation at scheduler startup which triggers periodic scheduler routine - in port.c since architecture specific: interrupts for context switch will be generated by FPGA, we don't want CPU tick interrupt
-#ifdef config_SCHEDULER_SOFTWARE
+#ifdef configSCHEDULER_SOFTWARE
 			configSETUP_TICK_INTERRUPT();
 #else
 			/* Start the scheduler on hardware */
@@ -1497,7 +1501,7 @@ void vPortExitCritical( void )
 }
 /*-----------------------------------------------------------*/
 
-#ifdef config_SCHEDULER_SOFTWARE
+#ifdef configSCHEDULER_SOFTWARE
 //extern u32 totalTime;
 void FreeRTOS_Tick_Handler( void )
 {

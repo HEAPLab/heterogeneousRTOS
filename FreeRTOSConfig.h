@@ -79,9 +79,11 @@
 //fedit add
 #define configMAX_RT_TASKS (4)
 
-//#define config_SCHEDULER_SOFTWARE
+#define configSCHEDULER_SOFTWARE
 
-//#define config_FAULTDETECTOR_SOFTWARE
+#define configFAULTDETECTOR_SOFTWARE
+
+#define configIGNORE_FAULTS_DETECTED_BY_SW_FAULT_DETECTOR
 
 #define configCRITICALITY_LEVELS (3)
 
