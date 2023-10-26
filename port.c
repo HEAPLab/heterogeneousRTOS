@@ -1,4 +1,3 @@
-//#define verboseScheduler
 #include <stdarg.h>
 #include "xil_printf.h"
 /*
@@ -832,7 +831,7 @@ void FAULTDET_hotUpdateRegions(FAULTDETECTOR_region_t trainedRegions[FAULTDETECT
 FAULTDETECTOR_controlStr* FAULTDET_initFaultDetection() {
 	//FAULTDET_resetFault(); //not needed, automatically done by the faultdetector when a command from the same check but with different UniId is received
 #ifndef configFAULTDETECTOR_SOFTWARE
-#ifndef disableOnlineTrain
+#ifndef configDISABLE_ONLINE_TRAINING
 	if (pxCurrentTCB->executionMode==EXECMODE_CURRJOB_FAULT) {
 		FAULTDET_getLastTestedPoint(&(pxCurrentTCB->lastFault));
 	}
@@ -881,9 +880,11 @@ void FAULTDET_blockIfFaultDetectedInTask () {
 		while(lastRequestedTest[taskId]!=(*((u32*)(&out))));
 		//			while(memcmp(control, &out, sizeof(FAULTDETECTOR_testpointShortDescriptorStr))!=0);
 
-		//			if(FAULTDETECTOR_hasFault(&FAULTDETECTOR_InstancePtr, taskId)) {
-		//				while(1) {}
-		//			}
+		if(FAULTDETECTOR_hasFault(&FAULTDETECTOR_InstancePtr, taskId)) {
+#ifndef configIGNORE_FAULTS_DETECTED_BY_SW_FAULT_DETECTOR
+			while(1) {}
+#endif
+		}
 	}
 	//	}
 }
@@ -1100,7 +1101,7 @@ void FAULTDET_testPoint(
 	control->taskId=taskId;
 	control->executionId=pxCurrentTCB->executionId;
 
-#ifndef disableOnlineTrain
+#ifndef configDISABLE_ONLINE_TRAINING
 	FAULTDETECTOR_testpointDescriptorStr* lastFault=&(pxCurrentTCB->lastFault);
 	char faultyCheckpoint=pxCurrentTCB->executionMode==EXECMODE_CURRJOB_FAULT && *((u32*)lastFault)==*((u32*)control);
 
@@ -1137,9 +1138,7 @@ void FAULTDET_testPoint(
 				while(1) {}
 #endif
 			}
-		}
 #else //!configFAULTDETECTOR_SOFTWARE
-	if (pxCurrentTCB->requiresFaultDetection) {
 		lastRequestedTest[taskId]=*((u32*)control);
 		control->command=COMMAND_TEST;
 
@@ -1147,9 +1146,8 @@ void FAULTDET_testPoint(
 
 		//			controlForFaultDet=*control;
 		FAULTDETECTOR_startCopy(&FAULTDETECTOR_InstancePtr, taskId);
-	}
 #endif
-
+		}
 }
 
 
@@ -1196,9 +1194,6 @@ void xPortScheduleNewTask(void)
 {
 	newTaskDescrStr* newtaskdesc=(newTaskDescrStr*) NEWTASKDESCRPTR;
 	TCB_t* pxNewTCB=newtaskdesc->pxNextTcb;
-#ifdef verboseScheduler
-	xil_printf("| NEW, %X ", pxNewTCB);
-#endif
 
 	if (newtaskdesc->executionMode==EXECMODE_NORMAL_NEWJOB) {
 		pxNewTCB->jobEnded=0;
@@ -1208,8 +1203,8 @@ void xPortScheduleNewTask(void)
 	pxNewTCB->requiresFaultDetection=newtaskdesc->requiresFaultDetection;
 	pxNewTCB->executionMode=newtaskdesc->executionMode;
 
-#ifdef verboseScheduler
-	xil_printf("exec mode SCH %x, exec id %d, requiresFaultDetection %d\n", newtaskdesc->executionMode, newtaskdesc->executionId, newtaskdesc->requiresFaultDetection);
+#ifdef configVERBOSE_CTX_SWITCH_FOR_FPGA_SCHEDULER
+	xil_printf("NEW, ptr %X, exec mode SCH %x, exec id %d, requiresFaultDetection %d\n", pxNewTCB, newtaskdesc->executionMode, newtaskdesc->executionId, newtaskdesc->requiresFaultDetection);
 #endif
 
 	if (newtaskdesc->executionMode>EXECMODE_NORMAL_NEWJOB) {
