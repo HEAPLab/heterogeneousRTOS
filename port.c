@@ -1132,7 +1132,7 @@ void FAULTDET_testPoint(
 #ifdef configSCHEDULER_SOFTWARE
 				SCHEDULER_SW_FaultDetected=0xFF;
 #else
-				SCHEDULER_restartFaultyJob((void*) SCHEDULER_BASEADDR, tcbPtr->uxTaskNumber, control->executionId);
+				SCHEDULER_restartFaultyJob((void*) SCHEDULER_BASEADDR, pxCurrentTCB->uxTaskNumber, control->executionId);
 #endif
 				while(1) {}
 #endif
