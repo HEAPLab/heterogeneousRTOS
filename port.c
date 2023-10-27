@@ -1104,9 +1104,13 @@ void FAULTDET_testPoint(
 
 #ifndef configDISABLE_ONLINE_TRAINING
 	FAULTDETECTOR_testpointDescriptorStr* lastFault=&(pxCurrentTCB->lastFault);
-	char faultyCheckpoint=pxCurrentTCB->executionMode==EXECMODE_CURRJOB_FAULT && *((u32*)lastFault)==*((u32*)control);
-
-	if (faultyCheckpoint &&	memcmp(lastFault->AOV, control->AOV, sizeof(control->AOV))==0) {
+//	char faultyCheckpoint=pxCurrentTCB->executionMode==EXECMODE_CURRJOB_FAULT && lastFault->checkId==control->checkId && lastFault->uniId==control->checkId;//*((u32*)lastFault)==*((u32*)control);
+//	char AOVequal=memcmp(lastFault->AOV, control->AOV, sizeof(control->AOV))==0;
+//	if (faultyCheckpoint &&	AOVequal) {
+	if (pxCurrentTCB->executionMode==EXECMODE_CURRJOB_FAULT
+			&& lastFault->checkId==control->checkId
+			&& lastFault->uniId==control->checkId
+			&& memcmp(lastFault->AOV, control->AOV, sizeof(control->AOV))==0) {
 #ifdef configFAULTDETECTOR_SOFTWARE
 		FAULTDETECTOR_SW_train(control);
 #else //!configFAULTDETECTOR_SOFTWARE
@@ -1121,8 +1125,6 @@ void FAULTDET_testPoint(
 #ifdef configFAULTDETECTOR_SOFTWARE
 
 			char fault=FAULTDETECTOR_SW_test(control);
-
-//			xil_printf(" fault : %u", fault);
 
 			if (fault) {
 				pxCurrentTCB->lastFault.uniId=control->uniId;
