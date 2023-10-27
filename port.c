@@ -865,7 +865,7 @@ void FAULTDET_resetFault() {
 
 #ifndef configFAULTDETECTOR_SOFTWARE
 //contains the last test details, FAULTDET_blockIfFaultDetectedInTask will wait until the last test stored in the fault detector matches this one
-u32 lastRequestedTest[configMAX_RT_TASKS];
+FAULTDETECTOR_testpointShortDescriptorStr lastRequestedTest[configMAX_RT_TASKS];
 
 //waits until the last test stored in the fault detector matches the last test requested
 void FAULTDET_blockIfFaultDetectedInTask () {
@@ -877,8 +877,9 @@ void FAULTDET_blockIfFaultDetectedInTask () {
 		do {
 			FAULTDETECTOR_getLastTestedPointShort(&FAULTDETECTOR_InstancePtr, taskId, &out);
 		}
-		while(lastRequestedTest[taskId]!=(*((u32*)(&out))));
-		//			while(memcmp(control, &out, sizeof(FAULTDETECTOR_testpointShortDescriptorStr))!=0);
+		while(memcmp((void*) &(lastRequestedTest[taskId]), (void*) &out, sizeof(FAULTDETECTOR_testpointShortDescriptorStr))!=0);
+//		while (!(lastRequestedTest[taskId].checkId==out.checkId && lastRequestedTest[taskId].uniId==out.uniId && lastRequestedTest[taskId].executionId==out.executionId ));
+//		while(lastRequestedTest[taskId]!=(*((u32*)(&out))));
 
 		if(FAULTDETECTOR_hasFault(&FAULTDETECTOR_InstancePtr, taskId)) {
 #ifndef configIGNORE_FAULTS_DETECTED_BY_SW_FAULT_DETECTOR
@@ -1139,7 +1140,7 @@ void FAULTDET_testPoint(
 #endif
 			}
 #else //!configFAULTDETECTOR_SOFTWARE
-		lastRequestedTest[taskId]=*((u32*)control);
+		lastRequestedTest[taskId]=*((FAULTDETECTOR_testpointShortDescriptorStr*)control);
 		control->command=COMMAND_TEST;
 
 		while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {}
