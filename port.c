@@ -1143,6 +1143,10 @@ void FAULTDET_testPoint(
 			}
 #else //!configFAULTDETECTOR_SOFTWARE
 		lastRequestedTest[taskId]=*((FAULTDETECTOR_testpointShortDescriptorStr*)control);
+//		lastRequestedTest[taskId].checkId=control->checkId;
+//		lastRequestedTest[taskId].uniId=control->uniId;
+//		lastRequestedTest[taskId].executionId=control->executionId;
+
 		control->command=COMMAND_TEST;
 
 		while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {}
