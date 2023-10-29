@@ -1173,14 +1173,15 @@ void FAULTDET_trainPoint() {
 		//		}
 	}
 #else
+	lastRequestedTest[taskId]=*((FAULTDETECTOR_testpointShortDescriptorStr*)control);
 	control->command=COMMAND_TEST;
+
 	while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {}
 
-	controlForFaultDet[taskId]=*control;
+	lastRequestedTest[taskId]=*((FAULTDETECTOR_testpointShortDescriptorStr*)control);
 	FAULTDETECTOR_startCopy(&FAULTDETECTOR_InstancePtr, taskId);
 
-
-	FAULTDET_blockIfFaultDetectedInTask(control);
+	FAULTDET_blockIfFaultDetectedInTask();
 	if (FAULTDETECTOR_hasFault(&FAULTDETECTOR_InstancePtr, control->taskId)) {
 		FAULTDETECTOR_resetFault(&FAULTDETECTOR_InstancePtr, control->taskId);
 		control->command=COMMAND_TRAIN;
