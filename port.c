@@ -877,13 +877,18 @@ void FAULTDET_blockIfFaultDetectedInTask () {
 		do {
 			FAULTDETECTOR_getLastTestedPointShort(&FAULTDETECTOR_InstancePtr, taskId, &out);
 		}
-		while(memcmp((void*) &(lastRequestedTest[taskId]), (void*) &out, sizeof(FAULTDETECTOR_testpointShortDescriptorStr))!=0);
-//		while (!(lastRequestedTest[taskId].checkId==out.checkId && lastRequestedTest[taskId].uniId==out.uniId && lastRequestedTest[taskId].executionId==out.executionId ));
-//		while(lastRequestedTest[taskId]!=(*((u32*)(&out))));
+#ifdef configENABLE_STRUCTS_SPECIFIC_MEMORY_OPTIMISATIONS_FOR_FAULT_DETECTOR
+		while((*((u32*)(&(lastRequestedTest[taskId]))))!=(*((u32*)(&out))));
+//		while(memcmp((void*) &(lastRequestedTest[taskId]), (void*) &out, sizeof(FAULTDETECTOR_testpointShortDescriptorStr))!=0);
+#else
+		while (!(lastRequestedTest[taskId].checkId==out.checkId && lastRequestedTest[taskId].uniId==out.uniId && lastRequestedTest[taskId].executionId==out.executionId ));
+#endif
 
+#ifndef configOPTIMISATION_ON_FAULT_FAULT_DETECTOR_WRITES_PREVIOUS_EXECUTION_ID
 		if(FAULTDETECTOR_hasFault(&FAULTDETECTOR_InstancePtr, taskId)) {
 #ifndef configIGNORE_FAULTS_DETECTED_BY_SW_FAULT_DETECTOR
 			while(1) {}
+#endif
 #endif
 		}
 	}
@@ -1094,7 +1099,6 @@ void FAULTDET_testing_resetStats() {
 
 #endif
 
-
 void FAULTDET_testPoint(
 ) {
 	u8 taskId=pxCurrentTCB->uxTaskNumber-1;
@@ -1107,10 +1111,18 @@ void FAULTDET_testPoint(
 //	char faultyCheckpoint=pxCurrentTCB->executionMode==EXECMODE_CURRJOB_FAULT && lastFault->checkId==control->checkId && lastFault->uniId==control->checkId;//*((u32*)lastFault)==*((u32*)control);
 //	char AOVequal=memcmp(lastFault->AOV, control->AOV, sizeof(control->AOV))==0;
 //	if (faultyCheckpoint &&	AOVequal) {
+//	size_t sz=sizeof(lastFault->checkId)+sizeof(lastFault->uniId);
+//	xil_printf("size: %u", sz);
 	if (pxCurrentTCB->executionMode==EXECMODE_CURRJOB_FAULT
+
+#ifdef configENABLE_STRUCTS_SPECIFIC_MEMORY_OPTIMISATIONS_FOR_FAULT_DETECTOR
+			&& memcmp(lastFault, control, sizeof(control->checkId)+sizeof(control->uniId))==0 //this implied that uniId or checkId are at the first place in the struct and adjacent.
+#else
 			&& lastFault->checkId==control->checkId
 			&& lastFault->uniId==control->checkId
-			&& memcmp(lastFault->AOV, control->AOV, sizeof(control->AOV))==0) {
+#endif
+			&& memcmp(lastFault->AOV, control->AOV, sizeof(control->AOV))==0
+		) {
 #ifdef configFAULTDETECTOR_SOFTWARE
 		FAULTDETECTOR_SW_train(control);
 #else //!configFAULTDETECTOR_SOFTWARE
@@ -1142,11 +1154,13 @@ void FAULTDET_testPoint(
 #endif
 			}
 #else //!configFAULTDETECTOR_SOFTWARE
+#ifdef configENABLE_STRUCTS_SPECIFIC_MEMORY_OPTIMISATIONS_FOR_FAULT_DETECTOR
 		lastRequestedTest[taskId]=*((FAULTDETECTOR_testpointShortDescriptorStr*)control);
-//		lastRequestedTest[taskId].checkId=control->checkId;
-//		lastRequestedTest[taskId].uniId=control->uniId;
-//		lastRequestedTest[taskId].executionId=control->executionId;
-
+#else
+		lastRequestedTest[taskId].checkId=control->checkId;
+		lastRequestedTest[taskId].uniId=control->uniId;
+		lastRequestedTest[taskId].executionId=control->executionId;
+#endif
 		control->command=COMMAND_TEST;
 
 		while(!FAULTDETECTOR_isReadyForNextControl(&FAULTDETECTOR_InstancePtr)) {}

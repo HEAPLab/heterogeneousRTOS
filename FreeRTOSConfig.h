@@ -56,6 +56,18 @@
 #define configATOMIC_SOFTWARE_SCHEDULER_OVERHEAD_IN_SOFTWARE_SCHEDULER_TICKS (0)
 
 #define configATOMIC_SOFTWARE_SCHEDULER_OVERHEAD_WITH_REEXECUTION_IN_SOFTWARE_SCHEDULER_TICKS (0)
+
+//depending on the (sometimes hardcoded) sizes of fields in
+//FAULTDETECTOR_controlStr,
+//FAULTDETECTOR_testpointDescriptorStr
+//and FAULTDETECTOR_testpointShortDescriptorStr
+//forces some memory accesses optimisations. NOTE that the order of the first fields of such structs (uniId, executionId and checkId) must ALWAYS match between them, as well as field sizes.
+//In case of changing field sizes and/or order of such structs, check the code marked with the following define:
+#define configENABLE_STRUCTS_SPECIFIC_MEMORY_OPTIMISATIONS_FOR_FAULT_DETECTOR
+//and adapt it to the new structs. To disable enforcing such optimisations comment the define.
+
+//to reduce the memory accesses in blockIfFaultDetected() when no fault is experienced, checking whether a fault has happened can be avoided if the fault detector has been synthesized to output an invalid executionId (such as current executionId-1) for the last examined testPoint in case of fault to make the task wait forever.
+//#define configOPTIMISATION_ON_FAULT_FAULT_DETECTOR_WRITES_PREVIOUS_EXECUTION_ID
 //_________________________________
 
 #define configUSE_PREEMPTION 1
