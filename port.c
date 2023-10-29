@@ -829,15 +829,16 @@ void FAULTDET_hotUpdateRegions(FAULTDETECTOR_region_t trainedRegions[FAULTDETECT
 }
 
 FAULTDETECTOR_controlStr* FAULTDET_initFaultDetection() {
-	//FAULTDET_resetFault(); //not needed, automatically done by the faultdetector when a command from the same check but with different UniId is received
+	//FAULTDET_resetFault(); //not needed, automatically done by the faultdetector on FPGA when a command from the same check but with different UniId is received
+	u8 taskId=pxCurrentTCB->uxTaskNumber-1;
 #ifndef configFAULTDETECTOR_SOFTWARE
 #ifndef configDISABLE_ONLINE_TRAINING
 	if (pxCurrentTCB->executionMode==EXECMODE_CURRJOB_FAULT) {
-		FAULTDET_getLastTestedPoint(&(pxCurrentTCB->lastFault));
+		FAULTDETECTOR_getLastTestedPoint(&FAULTDETECTOR_InstancePtr, taskId, &(pxCurrentTCB->lastFault));
 	}
 #endif
 #endif
-	return &(controlForFaultDet[pxCurrentTCB->uxTaskNumber-1]);
+	return &(controlForFaultDet[taskId]);
 }
 
 #ifndef configFAULTDETECTOR_SOFTWARE
