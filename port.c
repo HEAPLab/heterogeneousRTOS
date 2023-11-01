@@ -1315,21 +1315,8 @@ void xPortSchedulerSignalTaskEnded(u8 uxTaskNumber, u8 executionId) {
 }
 
 //must be called at the end of each task
-#ifdef configSCHEDULER_SOFTWARE
-extern u32 highestPriorityTask;
-extern int activeJobs;
-void xPortSchedulerSignalJobEnded() {
-	portCPU_IRQ_DISABLE();
-	//portICCPMR_PRIORITY_MASK_REGISTER = ( uint32_t ) ( configMAX_API_CALL_INTERRUPT_PRIORITY << portPRIORITY_SHIFT );
-	//__asm volatile (	"dsb		\n"
-	//					"isb		\n" ::: "memory" );
-	highestPriorityTask=0xFFFFFFFF;
-	pxCurrentTCB->executionMode=EXECMODE_NORMAL_NEWJOB;
-	activeJobs--;
-	portCPU_IRQ_ENABLE();
-}
-#else
-void xPortSchedulerSignalJobEnded(u8 uxTaskNumber, u8 executionId) {
+#ifndef configSCHEDULER_SOFTWARE
+inline void xPortSchedulerSignalJobEnded(u8 uxTaskNumber, u8 executionId) {
 	SCHEDULER_signalJobEnded((void*) SCHEDULER_BASEADDR, uxTaskNumber, executionId);
 }
 #endif
