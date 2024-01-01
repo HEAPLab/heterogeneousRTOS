@@ -167,19 +167,51 @@ vPortRestoreTaskContext:
  *****************************************************************************/
 .type vPortHandleNewTask, %function
 vPortHandleNewTask:
-/*	CPSID	i
-	DSB
-	ISB*/
+	//start timer for measure context switch overhead for scheduler on FPGA
 	subs	lr, lr, #4			/* adjust return */
 	portSAVE_CONTEXT
-	/* schedule new task */
+/*	push    {r1}
+	push    {r2}
+	ldr     r1, =9
+	ldr     r2, =0xF8F00208
+        str	r1, [r2]
+	pop     {r2}
+	pop     {r1}
+	//stop timer
+	push    {r1}
+	push    {r2}
+	ldr     r1, =0
+	ldr     r2, =0xF8F00208
+    	str	r1, [r2]
+    	pop     {r2}
+    	pop     {r1}*/
 	LDR R0, xPortScheduleNewTaskConst
 	BLX	R0
 	portRESTORE_CONTEXT
+
   
 .align 4
 .type FreeRTOS_IRQ_Handler, %function
 FreeRTOS_IRQ_Handler:
+//MEASUREMENTS: clear timer
+/*	push    {r1}
+	push    {r2}
+	ldr     r1, =0
+	ldr     r2, =0xF8F00200
+    str	r1, [r2]
+    ldr     r2, =0xF8F00204
+    str	r1, [r2]
+//  pop     {r2}
+//  pop     {r1}
+//MEASUREMENTS: start timer
+//	push    {r1}
+//	push    {r2}
+	ldr     r1, =9
+	ldr     r2, =0xF8F00208
+    str	r1, [r2]
+	pop     {r2}
+	pop     {r1}*/
+
 	/* Return to the interrupted instruction. */
 	SUB		lr, lr, #4
 
@@ -281,6 +313,15 @@ switch_before_exit:
 	/* Restore the context of, and branch to, the task selected to execute
 	next. */
 	portRESTORE_CONTEXT
+/*	//MEASUREMENTS: stop timer
+	push    {r1}
+	push    {r2}
+	ldr     r1, =0
+	ldr     r2, =0xF8F00208
+    str	r1, [r2]
+    pop     {r2}
+    pop     {r1}*/
+
 
 
 /******************************************************************************
