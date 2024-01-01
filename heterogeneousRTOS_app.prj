@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="ASCII"?>
+<sdkproject:SdkProject xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:sdkproject="http://www.xilinx.com/sdkproject" name="heterogeneousRTOS_app" location="/home/francesco/workspace/heterogeneousRTOS_app" platform="/home/francesco/workspace/heterogeneousRTOS_platform/export/heterogeneousRTOS_platform/heterogeneousRTOS_platform.xpfm" platformUID="xilinx:zedboard::0.0(custom)" systemProject="heterogeneousRTOS_app_system" sysConfig="heterogeneousRTOS_platform" runtime="cpp" cpu="freertos10_xilinx_ps7_cortexa9_0" cpuInstance="ps7_cortexa9_0" os="freertos10_xilinx" mssSignature="73a17f8dfb97294fe729d9b313e558ff">
+  <configuration name="Debug" id="xilinx.gnu.armv7.exe.debug.529176398">
+    <configBuildOptions xsi:type="sdkproject:SdkOptions"/>
+    <lastBuildOptions xsi:type="sdkproject:SdkOptions"/>
+  </configuration>
+  <configuration name="Release" id="xilinx.gnu.armv7.exe.release.1433194623" dirty="true">
+    <configBuildOptions xsi:type="sdkproject:SdkOptions"/>
+  </configuration>
+  <template appTemplateName="freertos_hello_world" hasBspSettings="true"/>
+</sdkproject:SdkProject>
