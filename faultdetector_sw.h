@@ -7,22 +7,22 @@
 //#define COMMAND_TRAIN 3
 
 #ifndef XFAULTDETECTOR_H
-#define FAULTDETECTOR_MAX_CHECKS 8
-#define FAULTDETECTOR_MAX_TASKS 8
+#define FAULTDETECTOR_MAX_CHECKS 4
+#define FAULTDETECTOR_MAX_TASKS 4
 
 #define FAULTDETECTOR_MAX_AOV_DIM 4
 
 #define FAULTDETECTOR_MAX_REGIONS 8
 
 typedef struct {
-	u8 checkId;
-	u8 taskId;
-	u8 executionId;
 	u16 uniId;
+	u8 checkId;
+	u8 executionId;
+	float AOV[FAULTDETECTOR_MAX_AOV_DIM];
+	u8 taskId;
 	char command;
 	char gap0[2];
-	float AOV[FAULTDETECTOR_MAX_AOV_DIM];
-} FAULTDETECTOR_controlStr;
+} __attribute__((packed, aligned(4))) FAULTDETECTOR_controlStr;
 
 typedef struct {
 	float min[FAULTDETECTOR_MAX_AOV_DIM];
@@ -31,17 +31,17 @@ typedef struct {
 } FAULTDETECTOR_region_t;
 
 typedef struct {
+	u16 uniId;
 	u8 checkId;
 	u8 executionId;
-	u16 uniId;
 	float AOV[FAULTDETECTOR_MAX_AOV_DIM];
-} FAULTDETECTOR_testpointDescriptorStr;
+} __attribute__((packed, aligned(4))) FAULTDETECTOR_testpointDescriptorStr;
 
 typedef struct {
+	u16 uniId;
 	u8 checkId;
 	u8 executionId;
-	u16 uniId;
-} FAULTDETECTOR_testpointShortDescriptorStr;
+} __attribute__((packed, aligned(4))) FAULTDETECTOR_testpointShortDescriptorStr;
 
 #endif
 
