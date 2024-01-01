@@ -841,10 +841,22 @@ FAULTDETECTOR_controlStr* FAULTDET_initFaultDetection() {
 	return &(controlForFaultDet[taskId]);
 }
 
+//wrapper around FAULTDET_dumpRegions, to obtain the last regions stored in the fault detector
+void FAULTDET_dumpRegionsToDest(FAULTDETECTOR_region_t trainedRegions[FAULTDETECTOR_MAX_CHECKS][FAULTDETECTOR_MAX_REGIONS], u8 n_regions[FAULTDETECTOR_MAX_CHECKS]) {
+#ifdef configFAULTDETECTOR_SOFTWARE
+	FAULTDETECTOR_SW_dumpRegions(trainedRegions, n_regions);
+#else
+	FAULTDET_StopRunMode();
+	FAULTDETECTOR_dumpRegions(&FAULTDETECTOR_InstancePtr, trainedRegions, n_regions);
+#endif
+}
+
 #ifndef configFAULTDETECTOR_SOFTWARE
 
 //to be called when the fault detector is in RUN_MODE, waiting for new AOV: after processing all the pending AOVs, if they exists, it stops
 void FAULTDET_StopRunMode() {
+	if (XFaultdetector_IsIdle(&FAULTDETECTOR_InstancePtr))
+		return;
 	FAULTDETECTOR_controlStr contr;
 	contr.command=1;
 	controlForFaultDet[0]=contr;
@@ -857,6 +869,7 @@ void FAULTDET_getLastTestedPoint(FAULTDETECTOR_testpointDescriptorStr* dest) {
 
 	FAULTDETECTOR_getLastTestedPoint(&FAULTDETECTOR_InstancePtr, (pxCurrentTCB->uxTaskNumber)-1, dest);
 }
+
 //to manually reset a fault in a task in the fault detector, it is never used because the fault detector automatically resets the fault when a AOV with a different executionId is submitted
 void FAULTDET_resetFault() {
 	FAULTDETECTOR_resetFault(&FAULTDETECTOR_InstancePtr, (pxCurrentTCB->uxTaskNumber)-1);
@@ -1211,6 +1224,11 @@ void FAULTDET_trainPoint() {
 #endif
 }
 
+#ifdef configVERBOSE_CTX_SWITCH_FOR_FPGA_SCHEDULER
+char verboseContainer[500][70];
+int verboseContainerIdx=0;
+#endif
+
 //called by the ASM function executed on FPGA scheduler interrupt
 //it parses the data provided by the FPGA scheduler and prepares the system for the context switch
 void xPortScheduleNewTask(void)
@@ -1227,7 +1245,16 @@ void xPortScheduleNewTask(void)
 	pxNewTCB->executionMode=newtaskdesc->executionMode;
 
 #ifdef configVERBOSE_CTX_SWITCH_FOR_FPGA_SCHEDULER
-	xil_printf("NEW, ptr %X, exec mode SCH %x, exec id %d, requiresFaultDetection %d\n", pxNewTCB, newtaskdesc->executionMode, newtaskdesc->executionId, newtaskdesc->requiresFaultDetection);
+		if (verboseContainerIdx<500) {
+			sprintf(verboseContainer[verboseContainerIdx++], "NEW, ptr %X, exec mode SCH %x, exec id %d, rFD %d, %u \n", pxNewTCB, newtaskdesc->executionMode, newtaskdesc->executionId, newtaskdesc->requiresFaultDetection, get_clock_L());
+
+			sprintf(verboseContainer[verboseContainerIdx++], "NEW, ptr %X, exec mode SCH %x, exec id %d, rFD %d SP %lx PC %lx\n", pxNewTCB, newtaskdesc->executionMode, newtaskdesc->executionId, newtaskdesc->requiresFaultDetection, pxNewTCB->pxTopOfStack, *(pxNewTCB->pxTopOfStack+16));
+		}
+		if (verboseContainerIdx==500) {
+			for (int i=0; i<verboseContainerIdx; i++)
+				printf(verboseContainer[i]);
+			verboseContainerIdx++;
+		}
 #endif
 
 	if (newtaskdesc->executionMode>EXECMODE_NORMAL_NEWJOB) {
@@ -1291,11 +1318,66 @@ void xPortScheduleNewTask(void)
 		 * to the start of the task function. Once the stack has been initialised
 		 * the top of stack variable is updated. */
 
-//		pxNewTCB->pxTopOfStack=pxNewTCB->pxInitTopOfStack;
-		pxNewTCB->pxTopOfStack = pxPortInitialiseStack(pxNewTCB->pxInitTopOfStack,
-				pxNewTCB->pxInitTaskCode, (void*) pxNewTCB->pxInitParameters);
+
+
+
+#if ( portUSING_MPU_WRAPPERS == 1 )
+				{
+#if ( portHAS_STACK_OVERFLOW_CHECKING == 1 )
+					{
+#if ( portSTACK_GROWTH < 0 )
+						{
+							pxNewTCB->pxTopOfStack = pxPortInitialiseStack( pxNewTCB->pxInitTopOfStack, pxNewTCB->pxStack, pxNewTCB->pxInitTaskCode, pxNewTCB->pxInitParameters, pxNewTCB->xRunPrivileged );
+						}
+#else /* portSTACK_GROWTH */
+						{
+							pxNewTCB->pxTopOfStack = pxPortInitialiseStack( pxNewTCB->pxInitTopOfStack, pxNewTCB->pxEndOfStack, pxNewTCB->pxInitTaskCode, pxNewTCB->pxInitParameters, pxNewTCB->xRunPrivileged );
+						}
+#endif /* portSTACK_GROWTH */
+					}
+#else /* portHAS_STACK_OVERFLOW_CHECKING */
+					{
+						pxNewTCB->pxTopOfStack = pxPortInitialiseStack( pxNewTCB->pxInitTopOfStack, pxNewTCB->pxInitTaskCode, pxNewTCB->pxInitParameters, pxNewTCB->xRunPrivileged );
+					}
+#endif /* portHAS_STACK_OVERFLOW_CHECKING */
+				}
+#else /* portUSING_MPU_WRAPPERS */
+				{
+					/* If the port has capability to detect stack overflow,
+					 * pass the stack end address to the stack initialization
+					 * function as well. */
+#if ( portHAS_STACK_OVERFLOW_CHECKING == 1 )
+					{
+#if ( portSTACK_GROWTH < 0 )
+						{
+							pxNewTCB->pxTopOfStack = pxPortInitialiseStack( pxNewTCB->pxInitTopOfStack, pxNewTCB->pxStack, pxNewTCB->pxInitTaskCode, pxNewTCB->pxInitParameters );
+						}
+#else /* portSTACK_GROWTH */
+						{
+							pxNewTCB->pxTopOfStack = pxPortInitialiseStack( pxNewTCB->pxInitTopOfStack, pxNewTCB->pxEndOfStack, pxNewTCB->pxInitTaskCode, pxNewTCB->pxInitParameters );
+						}
+#endif /* portSTACK_GROWTH */
+					}
+#else /* portHAS_STACK_OVERFLOW_CHECKING */
+					{
+						pxNewTCB->pxTopOfStack = pxPortInitialiseStack(pxNewTCB->pxInitTopOfStack,
+								pxNewTCB->pxInitTaskCode, pxNewTCB->pxInitParameters);
+					}
+#endif /* portHAS_STACK_OVERFLOW_CHECKING */
+				}
+#endif /* portUSING_MPU_WRAPPERS */
+
+
+
+
+
+
+
+
 
 	}
+
+
 	pxCurrentTCB = pxNewTCB;
 	SCHEDULER_ACKInterrupt((void *) SCHEDULER_BASEADDR);
 }
@@ -1333,8 +1415,6 @@ BaseType_t xPortInitScheduler( u32 numberOfTasks,
 {
 	//will be used by functions in port.c which need to access pxCurrentTCBPtr
 	//	int status;
-
-	Xil_DisableMMU();
 
 	//copy data structures to the scheduler on FPGA
 	SCHEDULER_setNumberOfTasks((void*) SCHEDULER_BASEADDR, (u32) numberOfTasks);

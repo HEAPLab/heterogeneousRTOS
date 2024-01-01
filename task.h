@@ -180,6 +180,9 @@ typedef struct tskTaskControlBlock       /* The old naming convention is used to
 	volatile StackType_t * pxInitTopOfStack; /*< Points to the location of the last item placed on the tasks stack.  THIS MUST BE THE FIRST MEMBER OF THE TCB STRUCT. */
 	volatile StackType_t pxInitParameters;
 	volatile TaskFunction_t pxInitTaskCode;
+#if ( portUSING_MPU_WRAPPERS == 1 )
+	BaseType_t xRunPrivileged;
+#endif
 } tskTCB;
 
 /* The old tskTCB name is maintained above then typedefed to the new TCB_t name
@@ -194,20 +197,21 @@ typedef tskTCB TCB_t;
 //#endif
 
 //fedit add
+void vTaskDBG_setExecutionModeFault();
 
 /*Used to represent real time tasks, contain timing informations of task and pointer to its TCB_t. Will be used by RT scheduler. */
 
 typedef struct __attribute__((__packed__)) RealTimeTask_t {
 	//	u32 uxTaskNumber;
 	TCB_t* taskTCB;
-	u32 pxPeriod;
-	u32 pxWcet[configCRITICALITY_LEVELS];
-	u32	pxDeadline;
+	double pxPeriod;
+	double pxWcet[configCRITICALITY_LEVELS];
+	double	pxDeadline;
 	u32 pxCriticalityLevel;
 } RTTask_t;
 
-void generate_deadlines(u32 tasksDerivativesDeadlines[configCRITICALITY_LEVELS][configMAX_RT_TASKS], u32 tasksDeadlines[configCRITICALITY_LEVELS][configMAX_RT_TASKS], RTTask_t task, int taskIndex, u32 x, u32 k);
-int calculate_x(RTTask_t tasks[], u8 numberOfTasks, int k);
+void generate_deadlines(u32 tasksDerivativesDeadlines[configCRITICALITY_LEVELS][configMAX_RT_TASKS], u32 tasksDeadlines[configCRITICALITY_LEVELS][configMAX_RT_TASKS], RTTask_t task, int taskIndex, float x, u32 k);
+float calculate_x(RTTask_t tasks[], u8 numberOfTasks, int k);
 int find_k(RTTask_t tasks[], u8 number_of_tasks);
 float compute_utilisation(RTTask_t tasks[], u8 number_of_tasks, u32 systemCriticalityLevel, u32 taskCriticalityLevel);
 int prvGenerateSchedulerDataFromTaskSet(RTTask_t prvRTTasksList[configMAX_RT_TASKS], u8 numberOfTasks,

@@ -1106,9 +1106,9 @@ u32 numberOfTasksGlob;
 			}
 #endif
 
-			//fedit add
-			pxNewTCB->pxInitTopOfStack=pxNewTCB->pxTopOfStack;
 
+			//fedit add
+			pxNewTCB->pxInitTopOfStack=pxTopOfStack;
 
 			/* Initialize the TCB stack to look as if the task was already running,
 			 * but had been interrupted by the scheduler.  The return address is set
@@ -1163,7 +1163,11 @@ u32 numberOfTasksGlob;
 			}
 #endif /* portUSING_MPU_WRAPPERS */
 
+
 			//fedit add
+#if ( portUSING_MPU_WRAPPERS == 1 )
+			pxNewTCB->xRunPrivileged=xRunPrivileged;
+#endif
 			pxNewTCB->pxInitTaskCode=pxTaskCode;
 			pxNewTCB->pxInitParameters=(StackType_t)pvParameters;
 
@@ -1253,25 +1257,71 @@ u32 numberOfTasksGlob;
 
 		//fedit add
 		//functions used for EDF-VD schedule pre-processing
+
+#include <math.h>
+		double prvRoundMicrosToFPGASchedulerClock(float inputInMicros) {
+			return ceil(inputInMicros/configFPGA_SCHEDULER_PERIOD_IN_MICROS)*configFPGA_SCHEDULER_PERIOD_IN_MICROS;
+
+		}
+		double prvRoundMicrosToFPGASchedulerAtomicTime(float inputInMicros) {
+			return ceil(inputInMicros/configATOMIC_OVERHEAD_WITH_REEXECUTION_FPGA_SCHEDULER_IN_MICROS)*configATOMIC_OVERHEAD_WITH_REEXECUTION_FPGA_SCHEDULER_IN_MICROS;
+		}
+
+		u32 prvConvertMicrosToFPGAClockCycles(float inputInMicros) {
+			return (ceil(inputInMicros/configFPGA_SCHEDULER_PERIOD_IN_MICROS));
+		}
+
+		u32 prvConvertMicrosToSoftwareSchedulerTicks(float inputInMicros) {
+			return (ceil(inputInMicros/configTICK_PERIOD_IN_MICROS));
+		}
+
+		u32 computeWCET(RTTask_t task, u32 criticalityLevel) {
+			u32 cumulated=0;
+			for (u32 i=0; i<=criticalityLevel; i++) {
+#ifdef configSCHEDULER_SOFTWARE
+				cumulated+=			ceil
+						(
+
+								(configATOMIC_SOFTWARE_SCHEDULER_OVERHEAD_WITH_REEXECUTION_IN_MICROS-configATOMIC_SOFTWARE_SCHEDULER_OVERHEAD_IN_MICROS+task.pxWcet[criticalityLevel]+configJOBEND_OVERHEAD_SOFTWARE_SCHEDULER_IN_MICROS)
+								/
+								(configTICK_PERIOD_IN_MICROS-configATOMIC_SOFTWARE_SCHEDULER_OVERHEAD_IN_MICROS)
+
+						);
+#else
+				cumulated+=			prvConvertMicrosToFPGAClockCycles
+				(
+						prvRoundMicrosToFPGASchedulerAtomicTime
+						(
+								prvRoundMicrosToFPGASchedulerClock(configATOMIC_OVERHEAD_WITH_REEXECUTION_FPGA_SCHEDULER_IN_MICROS+task.pxWcet[criticalityLevel]+configJOBEND_OVERHEAD_FPGA_SCHEDULER_IN_MICROS)
+								+
+								prvRoundMicrosToFPGASchedulerClock(configATOMIC_OVERHEAD_FPGA_SCHEDULER_IN_MICROS)
+						)
+				);
+#endif
+			}
+			return cumulated;
+		}
+
 		float compute_utilisation(RTTask_t tasks[], u8 number_of_tasks, u32 systemCriticalityLevel, u32 taskCriticalityLevel) {
 			float val=0;
 			for (int i=0; i<number_of_tasks; i++) {
 				if (tasks[i].pxCriticalityLevel==taskCriticalityLevel && systemCriticalityLevel>=tasks[i].pxCriticalityLevel)
 #ifdef configSCHEDULER_SOFTWARE
 //when the correct overhead values are set in the configs (not zero), this row must be used
-//					val+=ceil((tasks[i].pxWcet[systemCriticalityLevel]+(tasks[i].pxWcet[systemCriticalityLevel]-1)*configATOMIC_SOFTWARE_SCHEDULER_OVERHEAD_IN_SOFTWARE_SCHEDULER_TICKS+configATOMIC_SOFTWARE_SCHEDULER_OVERHEAD_WITH_REEXECUTION_IN_SOFTWARE_SCHEDULER_TICKS)/configATOMIC_SOFTWARE_SCHEDULER_OVERHEAD_WITH_REEXECUTION_IN_SOFTWARE_SCHEDULER_TICKS)/floor(tasks[i].pxPeriod/configATOMIC_SOFTWARE_SCHEDULER_OVERHEAD_WITH_REEXECUTION_IN_SOFTWARE_SCHEDULER_TICKS);
-					val+=(tasks[i].pxWcet[systemCriticalityLevel]+(tasks[i].pxWcet[systemCriticalityLevel]-1)*configATOMIC_SOFTWARE_SCHEDULER_OVERHEAD_IN_SOFTWARE_SCHEDULER_TICKS+configATOMIC_SOFTWARE_SCHEDULER_OVERHEAD_WITH_REEXECUTION_IN_SOFTWARE_SCHEDULER_TICKS)/(tasks[i].pxPeriod);
+					val+=computeWCET(tasks[i], taskCriticalityLevel)/prvConvertMicrosToSoftwareSchedulerTicks(tasks[i].pxPeriod);
 #else
-					val+=ceil((configATOMIC_OVERHEAD_WITH_REEXECUTION_IN_FPGA_SCHEDULER_TICKS+tasks[i].pxWcet[systemCriticalityLevel]+configATOMIC_OVERHEAD_IN_FPGA_SCHEDULER_TICKS)/configATOMIC_OVERHEAD_WITH_REEXECUTION_IN_FPGA_SCHEDULER_TICKS)/floor(tasks[i].pxPeriod/configATOMIC_OVERHEAD_WITH_REEXECUTION_IN_FPGA_SCHEDULER_TICKS);
+					val+=computeWCET(tasks[i], taskCriticalityLevel)/prvConvertMicrosToFPGAClockCycles(tasks[i].pxPeriod);
 #endif
 			}
 			return val;
 		}
 
+
 		int find_k(RTTask_t tasks[], u8 number_of_tasks) {
 			float u=0;
 			for (int l=0; l<configCRITICALITY_LEVELS; l++)
 				u+=compute_utilisation(tasks, number_of_tasks, l, l);
+
 			if (u<=1)
 				return -2;
 
@@ -1301,7 +1351,7 @@ u32 numberOfTasksGlob;
 			return -1;
 		}
 
-		int calculate_x(RTTask_t tasks[], u8 numberOfTasks, int k) {
+		float calculate_x(RTTask_t tasks[], u8 numberOfTasks, int k) {
 			float v1=0;
 			for (int l=k+1; l<configCRITICALITY_LEVELS; l++) {
 				v1+=compute_utilisation(tasks, numberOfTasks, l, l);
@@ -1312,17 +1362,25 @@ u32 numberOfTasksGlob;
 				v2+=compute_utilisation(tasks, numberOfTasks, l, l);
 			}
 			val=val/v2;
-			return (int)val;
+			return val;
 		}
 
-		void generate_deadlines(u32 tasksDerivativesDeadlines[configCRITICALITY_LEVELS][configMAX_RT_TASKS], u32 tasksDeadlines[configCRITICALITY_LEVELS][configMAX_RT_TASKS], RTTask_t task, int taskIndex, u32 x, u32 k) {
+		void generate_deadlines(u32 tasksDerivativesDeadlines[configCRITICALITY_LEVELS][configMAX_RT_TASKS], u32 tasksDeadlines[configCRITICALITY_LEVELS][configMAX_RT_TASKS], RTTask_t task, int taskIndex, float x, u32 k) {
 			u32 cumulated=0;
 			for (u32 i=0; i<=task.pxCriticalityLevel; i++) {
 				u32 currDeadline;
 				if (task.pxCriticalityLevel<=k) //|| k==-2)
-					currDeadline=task.pxDeadline;
+#ifdef configSCHEDULER_SOFTWARE
+					currDeadline=prvConvertMicrosToSoftwareSchedulerTicks(task.pxDeadline);
+#else
+					currDeadline=prvConvertMicrosToFPGAClockCycles(task.pxDeadline);
+#endif
 				else
-					currDeadline=task.pxDeadline*x;
+#ifdef configSCHEDULER_SOFTWARE
+					currDeadline=prvConvertMicrosToSoftwareSchedulerTicks(task.pxDeadline*x);
+#else
+					currDeadline=prvConvertMicrosToFPGAClockCycles(task.pxDeadline*x);
+#endif
 
 				//			if (i==0)
 				//				tasksDeadlines[i]=currDeadline;
@@ -1338,6 +1396,7 @@ u32 numberOfTasksGlob;
 		//______________________________________
 
 		//generates the data structures to be passed to the hardware scheduler starting from the task set
+
 		int prvGenerateSchedulerDataFromTaskSet(RTTask_t prvRTTasksList[configMAX_RT_TASKS], u8 numberOfTasks,
 				u8 maxTasks,
 				u32 tasksTCBPtrs[configMAX_RT_TASKS],
@@ -1352,8 +1411,9 @@ u32 numberOfTasksGlob;
 				xil_printf("task set not schedulable");
 				return -1;
 			}
+//			int k=-2; //BYPASS SCHEDULABILITY CHECK FOR TESTING PURPOSES
 
-			int x;
+			float x;
 			if (k==-2) {
 				x=1;
 			} else {
@@ -1362,18 +1422,14 @@ u32 numberOfTasksGlob;
 
 			for (int i = 0; i < numberOfTasks; i++) {
 				tasksTCBPtrs[i]=prvRTTasksList[i].taskTCB;
-				for (int j=0; j<configCRITICALITY_LEVELS; j++) {
-#ifdef configSCHEDULER_SOFTWARE
-					tasksWCETs[j][i]=prvRTTasksList[i].pxWcet[j];
-#else
-					tasksWCETs[j][i]=ceil((configATOMIC_OVERHEAD_WITH_REEXECUTION_IN_FPGA_SCHEDULER_TICKS+prvRTTasksList[i].pxWcet[j]+configATOMIC_OVERHEAD_IN_FPGA_SCHEDULER_TICKS)/configATOMIC_OVERHEAD_WITH_REEXECUTION_IN_FPGA_SCHEDULER_TICKS)*configATOMIC_OVERHEAD_WITH_REEXECUTION_IN_FPGA_SCHEDULER_TICKS;
-#endif
+				for (int j=0; j<=prvRTTasksList[i].pxCriticalityLevel; j++) {
+					tasksWCETs[j][i]=computeWCET(prvRTTasksList[i], j);
 				}
 				generate_deadlines(tasksDerivativesDeadlines, tasksDeadlines, prvRTTasksList[i], i, x, k),
 #ifdef configSCHEDULER_SOFTWARE
-				tasksPeriods[i]=prvRTTasksList[i].pxPeriod;
+				tasksPeriods[i]=prvConvertMicrosToSoftwareSchedulerTicks(prvRTTasksList[i].pxPeriod);
 #else
-				tasksPeriods[i]=prvRTTasksList[i].pxPeriod-1;
+				tasksPeriods[i]=prvConvertMicrosToFPGAClockCycles(prvRTTasksList[i].pxPeriod)-1;
 #endif
 				criticalityLevels[i]=prvRTTasksList[i].pxCriticalityLevel;
 				prvRTTasksList[i].taskTCB->requiresFaultDetection=prvRTTasksList[i].pxCriticalityLevel>0 ? 0xFF : 0x0;
@@ -1448,47 +1504,11 @@ u32 numberOfTasksGlob;
 		/*-----------------------------------------------------------*/
 
 		void vTaskJobEnd() { //(TaskHandle_t xTaskToEndJob) {
-			//TCB_t* pxTCB;
-
-			//taskENTER_CRITICAL()
-			//	;
-			//	{
-			/* If null is passed in here then it is the running task that is
-			 * being suspended. */
-			//pxTCB = prvGetTCBFromHandle(xTaskToEndJob);
-			//pxTCB=pxCurrentTCB;
-
-			//blockIfFaultDetectedInTask();
-
-			//		xil_printf(" end ");
 			pxCurrentTCB->jobEnded=1;
-//#ifdef configSCHEDULER_SOFTWARE
-//			portCPU_IRQ_DISABLE();
-//
-//			highestPriorityTask=0xFFFFFFFF;
-//			pxCurrentTCB->executionMode=EXECMODE_NORMAL_NEWJOB;
-//			activeJobs--;
-//
-//			portCPU_IRQ_ENABLE();
-
-//			xPortSchedulerSignalJobEnded(pxCurrentTCB);
-//#else
 #ifndef configSCHEDULER_SOFTWARE
-//			perf_reset_and_start_clock();
 			xPortSchedulerSignalJobEnded(pxCurrentTCB->uxTaskNumber, pxCurrentTCB->executionId);
-//			unsigned int clk=get_clock_L();
-//			perf_reset_clock();
-//			xil_printf("%u\n", clk);
-			//xil_printf(" JOBEND SENT ");
 #endif
-			//if (pxTCB == pxCurrentTCB) {
-			//		portYIELD_WITHIN_API()
-			//			;
-			//		}
-			//	taskEXIT_CRITICAL()
-			//		;
-
-			while(pxCurrentTCB->jobEnded) {
+			while (pxCurrentTCB->jobEnded) {
 			}
 		}
 
@@ -2374,6 +2394,7 @@ u32 numberOfTasksGlob;
 				xil_printf("error, cannot generate schedule");
 				return;
 			}
+			Xil_DisableMMU();
 
 #ifdef configSCHEDULER_SOFTWARE
 			numberOfTasksGlob=uxTaskNumber;
@@ -3374,6 +3395,11 @@ void SchedulerNewTaskIntrHandl(void)
 }*/
 
 		//paper
+
+		void vTaskDBG_setExecutionModeFault() {
+			pxCurrentTCB->executionMode=EXECMODE_CURRJOB_FAULT;
+		}
+
 		#ifdef configSCHEDULER_SOFTWARE
 		u8 SCHEDULER_SW_FaultDetected=0;
 		#endif
@@ -3439,6 +3465,7 @@ void SchedulerNewTaskIntrHandl(void)
 					systemCriticality=0;
 				}
 
+
 				if (highestPriorityTask!=0xFFFFFFFF) {
 					if (tasksTCBPtrs[highestPriorityTask]->jobEnded) {
 
@@ -3478,6 +3505,7 @@ void SchedulerNewTaskIntrHandl(void)
 							//mode switch
 							if (tasksCriticalityLevels[highestPriorityTask]>systemCriticality) {
 								systemCriticality++;
+
 								for (u32 t=0; t<numberOfTasksGlob; t++) {
 									if (tasksCriticalityLevels[t]<systemCriticality) {
 										activeJobs--;
@@ -3501,7 +3529,7 @@ void SchedulerNewTaskIntrHandl(void)
 
 				//check activations
 				for (u32 i=0; i<numberOfTasksGlob; i++) {
-					if (AbsActivations[i]==totalTime) {
+					if (AbsActivations[i]==totalTime && tasksCriticalityLevels[i]>=systemCriticality) {
 						//new activation
 						activeJobs++;
 
@@ -3529,6 +3557,7 @@ void SchedulerNewTaskIntrHandl(void)
 							highestPriorityTaskDeadline=AbsDeadlines[systemCriticality][i];
 					}
 				}
+//				printf("old ptr %X, SP %lx PC %lx\n", pxCurrentTCB, pxCurrentTCB->pxTopOfStack, *(pxCurrentTCB->pxTopOfStack+16));
 
 				//switch current running task
 				if (highestPriorityTask==0xFFFFFFFF) {
@@ -3540,68 +3569,118 @@ void SchedulerNewTaskIntrHandl(void)
 						pxCurrentTCB->jobEnded=0;
 						pxCurrentTCB->executionMode=EXECMODE_NORMAL;
 					} else if (pxCurrentTCB->executionMode!=EXECMODE_NORMAL && partialExecutionTimes[highestPriorityTask]==0) {
-							//clean stack
-							#if ( configUSE_MUTEXES == 1 )
+						//RESTART TASK
+
+				#if ( configUSE_MUTEXES == 1 )
+						{
+							pxCurrentTCB->uxBasePriority = pxCurrentTCB->uxPriority;
+							pxCurrentTCB->uxMutexesHeld = 0;
+						}
+				#endif /* configUSE_MUTEXES */
+
+						// vListInitialiseItem(&(pxCurrentTCB->xStateListItem));
+						// vListInitialiseItem(&(pxCurrentTCB->xEventListItem));
+
+						// /* Set the pxCurrentTCB as a link back from the ListItem_t.  This is so we can get
+						// * back to  the containing TCB from a generic item in a list. */
+						// listSET_LIST_ITEM_OWNER(&(pxCurrentTCB->xStateListItem), pxCurrentTCB);
+
+						// /* Event lists are always in priority order. */
+						// listSET_LIST_ITEM_VALUE(&(pxCurrentTCB->xEventListItem),
+						// ( TickType_t ) configMAX_PRIORITIES - ( TickType_t ) uxPriority); /*lint !e961 MISRA exception as the casts are only redundant for some ports. */
+						// listSET_LIST_ITEM_OWNER(&(pxCurrentTCB->xEventListItem), pxCurrentTCB);
+
+				#if ( portCRITICAL_NESTING_IN_TCB == 1 )
+						{
+							pxCurrentTCB->uxCriticalNesting = ( UBaseType_t ) 0U;
+						}
+				#endif /* portCRITICAL_NESTING_IN_TCB */
+
+				#if ( configGENERATE_RUN_TIME_STATS == 1 )
+						{
+							pxCurrentTCB->ulRunTimeCounter = 0UL;
+						}
+				#endif /* configGENERATE_RUN_TIME_STATS */
+
+						//thread not implemented yet
+						// #if ( configNUM_THREAD_LOCAL_STORAGE_POINTERS != 0 )
+						// {
+						// memset( ( void * ) &( pxCurrentTCB->pvThreadLocalStoragePointers[ 0 ] ), 0x00, sizeof( pxCurrentTCB->pvThreadLocalStoragePointers ) );
+						// }
+						// #endif
+
+						/* #if ( configUSE_TASK_NOTIFICATIONS == 1 )
+								{
+									memset((void *) &(pxCurrentTCB->ulNotifiedValue[0]), 0x00,
+											sizeof(pxCurrentTCB->ulNotifiedValue));
+									memset((void *) &(pxCurrentTCB->ucNotifyState[0]), 0x00,
+											sizeof(pxCurrentTCB->ucNotifyState));
+								}
+					#endif */
+
+				#if ( INCLUDE_xTaskAbortDelay == 1 )
+						{
+							pxCurrentTCB->ucDelayAborted = pdFALSE;
+						}
+				#endif
+
+						/* Initialize the TCB stack to look as if the task was already running,
+						 * but had been interrupted by the scheduler.  The return address is set
+						 * to the start of the task function. Once the stack has been initialised
+						 * the top of stack variable is updated. */
+
+
+
+
+				#if ( portUSING_MPU_WRAPPERS == 1 )
+								{
+				#if ( portHAS_STACK_OVERFLOW_CHECKING == 1 )
 									{
-										pxCurrentTCB->uxBasePriority = pxNewTCB->uxPriority;
-										pxCurrentTCB->uxMutexesHeld = 0;
+				#if ( portSTACK_GROWTH < 0 )
+										{
+											pxCurrentTCB->pxTopOfStack = pxPortInitialiseStack( pxCurrentTCB->pxInitTopOfStack, pxCurrentTCB->pxStack, pxCurrentTCB->pxInitTaskCode, pxCurrentTCB->pxInitParameters, pxCurrentTCB->xRunPrivileged );
+										}
+				#else /* portSTACK_GROWTH */
+										{
+											pxCurrentTCB->pxTopOfStack = pxPortInitialiseStack( pxCurrentTCB->pxInitTopOfStack, pxCurrentTCB->pxEndOfStack, pxCurrentTCB->pxInitTaskCode, pxCurrentTCB->pxInitParameters, pxCurrentTCB->xRunPrivileged );
+										}
+				#endif /* portSTACK_GROWTH */
 									}
-							#endif /* configUSE_MUTEXES */
-
-									// vListInitialiseItem(&(pxNewTCB->xStateListItem));
-									// vListInitialiseItem(&(pxNewTCB->xEventListItem));
-
-									// /* Set the pxNewTCB as a link back from the ListItem_t.  This is so we can get
-									// * back to  the containing TCB from a generic item in a list. */
-									// listSET_LIST_ITEM_OWNER(&(pxNewTCB->xStateListItem), pxNewTCB);
-
-									// /* Event lists are always in priority order. */
-									// listSET_LIST_ITEM_VALUE(&(pxNewTCB->xEventListItem),
-									// ( TickType_t ) configMAX_PRIORITIES - ( TickType_t ) uxPriority); /*lint !e961 MISRA exception as the casts are only redundant for some ports. */
-									// listSET_LIST_ITEM_OWNER(&(pxNewTCB->xEventListItem), pxNewTCB);
-
-							#if ( portCRITICAL_NESTING_IN_TCB == 1 )
+				#else /* portHAS_STACK_OVERFLOW_CHECKING */
 									{
-										pxCurrentTCB->uxCriticalNesting = ( UBaseType_t ) 0U;
+										pxCurrentTCB->pxTopOfStack = pxPortInitialiseStack( pxCurrentTCB->pxInitTopOfStack, pxCurrentTCB->pxInitTaskCode, pxCurrentTCB->pxInitParameters, pxCurrentTCB->xRunPrivileged );
 									}
-							#endif /* portCRITICAL_NESTING_IN_TCB */
-
-							#if ( configGENERATE_RUN_TIME_STATS == 1 )
+				#endif /* portHAS_STACK_OVERFLOW_CHECKING */
+								}
+				#else /* portUSING_MPU_WRAPPERS */
+								{
+									/* If the port has capability to detect stack overflow,
+									 * pass the stack end address to the stack initialization
+									 * function as well. */
+				#if ( portHAS_STACK_OVERFLOW_CHECKING == 1 )
 									{
-										pxCurrentTCB->ulRunTimeCounter = 0UL;
+				#if ( portSTACK_GROWTH < 0 )
+										{
+											pxCurrentTCB->pxTopOfStack = pxPortInitialiseStack( pxCurrentTCB->pxInitTopOfStack, pxCurrentTCB->pxStack, pxCurrentTCB->pxInitTaskCode, pxCurrentTCB->pxInitParameters );
+										}
+				#else /* portSTACK_GROWTH */
+										{
+											pxCurrentTCB->pxTopOfStack = pxPortInitialiseStack( pxCurrentTCB->pxInitTopOfStack, pxCurrentTCB->pxEndOfStack, pxCurrentTCB->pxInitTaskCode, pxCurrentTCB->pxInitParameters );
+										}
+				#endif /* portSTACK_GROWTH */
 									}
-							#endif /* configGENERATE_RUN_TIME_STATS */
-
-									//thread not implemented yet
-									// #if ( configNUM_THREAD_LOCAL_STORAGE_POINTERS != 0 )
-									// {
-									// memset( ( void * ) &( pxNewTCB->pvThreadLocalStoragePointers[ 0 ] ), 0x00, sizeof( pxNewTCB->pvThreadLocalStoragePointers ) );
-									// }
-									// #endif
-
-									/* #if ( configUSE_TASK_NOTIFICATIONS == 1 )
-											{
-												memset((void *) &(pxNewTCB->ulNotifiedValue[0]), 0x00,
-														sizeof(pxNewTCB->ulNotifiedValue));
-												memset((void *) &(pxNewTCB->ucNotifyState[0]), 0x00,
-														sizeof(pxNewTCB->ucNotifyState));
-											}
-								#endif */
-
-							#if ( INCLUDE_xTaskAbortDelay == 1 )
+				#else /* portHAS_STACK_OVERFLOW_CHECKING */
 									{
-										pxNewTCB->ucDelayAborted = pdFALSE;
+										pxCurrentTCB->pxTopOfStack = pxPortInitialiseStack(pxCurrentTCB->pxInitTopOfStack,
+												pxCurrentTCB->pxInitTaskCode, pxCurrentTCB->pxInitParameters);
 									}
-							#endif
+				#endif /* portHAS_STACK_OVERFLOW_CHECKING */
+								}
+				#endif /* portUSING_MPU_WRAPPERS */
 
-									/* Initialize the TCB stack to look as if the task was already running,
-									 * but had been interrupted by the scheduler.  The return address is set
-									 * to the start of the task function. Once the stack has been initialised
-									 * the top of stack variable is updated. */
 
-									//pxCurrentTCB->pxTopOfStack=pxCurrentTCB->pxInitTopOfStack;
-									pxCurrentTCB->pxTopOfStack = pxPortInitialiseStack(pxCurrentTCB->pxInitTopOfStack,
-											pxCurrentTCB->pxInitTaskCode, (void*) pxCurrentTCB->pxInitParameters);
+
+
 					}
 				}
 
@@ -3613,6 +3692,7 @@ void SchedulerNewTaskIntrHandl(void)
 				pxCurrentTCB = pxIdleTCB;
 #endif
 
+//				printf("new ptr %X, SP %lx PC %lx\n", pxCurrentTCB, pxCurrentTCB->pxTopOfStack, *(pxCurrentTCB->pxTopOfStack+16));
 
 				traceTASK_SWITCHED_IN();
 
